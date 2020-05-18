@@ -1,0 +1,17 @@
+package com.gardenShare.gardenshare.Config
+
+import utest._
+
+object PersistentStorageSpec extends TestSuite {
+  val tests = Tests{
+    test("PersistenStorage"){
+      test("for IO") {
+        test("store") {
+          test("Should ") {
+
+          }
+        }
+      }
+    }
+  }
+}
