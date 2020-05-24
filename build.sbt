@@ -3,6 +3,7 @@ val CirceVersion = "0.13.0"
 val Specs2Version = "4.9.3"
 val LogbackVersion = "1.2.3"
 
+
 lazy val root = (project in file("."))
   .settings(
     organization := "com.gardenShare",
@@ -17,11 +18,13 @@ lazy val root = (project in file("."))
       "io.circe"        %% "circe-generic"       % CirceVersion,
       "org.specs2"      %% "specs2-core"         % Specs2Version % "test",
       "ch.qos.logback"  %  "logback-classic"     % LogbackVersion,
-      "org.mongodb.scala" %% "mongo-scala-driver" % "2.9.0",
       "com.typesafe" % "config" % "1.4.0",
       "com.lihaoyi" %% "utest" % "0.7.2" % "test",
-      "org.mockito" %% "mockito-scala" % "1.14.2"
-
+      "org.mockito" %% "mockito-scala" % "1.14.2",
+      "com.typesafe.slick" %% "slick" % "3.3.2",
+      "org.slf4j" % "slf4j-nop" % "1.6.4",
+      "com.typesafe.slick" %% "slick-hikaricp" % "3.3.2",
+      "org.postgresql" % "postgresql" % "9.3-1100-jdbc4"
     ),
     testFrameworks += new TestFramework("utest.runner.Framework"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
