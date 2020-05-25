@@ -24,7 +24,7 @@ lazy val root = (project in file("."))
       "com.typesafe.slick" %% "slick" % "3.3.2",
       "org.slf4j" % "slf4j-nop" % "1.6.4",
       "com.typesafe.slick" %% "slick-hikaricp" % "3.3.2",
-      "org.postgresql" % "postgresql" % "9.3-1100-jdbc4"
+      "org.postgresql" % "postgresql" % "42.2.12"
     ),
     testFrameworks += new TestFramework("utest.runner.Framework"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),

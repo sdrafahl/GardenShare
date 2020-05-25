@@ -6,7 +6,7 @@ import com.gardenShare.gardenshare.Storage.Relational.Setup
 
 object Main extends IOApp {
   def run(args: List[String]) = for {
-    _ <- Setup.createDBTables
+    _ <- Setup.createPostGresDBTables
     exitCode <- GardenshareServer.stream[IO].compile.drain.as(ExitCode.Success)
   } yield exitCode
 }
