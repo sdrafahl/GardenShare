@@ -10,12 +10,46 @@ import slick.lifted.AbstractTable
 import com.gardenShare.gardenshare.Storage.Relational.Tables.Gardens
 import com.gardenShare.gardenshare.Storage.Relational.Tables.Plants
 
-
 object Concurrency {
   val ec = scala.concurrent.ExecutionContext.global
   implicit val cs = IO.contextShift(ec)
 }
 import Concurrency._
+
+
+abstract class GetGarden[F[_]: Async] {
+  def getGardenByOwner(owner: String): F[Seq[(String, Int)]]
+}
+
+object GetGarden {
+  def apply[F[_]: GetGarden] = implicitly[GetGarden[F]]
+
+  implicit object IOGetGardenByOwner extends GetGarden[IO] {
+    def getGardenByOwner(owner: String): IO[Seq[(String, Int)]] = {
+      val query = for {
+        garden <- Tables.gardens if garden.owner equals owner
+      } yield (garden.owner, garden.id)
+      IO.fromFuture(IO(Setup.db.run(query.result)))
+    }
+  }
+}
+
+abstract class GetPlant[F[_]: Async] {
+  def gardenPlantsByGardenId(id: Int): F[Seq[(String, Int)]]
+}
+
+object GetPlant {
+  def apply[F[_]: GetPlant]() = implicitly[GetPlant[F]]
+
+  implicit object IOGetPlant {
+    def gardenPlantsByGardenId(id: Int): IO[Seq[(String, Int)]] = {
+      val query = for {
+        plants <- Tables.plants if plants.gardenId equals id
+      } yield (plants.plantName, plants.gardenId)
+      IO.fromFuture(IO(Setup.db.run(query.result)))
+    }
+  }
+}
 
 abstract class InsertGarden[F[_]: Async] {
   def add(data: List[String]): F[List[(Int, String)]]
