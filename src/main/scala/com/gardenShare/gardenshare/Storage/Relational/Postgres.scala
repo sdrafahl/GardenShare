@@ -17,14 +17,14 @@ object Concurrency {
 import Concurrency._
 
 
-abstract class GetGarden[F[_]: Async] {
+abstract class GetGardenFromDatabase[F[_]: Async] {
   def getGardenByOwner(owner: String): F[Seq[(String, Int)]]
 }
 
-object GetGarden {
-  def apply[F[_]: GetGarden] = implicitly[GetGarden[F]]
+object GetGardenFromDatabase {
+  def apply[F[_]: GetGardenFromDatabase] = implicitly[GetGardenFromDatabase[F]]
 
-  implicit object IOGetGardenByOwner extends GetGarden[IO] {
+  implicit object IOGetGardenByOwner extends GetGardenFromDatabase[IO] {
     def getGardenByOwner(owner: String): IO[Seq[(String, Int)]] = {
       val query = for {
         garden <- Tables.gardens if garden.owner equals owner
