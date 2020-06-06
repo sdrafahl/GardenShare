@@ -4,7 +4,8 @@ import utest._
 import cats.effect.IO
 import com.gardenShare.gardenshare.CreateGarden.CreateGarden
 import com.gardenShare.gardenshare.Storage.Relational.InsertGarden
-import com.gardenShare.gardenshare.Storage.Relational.Tables
+import com.gardenShare.gardenshare.Storage.Relational.Gardens._
+import com.gardenShare.gardenshare.Storage.Relational.Plants._
 import com.gardenShare.gardenshare.Storage.Relational.InsertPlant
 import com.gardenShare.gardenshare.GardenData.Garden
 import com.gardenShare.gardenshare.GardenData.Plant
