@@ -7,7 +7,7 @@ import slick.dbio.DBIOAction
 import java.util.concurrent.Executors
 import cats.effect._
 import slick.lifted.AbstractTable
-import com.gardenShare.gardenshare.Concurrency.Concurrency._p
+import com.gardenShare.gardenshare.Concurrency.Concurrency._
 
 object Gardens {
   class Gardens(tag: Tag) extends Table[(Int, String)](tag, "gardens") {
