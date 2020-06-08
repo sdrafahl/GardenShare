@@ -11,7 +11,7 @@ import com.gardenShare.gardenshare.GardenData.Garden
 import com.gardenShare.gardenshare.GardenData.Plant
 import com.gardenShare.gardenshare.CreateGarden.CreateGarden._
 
-object PersistentStorageSpec extends TestSuite {
+object CreateGardenSpec extends TestSuite {
   val tests = Tests{
     test("CreateGarden"){
       test("for IO") {

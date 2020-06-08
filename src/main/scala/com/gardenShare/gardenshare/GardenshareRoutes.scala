@@ -30,4 +30,17 @@ object GardenshareRoutes {
         } yield resp
     }
   }
+
+  def userRoutes[F[_]: Sync](signupUser: com.gardenShare.gardenshare.SignupUser.SignupUser[F]): HttpRoutes[F] = {
+    val dsl = new Http4sDsl[F]{}
+    import dsl._
+    HttpRoutes.of[F] {
+      // case GET -> Root / "user" / "signup" / email =>
+      //   for {
+      //     greeting <- H.hello(HelloWorld.Name(name))
+      //     resp <- Ok(greeting)
+      //   } yield resp
+      ???
+    }
+  }
 }
