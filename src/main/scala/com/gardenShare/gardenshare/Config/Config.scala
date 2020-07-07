@@ -7,7 +7,6 @@ import cats.effect.Async
 import scala.util.Try
 import cats.syntax.functor._
 import cats.Functor
-import java.util.Base64
 import javax.crypto.Cipher
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 import java.security.KeyPairGenerator
@@ -17,6 +16,11 @@ import java.security.KeyFactory
 import collection.JavaConverters._
 import java.security.interfaces.RSAPublicKey
 import java.security.interfaces.RSAPrivateKey
+import java.io.BufferedReader
+import java.io.FileReader
+import java.io.File
+import scala.io.Source
+import org.apache.commons.codec.binary.Base64
 
 abstract class GetTypeSafeConfig[F[_]:Functor] {
   def get(key: String): F[String]
@@ -47,59 +51,67 @@ object GetUserPoolName {
   }
 }
 
-abstract class GetEncryptionAlgorithmFromConfig[F[_]] {
-  def get()(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[EncryptionAlgorithm]
+case class PubKey(underlying: RSAPublicKey)
+abstract class GetPublicKey {
+  def exec(): PubKey
 }
 
-object GetEncryptionAlgorithmFromConfig {
-  def apply[F[_]: GetEncryptionAlgorithmFromConfig] = implicitly[GetEncryptionAlgorithmFromConfig[F]]
-
-  implicit object IOGetEncryptionAlgorithmFromConfig extends GetEncryptionAlgorithmFromConfig[IO] {
-    def get()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]) = {
-      for {
-        conf <- getTypeSafeConfig.get("encryption.algorithm")
-      } yield conf match {
-        case "RSA" => RSA
+object getKeysHelpers {
+  def getKey(fileName: String): String = {
+    val bufferedReader = Source.fromResource(fileName).bufferedReader()
+    def readUniltEnd(acc:String, bufferedReader: BufferedReader): String = {
+      val maybeLine = Option(bufferedReader.readLine())
+      maybeLine match {
+        case None => acc
+        case Some(newLine) => readUniltEnd(acc + newLine + "\n", bufferedReader)
       }
     }
+    val key = readUniltEnd("", bufferedReader)
+    bufferedReader.close()
+    key
   }
 }
 
-abstract class EncryptionAlgorithm
-case object RSA extends EncryptionAlgorithm
-
-case class PubKey(underlying: RSAPublicKey)
-abstract class GetPublicKey[F[_]: GetTypeSafeConfig] {
-  def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[PubKey]
-}
-
 object GetPublicKey {
-  def apply[F[_]: GetPublicKey] = implicitly[GetPublicKey[F]]
-  implicit object IOGetPublicKey extends GetPublicKey[IO] {
-    def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[PubKey] = {
-      for {
-        conf <- getTypeSafeConfig.get("encryption.publicKey")
-        keyFactory = KeyFactory.getInstance("RSA")
-        encodedKey: RSAPublicKey = keyFactory.generatePublic(new X509EncodedKeySpec(conf.getBytes())).asInstanceOf[RSAPublicKey]
-      } yield PubKey(encodedKey)
-    }
+
+  private def getPublicKey(key: String): PubKey = {
+    val keyWithoutHeaders = key
+      .replace("-----BEGIN PUBLIC KEY-----\n", "")
+      .replace("-----END PUBLIC KEY-----", "")
+    val encoded = Base64.decodeBase64(keyWithoutHeaders)
+    val keyFactory = KeyFactory.getInstance("RSA")
+    PubKey(keyFactory.generatePublic(new X509EncodedKeySpec(encoded)).asInstanceOf[RSAPublicKey])
+  }
+
+  lazy val publicKey = getPublicKey(getKeysHelpers.getKey("public.pem"))
+
+  def apply() = DefaultGetPublicKey
+
+  implicit object DefaultGetPublicKey extends GetPublicKey {
+    def exec(): PubKey = publicKey
   }
 }
 
 case class PrivateKey(underlying: RSAPrivateKey)
-abstract class GetPrivateKey[F[_]: GetTypeSafeConfig] {
-  def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[PrivateKey]
+abstract class GetPrivateKey {
+  def exec(): PrivateKey
 }
 
 object GetPrivateKey {
-  def apply[F[_]: GetPrivateKey] = implicitly[GetPrivateKey[F]]
-  implicit object IOGetPrivateKey extends GetPrivateKey[IO] {
-    def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[PrivateKey] = {
-      for {
-        conf <- getTypeSafeConfig.get("encryption.privateKey")
-        encodedKey = new PKCS8EncodedKeySpec(conf.getBytes())
-        keyFactory = KeyFactory.getInstance("RSA")
-      } yield PrivateKey(keyFactory.generatePrivate(encodedKey).asInstanceOf[RSAPrivateKey])
-    }
+  private def createPrivateKeyFromSerial(key:String):PrivateKey = {
+    val keyWithoutHeaders = key
+      .replace("-----BEGIN PRIVATE KEY-----\n", "")
+      .replace("-----END PRIVATE KEY-----", "")
+    val keyEncoding = Base64.decodeBase64(keyWithoutHeaders)
+    val kf = KeyFactory.getInstance("RSA")
+    val keySpec = new PKCS8EncodedKeySpec(keyEncoding)
+    PrivateKey(kf.generatePrivate(keySpec).asInstanceOf[RSAPrivateKey])
+  }
+
+  lazy val privateKey = createPrivateKeyFromSerial(getKeysHelpers.getKey("private.pem"))
+  
+  def apply() = DefaultGetPrivateKey
+  implicit object DefaultGetPrivateKey extends GetPrivateKey {
+    def exec(): PrivateKey = privateKey
   }
 }
