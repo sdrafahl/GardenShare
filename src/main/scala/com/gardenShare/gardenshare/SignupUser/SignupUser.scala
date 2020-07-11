@@ -7,19 +7,21 @@ import cats.effect.IO
 import com.gardenShare.gardenshare.UserEntities.User
 import com.gardenShare.gardenshare.UserEntities.Email
 import com.gardenShare.gardenshare.UserEntities.Password
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
 
-abstract class SignupUser[F[_]: Async] {
-  def signupUser(email: Email, password :Password)(implicit cognitoClient: CogitoClient[F]): F[Unit]
+abstract class SignupUser[F[_]] {
+  def signupUser(email: Email, password :Password)(implicit cognitoClient: CogitoClient[F]): F[SignUpResponse]
 }
 
 object SignupUser {
   implicit def apply[F[_]: SignupUser]() = implicitly[SignupUser[F]]
-  implicit object IOSignupUser extends SignupUser[IO] {
-    def signupUser(email: Email, password: Password)(implicit cognitoClient: CogitoClient[IO]): IO[Unit] = cognitoClient.createUser(password.underlying, email.underlying).map(_ =>())
-  }
 
-  implicit class SignupUserOps[F[_]: SignupUser: CogitoClient](underlying : User) {
-    def signUp() = SignupUser[F].signupUser(underlying.email, underlying.password)
+  implicit object IOSignupUser extends SignupUser[IO] {
+    def signupUser(email: Email, password: Password)(implicit cognitoClient: CogitoClient[IO]): IO[SignUpResponse] = cognitoClient.createUser(password.underlying, email.underlying)
+  }  
+
+  implicit class SignupUserOps(underlying : User) {
+    def signUp[F[_]: SignupUser: CogitoClient]() = SignupUser[F].signupUser(underlying.email, underlying.password)
   }
 
 }

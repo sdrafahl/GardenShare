@@ -24,7 +24,7 @@ object Encryption {
   def apply() = DefaultEncryption
   implicit object DefaultEncryption extends Encryption {
     def encrypt(textToEncrypt: String, publicKey: PubKey) = {
-      val (cipherDecrypter) = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "BC")
+      val cipherDecrypter = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding", "BC")
       cipherDecrypter.init(Cipher.ENCRYPT_MODE, publicKey.underlying)
       val dataAsBytes = Base64.decodeBase64(textToEncrypt)   
       cipherDecrypter.doFinal(dataAsBytes)

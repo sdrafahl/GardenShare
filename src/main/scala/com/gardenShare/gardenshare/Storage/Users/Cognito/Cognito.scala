@@ -33,7 +33,8 @@ abstract class CogitoClient[F[_]:GetUserPoolName:Async] {
 }
 
 object CogitoClient {
-  implicit def apply[F[_]:GetUserPoolName:GetTypeSafeConfig:Async](implicit client: CognitoIdentityProviderClient) = new CogitoClient[F] {
+  implicit lazy val defaultCognitoClient = CognitoIdentityProviderClient.builder().build()
+  implicit def apply[F[_]:GetUserPoolName:GetTypeSafeConfig:Async]()(implicit client: CognitoIdentityProviderClient) = new CogitoClient[F] {
     def createUserPool(userPoolName: String) = {
     Async[F].async { (cb: Either[Throwable, CreateUserPoolResponse] => Unit) =>
       val response = Try(client.createUserPool(
@@ -48,8 +49,6 @@ object CogitoClient {
       }
     }   
   }
-
-  implicit lazy val defaultCognitoClient = CognitoIdentityProviderClient.builder().build()
 
   def createUserPoolClient(clientName: String, userPoolId: String) = {
     Async[F].async { (cb: Either[Throwable, UserPoolClientType] => Unit) =>
