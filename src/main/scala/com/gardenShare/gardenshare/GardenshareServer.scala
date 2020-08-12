@@ -8,10 +8,15 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
 import scala.concurrent.ExecutionContext.global
+import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient
+import com.gardenShare.gardenshare.SignupUser.SignupUser
+import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
+import com.gardenShare.gardenshare.Config.GetUserPoolName
+import com.gardenShare.gardenshare.Config.GetUserPoolSecret
 
 object GardenshareServer {
 
-  def stream[F[_]: ConcurrentEffect](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
+  def stream[F[_]: ConcurrentEffect:CogitoClient:GetUserPoolName:GetTypeSafeConfig:SignupUser:GetUserPoolSecret](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
     for {
       client <- BlazeClientBuilder[F](global).stream
       helloWorldAlg = HelloWorld.impl[F]
@@ -23,7 +28,8 @@ object GardenshareServer {
       // in the underlying routes.
       httpApp = (
         GardenshareRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-        GardenshareRoutes.jokeRoutes[F](jokeAlg)
+        GardenshareRoutes.jokeRoutes[F](jokeAlg) <+>
+        GardenshareRoutes.userRoutes[F]()
       ).orNotFound
 
       // With Middlewares in place

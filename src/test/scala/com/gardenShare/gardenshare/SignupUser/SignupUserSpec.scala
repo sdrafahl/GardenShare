@@ -24,6 +24,8 @@ import com.gardenShare.gardenshare.UserEntities.User
 import com.gardenShare.gardenshare.UserEntities.Email
 import com.gardenShare.gardenshare.UserEntities.Password
 import com.gardenShare.gardenshare.Config.GetUserPoolName
+import com.gardenShare.gardenshare.Config.UserPoolName
+import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 
 object SignupUserSpec extends TestSuite {
   val tests = Tests {
@@ -31,26 +33,31 @@ object SignupUserSpec extends TestSuite {
       test("For IO") {
         test("signupUser") {
           test("Should use a cognito client to make a user request") {            
-            val email = Email("me@me.com")
-            val password = Password("testPass")
+            val correctEmail = Email("shanedrafahl@gmail.com")
+            val correctPassword = Password("testPass1*")
+            val testUserPoolName = UserPoolName("userPool")
+
+            implicit val testGetUserPoolName = new GetUserPoolName[IO] {
+              def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[UserPoolName] = IO(testUserPoolName)
+            }
 
             val fakeSignupResponse = SignUpResponse.builder().build()
 
-            implicit val userPoolName = GetUserPoolName[IO]
             implicit val mockCognitoClient = new CogitoClient[IO] {
               def createUserPool(userPoolName: String) = ???
               def createUserPoolClient(clientName: String, userPoolId: String) = ???
               def adminCreateUser(userName: String) = ???
-              def createUser(givenPass: String, givenEmail: String): IO[SignUpResponse] = {
-                assert(password equals Password(givenPass))
-                assert(email equals Email(givenEmail))
-                IO(fakeSignupResponse)
+              def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = {
+                assert(correctPassword equals Password(password))
+                assert(correctEmail equals Email(email))
+                //assert(userPoolName equals testUserPoolName)
+                fakeSignupResponse
               }
             }
 
             val signUpUser = SignupUser[IO]()
 
-            signUpUser.signupUser(email, password).unsafeRunSync()
+            signUpUser.signupUser(correctEmail, correctPassword).unsafeRunSync()
           }
         }
       }

@@ -34,6 +34,22 @@ object GetTypeSafeConfig {
   }
 }
 
+case class UserPoolSecret(secret: String)
+
+abstract class GetUserPoolSecret[F[_]:Functor] {
+  def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): F[UserPoolSecret]
+}
+
+object GetUserPoolSecret {
+  def apply[F[_]:GetUserPoolSecret] = implicitly[GetUserPoolSecret[F]]
+
+  implicit object IOGetUserPoolSecret extends GetUserPoolSecret[IO] {
+    def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[UserPoolSecret] = for {
+      conf <- getTypeSafeConfig.get("users.secret")
+    } yield UserPoolSecret(conf)
+  }
+}
+
 case class UserPoolName(name: String)
 
 abstract class GetUserPoolName[F[_]: GetTypeSafeConfig:Functor] {

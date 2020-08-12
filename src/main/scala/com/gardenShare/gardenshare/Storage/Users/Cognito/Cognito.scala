@@ -24,17 +24,20 @@ import com.gardenShare.gardenshare.Config.GetUserPoolName
 import software.amazon.awssdk.services.appsync.model.GetTypeRequest
 import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import cats.syntax.functor._
+import cats.effect.IO
+import com.gardenShare.gardenshare.Config.UserPoolSecret
+import com.gardenShare.gardenshare.Config.UserPoolName
 
 abstract class CogitoClient[F[_]:GetUserPoolName:Async] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]
   def createUserPoolClient(clientName: String, userPoolId: String): F[UserPoolClientType]
   def adminCreateUser(userName: String): F[AdminCreateUserResponse]
-  def createUser(password: String, email: String): F[SignUpResponse]
+  def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse
 }
 
 object CogitoClient {
-  implicit lazy val defaultCognitoClient = CognitoIdentityProviderClient.builder().build()
-  implicit def apply[F[_]:GetUserPoolName:GetTypeSafeConfig:Async]()(implicit client: CognitoIdentityProviderClient) = new CogitoClient[F] {
+  implicit lazy val cognitoIdentityClient = CognitoIdentityProviderClient.builder().build()
+  implicit def apply[F[_]:GetUserPoolName:GetTypeSafeConfig:Async]()(implicit client: CognitoIdentityProviderClient): CogitoClient[F] = new CogitoClient[F] {
     def createUserPool(userPoolName: String) = {
     Async[F].async { (cb: Either[Throwable, CreateUserPoolResponse] => Unit) =>
       val response = Try(client.createUserPool(
@@ -48,7 +51,9 @@ object CogitoClient {
         case Failure(error) => cb(Left(error))
       }
     }   
-  }
+    }
+
+  
 
   def createUserPoolClient(clientName: String, userPoolId: String) = {
     Async[F].async { (cb: Either[Throwable, UserPoolClientType] => Unit) =>
@@ -79,11 +84,8 @@ object CogitoClient {
     }
   }
 
-  def createUser(password: String, email: String) = {   
-      val getUserPool: GetUserPoolName[F] =  GetUserPoolName[F]
-      for {
-        userPoolName <- getUserPool.exec()
-        maybeResponse = client.signUp(
+  def createUser(password: String, email: String, userPoolName:UserPoolName) = {   
+      client.signUp(
           SignUpRequest
             .builder()
             .password(password)
@@ -91,7 +93,7 @@ object CogitoClient {
             .username(email)
             .build()
       )
-      } yield maybeResponse
     }  
   }
+  implicit lazy val defaultCognitoClient: CogitoClient[IO] = CogitoClient[IO]()
 }

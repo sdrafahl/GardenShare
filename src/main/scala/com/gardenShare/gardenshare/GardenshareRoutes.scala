@@ -20,6 +20,7 @@ import com.gardenShare.gardenshare.SignupUser.SignupUser._
 import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient._
 import com.gardenShare.gardenshare.Config.GetUserPoolName
+import com.gardenShare.gardenshare.Config.GetUserPoolSecret
 
 object GardenshareRoutes {
 
@@ -47,8 +48,11 @@ object GardenshareRoutes {
     }
   }
 
-  def userRoutes[F[_]: Async:CogitoClient:GetUserPoolName:GetTypeSafeConfig:SignupUser](signupUser: com.gardenShare.gardenshare.SignupUser.SignupUser[F]): HttpRoutes[F] = {
+  def userRoutes[F[_]: Async:CogitoClient:GetUserPoolName:GetTypeSafeConfig:SignupUser:GetUserPoolSecret](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
+    val testUser = User(Email("shanedrafahl@gmail.com"), Password("password1"))
+    val rest = testUser.signUp[IO]().unsafeRunSync()
+    println(rest)
     import dsl._
     HttpRoutes.of[F] {
       case POST -> Root / "user" / "signup" / email / encryptedPassword => {
