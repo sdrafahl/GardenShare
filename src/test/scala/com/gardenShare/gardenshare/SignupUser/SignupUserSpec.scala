@@ -50,7 +50,7 @@ object SignupUserSpec extends TestSuite {
               def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = {
                 assert(correctPassword equals Password(password))
                 assert(correctEmail equals Email(email))
-                //assert(userPoolName equals testUserPoolName)
+                assert(userPoolName equals testUserPoolName)
                 fakeSignupResponse
               }
             }
