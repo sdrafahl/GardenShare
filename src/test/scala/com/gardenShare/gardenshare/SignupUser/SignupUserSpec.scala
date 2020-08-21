@@ -57,7 +57,8 @@ object SignupUserSpec extends TestSuite {
 
             val signUpUser = SignupUser[IO]()
 
-            signUpUser.signupUser(correctEmail, correctPassword).unsafeRunSync()
+            val result = signUpUser.signupUser(correctEmail, correctPassword).unsafeRunSync()
+            assert(result equals fakeSignupResponse)
           }
         }
       }

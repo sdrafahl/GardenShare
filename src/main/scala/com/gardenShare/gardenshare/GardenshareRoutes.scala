@@ -50,25 +50,18 @@ object GardenshareRoutes {
 
   def userRoutes[F[_]: Async:CogitoClient:GetUserPoolName:GetTypeSafeConfig:SignupUser:GetUserPoolSecret](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
-    val testUser = User(Email("shanedrafahl@gmail.com"), Password("password1"))
-    val rest = testUser.signUp[IO]().unsafeRunSync()
-    println(rest)
     import dsl._
     HttpRoutes.of[F] {
-      case POST -> Root / "user" / "signup" / email / encryptedPassword => {
-        val decryptor = Decrypt()
-        val privateKey = GetPrivateKey().exec()
-        val encryptedPasswordAsBinary = Base64.decodeBase64(encryptedPassword)
-        val decryptedPassword = decryptor.decrypt(encryptedPasswordAsBinary, privateKey)
+      case POST -> Root / "user" / "signup" / email / password => {
         val emailToPass = Email(email)
-        val passwordToPass = Password(decryptedPassword)
+        val passwordToPass = Password(password)
         val user = User(emailToPass,passwordToPass)
         for {
           resp <- user.signUp[F]()
           success = resp.userConfirmed().booleanValue()
           newResp <- success match {
             case true => Ok("User Request Made")
-            case false => NotAcceptable("User Request Failed")
+            case false => NotAcceptable(s"User Request Failed: ${resp.toString()}")
           }
         } yield newResp
       }
