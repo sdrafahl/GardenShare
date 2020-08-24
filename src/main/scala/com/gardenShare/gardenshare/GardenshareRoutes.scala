@@ -21,6 +21,12 @@ import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient._
 import com.gardenShare.gardenshare.Config.GetUserPoolName
 import com.gardenShare.gardenshare.Config.GetUserPoolSecret
+import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser.AuthUserOps
+import com.gardenShare.gardenshare.UserEntities.AuthenticatedUser
+import com.gardenShare.gardenshare.UserEntities.FailedToAuthenticate
+import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
+import com.gardenShare.gardenshare.Config.GetUserPoolId
+import com.gardenShare.gardenshare.UserEntities.UserResponse
 
 object GardenshareRoutes {
 
@@ -48,7 +54,7 @@ object GardenshareRoutes {
     }
   }
 
-  def userRoutes[F[_]: Async:CogitoClient:GetUserPoolName:GetTypeSafeConfig:SignupUser:GetUserPoolSecret](): HttpRoutes[F] = {
+  def userRoutes[F[_]: Async:CogitoClient:GetUserPoolName:GetTypeSafeConfig:SignupUser:GetUserPoolSecret:AuthUser:GetUserPoolId](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
     import dsl._
     HttpRoutes.of[F] {
@@ -64,6 +70,17 @@ object GardenshareRoutes {
             case false => NotAcceptable(s"User Request Failed: ${resp.toString()}")
           }
         } yield newResp
+      }
+
+      case GET -> Root / "user" / "auth" / email / password => {
+        User(Email(email), Password(password))
+          .auth
+          .flatMap{mr =>
+            mr match {
+              case AuthenticatedUser(user, jwt, accToken) => Ok(AuthenticatedUser(user, jwt, accToken).toString())
+              case FailedToAuthenticate(msg) => NotAcceptable(s"User failed to verify: ${msg}")
+            }
+          }
       }
     }
   }

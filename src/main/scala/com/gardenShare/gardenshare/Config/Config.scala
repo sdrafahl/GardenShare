@@ -67,6 +67,23 @@ object GetUserPoolName {
   }
 }
 
+case class UserPoolID(id: String)
+
+abstract class GetUserPoolId[F[_]: GetTypeSafeConfig:Functor] {
+  def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[UserPoolID]
+}
+
+object GetUserPoolId {
+  implicit def apply[F[_]: GetUserPoolId] = implicitly[GetUserPoolId[F]]
+  implicit object IOGetUserPoolId extends GetUserPoolId[IO] {
+    def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[UserPoolID] = {
+      for {
+        userPoolId <- getTypeSafeConfig.get("users.id")        
+      } yield UserPoolID(userPoolId)
+    }
+  }
+}
+
 case class PubKey(underlying: RSAPublicKey)
 abstract class GetPublicKey {
   def exec(): PubKey

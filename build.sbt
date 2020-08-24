@@ -28,7 +28,8 @@ lazy val root = (project in file("."))
       "software.amazon.awssdk" % "aws-sdk-java" % "2.13.30",
       "jakarta.xml.bind" % "jakarta.xml.bind-api" % "3.0.0-RC3",
       "com.walterjwhite.java.dependencies" % "bouncy-castle" % "0.0.17",
-      "org.bouncycastle" % "bcprov-jdk15on" % "1.65.01"
+      "org.bouncycastle" % "bcprov-jdk15on" % "1.65.01",
+      "com.github.3tty0n" %% "jwt-scala" % "1.3.0"
     ),
     testFrameworks += new TestFramework("utest.runner.Framework"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),

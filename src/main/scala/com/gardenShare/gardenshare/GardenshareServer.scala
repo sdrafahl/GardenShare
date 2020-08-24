@@ -13,10 +13,13 @@ import com.gardenShare.gardenshare.SignupUser.SignupUser
 import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import com.gardenShare.gardenshare.Config.GetUserPoolName
 import com.gardenShare.gardenshare.Config.GetUserPoolSecret
+import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser._
+import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
+import com.gardenShare.gardenshare.Config.GetUserPoolId
 
 object GardenshareServer {
 
-  def stream[F[_]: ConcurrentEffect:CogitoClient:GetUserPoolName:GetTypeSafeConfig:SignupUser:GetUserPoolSecret](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
+  def stream[F[_]: ConcurrentEffect:CogitoClient:GetUserPoolName:GetTypeSafeConfig:SignupUser:GetUserPoolSecret: AuthUser:GetUserPoolId](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
     for {
       client <- BlazeClientBuilder[F](global).stream
       helloWorldAlg = HelloWorld.impl[F]

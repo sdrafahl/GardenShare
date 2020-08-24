@@ -18,7 +18,6 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.DeliveryMed
 import cats.effect.Async
 import scala.util.Try
 import scala.util.Success
-import collection.JavaConverters._
 import scala.util.Failure
 import com.gardenShare.gardenshare.Config.GetUserPoolName
 import software.amazon.awssdk.services.appsync.model.GetTypeRequest
@@ -27,12 +26,21 @@ import cats.syntax.functor._
 import cats.effect.IO
 import com.gardenShare.gardenshare.Config.UserPoolSecret
 import com.gardenShare.gardenshare.Config.UserPoolName
+import com.gardenShare.gardenshare.UserEntities.User
+import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthRequest
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType._
+import scala.jdk.CollectionConverters
+import scala.jdk.CollectionConverters._
+import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse
 
 abstract class CogitoClient[F[_]:GetUserPoolName:Async] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]
   def createUserPoolClient(clientName: String, userPoolId: String): F[UserPoolClientType]
   def adminCreateUser(userName: String): F[AdminCreateUserResponse]
   def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse
+  def authUserAdmin(user: User, userPoolId: String, clientId: String): F[AdminInitiateAuthResponse]
 }
 
 object CogitoClient {
@@ -50,10 +58,8 @@ object CogitoClient {
         case Success(response) => cb(Right(response))
         case Failure(error) => cb(Left(error))
       }
-    }   
     }
-
-  
+    }
 
   def createUserPoolClient(clientName: String, userPoolId: String) = {
     Async[F].async { (cb: Either[Throwable, UserPoolClientType] => Unit) =>
@@ -93,7 +99,27 @@ object CogitoClient {
             .username(email)
             .build()
       )
-    }  
+  }
+
+    def authUserAdmin(user: User, userPoolId: String, clientId: String): F[AdminInitiateAuthResponse] = {
+
+      val params = Map(
+          "USERNAME" -> user.email.underlying,
+          "PASSWORD" -> user.password.underlying
+      ).asJava
+
+      val request = AdminInitiateAuthRequest
+        .builder()
+        .authFlow(ADMIN_NO_SRP_AUTH)
+        .authParameters(params)
+        .userPoolId(userPoolId)
+        .clientId(clientId)
+        .build()
+
+      Async[F].async { cb =>
+        cb(Try(client.adminInitiateAuth(request)).toEither)
+      }
+    }
   }
   implicit lazy val defaultCognitoClient: CogitoClient[IO] = CogitoClient[IO]()
 }
