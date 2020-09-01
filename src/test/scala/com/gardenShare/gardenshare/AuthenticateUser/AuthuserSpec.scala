@@ -77,18 +77,18 @@ object AuthUserSpec extends TestSuite {
           }
           test("experiment") {
 
-            val result: UserResponse = User(Email("shanedrafahl@gmail.com"), Password("Password12$"))
-              .auth
-              .unsafeRunSync()
+            // val result: UserResponse = User(Email("shanedrafahl@gmail.com"), Password("Password12$"))
+            //   .auth
+            //   .unsafeRunSync()
 
-            println("###################################################")
-            println(result.asInstanceOf[AuthenticatedUser].jwt)
+            // println("###################################################")
+            // println(result.asInstanceOf[AuthenticatedUser].jwt)
 
-            val token = JWTValidationTokens(result.asInstanceOf[AuthenticatedUser].jwt)
-            val auther = AuthJWT[IO]().authJWT(token).unsafeRunSync()
+            // val token = JWTValidationTokens(result.asInstanceOf[AuthenticatedUser].jwt)
+            // val auther = AuthJWT[IO]().authJWT(token).unsafeRunSync()
 
-            println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            println(auther)
+            // println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+            // println(auther)
 
             assert(true)
           }
