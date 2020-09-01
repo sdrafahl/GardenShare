@@ -67,6 +67,44 @@ object GetUserPoolName {
   }
 }
 
+abstract class Region
+case class USEastOne() extends Region
+
+abstract class StringReps[R] {
+  def toStringRep(r: R): String
+}
+
+object StringReps {
+  implicit def apply[R: StringReps]() = implicitly[StringReps[R]]  
+
+  implicit object UseastOneRep extends StringReps[USEastOne] {
+    def toStringRep(r: USEastOne): String = "us-east-1"
+  }
+
+  implicit class Ops[F:StringReps](underlying: F) {
+    def stringRep(implicit toStRep: StringReps[F]) = toStRep.toStringRep(underlying)
+  }
+
+  implicit object Default extends StringReps[Region] {
+    def toStringRep(r: Region): String = {
+      r match {
+        case a:USEastOne => a.stringRep
+      }
+    }
+  }
+}
+
+abstract class GetRegion[F[_]] {
+  def exec: F[Region]
+}
+
+object GetRegion {
+  implicit def apply[F[_]: GetRegion]() = implicitly[GetRegion[F]]
+  implicit object ioDefault extends GetRegion[IO] {
+    def exec: IO[USEastOne] = IO(USEastOne())
+  }
+}
+
 case class UserPoolID(id: String)
 
 abstract class GetUserPoolId[F[_]: GetTypeSafeConfig:Functor] {

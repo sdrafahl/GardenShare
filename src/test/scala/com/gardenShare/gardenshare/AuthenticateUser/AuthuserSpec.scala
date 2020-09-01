@@ -23,6 +23,8 @@ import com.gardenShare.gardenshare.Config.UserPoolName
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthenticationResultType
 import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import com.gardenShare.gardenshare.Config.UserPoolID
+import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
+import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
 
 object AuthUserSpec extends TestSuite {
   val tests = Tests {
@@ -72,6 +74,23 @@ object AuthUserSpec extends TestSuite {
               .unsafeRunSync()
 
             assert(result equals AuthenticatedUser(User(Email("test@email.com"),Password("Password123$")),"idToken","accessToken"))
+          }
+          test("experiment") {
+
+            val result: UserResponse = User(Email("shanedrafahl@gmail.com"), Password("Password12$"))
+              .auth
+              .unsafeRunSync()
+
+            println("###################################################")
+            println(result.asInstanceOf[AuthenticatedUser].jwt)
+
+            val token = JWTValidationTokens(result.asInstanceOf[AuthenticatedUser].jwt)
+            val auther = AuthJWT[IO]().authJWT(token).unsafeRunSync()
+
+            println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+            println(auther)
+
+            assert(true)
           }
         }
       }

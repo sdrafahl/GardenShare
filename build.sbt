@@ -3,8 +3,10 @@ val CirceVersion = "0.13.0"
 val Specs2Version = "4.9.3"
 val LogbackVersion = "1.2.3"
 
+resolvers += "Sonatype OSS Release Repository" at "https://oss.sonatype.org/content/repositories/releases/"
 
 lazy val root = (project in file("."))
+  .enablePlugins(DockerPlugin)
   .settings(
     organization := "com.gardenShare",
     name := "gardenshare",
@@ -29,12 +31,28 @@ lazy val root = (project in file("."))
       "jakarta.xml.bind" % "jakarta.xml.bind-api" % "3.0.0-RC3",
       "com.walterjwhite.java.dependencies" % "bouncy-castle" % "0.0.17",
       "org.bouncycastle" % "bcprov-jdk15on" % "1.65.01",
-      "com.github.3tty0n" %% "jwt-scala" % "1.3.0"
+      "com.pauldijou" %% "jwt-circe" % "4.2.0",
+      "com.chatwork" %% "scala-jwk" % "1.0.5",
+      "org.bitbucket.b_c" % "jose4j" % "0.7.2"
     ),
     testFrameworks += new TestFramework("utest.runner.Framework"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
     addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1")
   )
+
+dockerfile in docker := {
+  val artifact: File = assembly.value
+  val artifactTargetPath = s"/app/${artifact.name}"
+
+  new Dockerfile {
+    from("openjdk:8-jre")
+    add(artifact, artifactTargetPath)
+    expose(8080)
+    entryPoint("java", "-jar", artifactTargetPath)
+  }
+}
+
+
 
 scalacOptions ++= Seq(
   "-deprecation",
@@ -44,3 +62,4 @@ scalacOptions ++= Seq(
   "-feature",
   "-Xfatal-warnings",
 )
+
