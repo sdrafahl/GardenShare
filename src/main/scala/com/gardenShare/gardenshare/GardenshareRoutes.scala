@@ -107,12 +107,16 @@ object GardenshareRoutes {
           }
       }
       case GET -> Root / "user" / "jwt" / jwtToken => {
-        JWTValidationTokens(jwtToken)
+        val result = JWTValidationTokens(jwtToken)
           .auth[F]
-          .flatMap {rest =>
+          .attempt
+
+          result.flatMap {rest =>
             rest match {
-              case ValidToken() => Ok("Token is valid")
-              case InvalidToken(msg) => Ok("Token is not valid")
+              case Left(error) => NotAcceptable(s"Error occured: ${error}")
+              case Right(ValidToken()) => Ok("Token is valid")
+              case Right(InvalidToken(msg)) => Ok("Token is not valid")
+              case Right(_) => NotAcceptable("Unknown response")
             }
           }
       }
