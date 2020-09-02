@@ -62,12 +62,15 @@ object GardenshareRoutes {
         val emailToPass = Email(email)
         val passwordToPass = Password(password)
         val user = User(emailToPass,passwordToPass)
-        for {
+        val processRequest = (for {
           resp <- user.signUp[F]()
-          success = resp.userConfirmed().booleanValue()
-          newResp <- success match {
-            case true => Ok("User Request Made")
-            case false => NotAcceptable(s"User Request Failed: ${resp.toString()}")
+        } yield resp)
+          .attempt
+        for {
+          result <- processRequest
+          newResp <- result match {
+            case Left(err) => NotAcceptable(s"User Request Failed: ${err.getMessage()}")
+            case Right(resp) => Ok(s"User Request Made: ${resp.codeDeliveryDetails().toString()}")
           }
         } yield newResp
       }
