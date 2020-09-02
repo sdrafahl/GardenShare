@@ -97,12 +97,16 @@ object GardenshareRoutes {
       }
 
       case GET -> Root / "user" / "auth" / email / password => {
-        User(Email(email), Password(password))
+        val result =  User(Email(email), Password(password))
           .auth
-          .flatMap{mr =>
+          .attempt
+
+          result.flatMap{mr =>
             mr match {
-              case AuthenticatedUser(user, jwt, accToken) => Ok(AuthenticatedUser(user, jwt, accToken).asJson.toString())
-              case FailedToAuthenticate(msg) => NotAcceptable(s"User failed to verify: ${msg}")
+              case Left(error) => NotAcceptable(s"Error Occurred: ${error}")
+              case Right(AuthenticatedUser(user, jwt, accToken)) => Ok(AuthenticatedUser(user, jwt, accToken).asJson.toString())
+              case Right(FailedToAuthenticate(msg)) => NotAcceptable(s"User failed to verify: ${msg}")
+              case _ => NotAcceptable(s"Unknown response")
             }
           }
       }
