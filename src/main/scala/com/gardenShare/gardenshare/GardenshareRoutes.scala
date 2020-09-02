@@ -27,6 +27,7 @@ import com.gardenShare.gardenshare.UserEntities.FailedToAuthenticate
 import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
 import com.gardenShare.gardenshare.Config.GetUserPoolId
 import com.gardenShare.gardenshare.UserEntities.UserResponse
+import io.circe.generic.auto._, io.circe.syntax._
 
 object GardenshareRoutes {
 
@@ -77,7 +78,7 @@ object GardenshareRoutes {
           .auth
           .flatMap{mr =>
             mr match {
-              case AuthenticatedUser(user, jwt, accToken) => Ok(AuthenticatedUser(user, jwt, accToken).toString())
+              case AuthenticatedUser(user, jwt, accToken) => Ok(AuthenticatedUser(user, jwt, accToken).asJson.toString())
               case FailedToAuthenticate(msg) => NotAcceptable(s"User failed to verify: ${msg}")
             }
           }
