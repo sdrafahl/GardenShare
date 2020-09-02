@@ -28,6 +28,14 @@ import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
 import com.gardenShare.gardenshare.Config.GetUserPoolId
 import com.gardenShare.gardenshare.UserEntities.UserResponse
 import io.circe.generic.auto._, io.circe.syntax._
+import java.time.LocalDate
+import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
+import com.gardenShare.gardenshare.UserEntities.InvalidToken
+import com.gardenShare.gardenshare.UserEntities.ValidToken
+import com.gardenShare.gardenshare.Config.GetRegion
+import com.gardenShare.gardenshare.authenticateUser.AuthJWT.HttpsJwksBuilder
+import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
+import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT.AuthJwtOps
 
 object GardenshareRoutes {
 
@@ -55,7 +63,19 @@ object GardenshareRoutes {
     }
   }
 
-  def userRoutes[F[_]: Async:CogitoClient:GetUserPoolName:GetTypeSafeConfig:SignupUser:GetUserPoolSecret:AuthUser:GetUserPoolId](): HttpRoutes[F] = {
+  def userRoutes[F[_]:
+      Async:
+      CogitoClient:
+      GetUserPoolName:
+      GetTypeSafeConfig:
+      SignupUser:
+      GetUserPoolSecret:
+      AuthUser:
+      GetUserPoolId:
+      AuthJWT:
+      GetRegion:
+      HttpsJwksBuilder
+  ](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
     import dsl._
     HttpRoutes.of[F] {
@@ -83,6 +103,16 @@ object GardenshareRoutes {
             mr match {
               case AuthenticatedUser(user, jwt, accToken) => Ok(AuthenticatedUser(user, jwt, accToken).asJson.toString())
               case FailedToAuthenticate(msg) => NotAcceptable(s"User failed to verify: ${msg}")
+            }
+          }
+      }
+      case GET -> Root / "user" / "jwt" / jwtToken => {
+        JWTValidationTokens(jwtToken)
+          .auth[F]
+          .flatMap {rest =>
+            rest match {
+              case ValidToken() => Ok("Token is valid")
+              case InvalidToken(msg) => Ok("Token is not valid")
             }
           }
       }

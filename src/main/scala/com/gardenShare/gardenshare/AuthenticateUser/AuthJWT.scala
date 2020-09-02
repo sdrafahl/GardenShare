@@ -23,6 +23,8 @@ import org.jose4j.jwt.consumer.JwtContext
 import scala.util.Try
 import scala.util.Success
 import software.amazon.awssdk.services.ecs.model.Failure
+import com.gardenShare.gardenshare.Config.GetUserPoolId
+import com.gardenShare.gardenshare.Config.GetUserPoolId._
 
 abstract class AuthJWT[F[_]] {
   def authJWT(jwt:JWTValidationTokens)(implicit getUserPoolId: GetUserPoolId[F], builder: HttpsJwksBuilder[F], getRegion: GetRegion[F], joseProcessJwt:JoseProcessJwt, getUserPoolName: GetUserPoolName[F]): F[JWTValidationResult]
@@ -43,6 +45,10 @@ object AuthJWT {
       } yield joseProcessJwt.processJwt(consumer, jwt)
     }
   }
+
+  implicit class AuthJwtOps(underlying:JWTValidationTokens) {
+    def auth[F[_]: AuthJWT: GetUserPoolId:HttpsJwksBuilder:GetRegion:GetUserPoolName](implicit auth: AuthJWT[F], joe: JoseProcessJwt) = auth.authJWT(underlying)
+  }
 }
 
 
@@ -54,9 +60,9 @@ object JoseProcessJwt {
   implicit def apply() = default
   implicit object default extends JoseProcessJwt {
     def processJwt(c: JwtConsumer, jwt:JWTValidationTokens): JWTValidationResult = {
-      Try(c.process(jwt.idToken)).fold (        
+      Try(c.processToClaims(jwt.idToken)).fold (        
         err => InvalidToken(""),
-        con => ValidToken()
+        claim => ValidToken()
       )
     }
   }
