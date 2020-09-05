@@ -67,6 +67,7 @@ object GardenshareRoutes {
   }
 
   case class ResponseBody(msg: String)
+  case class UserCreationRespose(msg: String, userCreated: Boolean)
 
   def userRoutes[F[_]:
       Async:
@@ -95,8 +96,8 @@ object GardenshareRoutes {
         for {
           result <- processRequest
           newResp <- result match {
-            case Left(err) =>  Ok(ResponseBody(s"User Request Failed: ${err.getMessage()}").asJson.toString())
-            case Right(resp) => Ok(ResponseBody(s"User Request Made: ${resp.codeDeliveryDetails().toString()}").asJson.toString())
+            case Left(err) =>  Ok(UserCreationRespose(s"User Request Failed: ${err.getMessage()}", false).asJson.toString())
+            case Right(resp) => Ok(UserCreationRespose(s"User Request Made: ${resp.codeDeliveryDetails().toString()}", true).asJson.toString())
               .map(a => a.copy(headers = a.headers.put(Header.apply("Content-Type", "application/json"))))
           }
         } yield newResp
