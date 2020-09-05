@@ -95,7 +95,7 @@ object GardenshareRoutes {
         for {
           result <- processRequest
           newResp <- result match {
-            case Left(err) =>  Conflict(ResponseBody(s"User Request Failed: ${err.getMessage()}").asJson.toString())
+            case Left(err) =>  Ok(ResponseBody(s"User Request Failed: ${err.getMessage()}").asJson.toString())
             case Right(resp) => Ok(ResponseBody(s"User Request Made: ${resp.codeDeliveryDetails().toString()}").asJson.toString())
               .map(a => a.copy(headers = a.headers.put(Header.apply("Content-Type", "application/json"))))
           }
