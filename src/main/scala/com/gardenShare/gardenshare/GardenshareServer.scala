@@ -57,8 +57,7 @@ object GardenshareServer {
 
       methodConfig = CORSConfig(
         anyOrigin = true,
-        anyMethod = false,
-        allowedMethods = Some(Set("GET", "POST")),
+        anyMethod = true,
         allowCredentials = true,
         maxAge = 1.day.toSeconds)
 
