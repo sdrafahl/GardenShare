@@ -65,7 +65,7 @@ object GardenshareServer {
       corsService = CORS(httpApp, methodConfig)
 
       exitCode <- BlazeServerBuilder[F]
-        .bindHttp(8080, "0.0.0.0")
+        .bindHttp(8080, "0.0.0.0")      
         .withHttpApp(finalHttpApp)
         .withHttpApp(corsService)       
         .serve
