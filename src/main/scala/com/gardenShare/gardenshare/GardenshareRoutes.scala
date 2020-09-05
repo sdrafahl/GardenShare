@@ -36,6 +36,7 @@ import com.gardenShare.gardenshare.Config.GetRegion
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.HttpsJwksBuilder
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT.AuthJwtOps
+import org.http4s.dsl.impl.Responses.BadRequestOps
 
 object GardenshareRoutes {
 
@@ -90,7 +91,7 @@ object GardenshareRoutes {
         for {
           result <- processRequest
           newResp <- result match {
-            case Left(err) => NotAcceptable(s"User Request Failed: ${err.getMessage()}")
+            case Left(err) => BadRequest(s"User Request Failed: ${err.getMessage()}")
             case Right(resp) => Ok(s"User Request Made: ${resp.codeDeliveryDetails().toString()}")
           }
         } yield newResp
