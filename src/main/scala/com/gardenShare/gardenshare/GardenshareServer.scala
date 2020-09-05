@@ -19,6 +19,8 @@ import com.gardenShare.gardenshare.Config.GetUserPoolId
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
 import com.gardenShare.gardenshare.Config.GetRegion
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.HttpsJwksBuilder
+import org.http4s.server.middleware._
+import scala.concurrent.duration._
 
 object GardenshareServer {
 
@@ -53,9 +55,19 @@ object GardenshareServer {
       // With Middlewares in place
       finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
+      methodConfig = CORSConfig(
+        anyOrigin = true,
+        anyMethod = false,
+        allowedMethods = Some(Set("GET", "POST")),
+        allowCredentials = true,
+        maxAge = 1.day.toSeconds)
+
+      corsService = CORS(httpApp, methodConfig)
+
       exitCode <- BlazeServerBuilder[F]
         .bindHttp(8080, "0.0.0.0")
         .withHttpApp(finalHttpApp)
+        .withHttpApp(corsService)       
         .serve
     } yield exitCode
   }.drain
