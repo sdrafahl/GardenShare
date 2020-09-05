@@ -37,6 +37,8 @@ import com.gardenShare.gardenshare.authenticateUser.AuthJWT.HttpsJwksBuilder
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT.AuthJwtOps
 import org.http4s.dsl.impl.Responses.BadRequestOps
+import io.circe.generic.auto._, io.circe.syntax._
+import org.http4s.Header
 
 object GardenshareRoutes {
 
@@ -63,6 +65,8 @@ object GardenshareRoutes {
         } yield resp
     }
   }
+
+  case class ResponseBody(msg: String)
 
   def userRoutes[F[_]:
       Async:
@@ -91,8 +95,10 @@ object GardenshareRoutes {
         for {
           result <- processRequest
           newResp <- result match {
-            case Left(err) => BadRequest(s"User Request Failed: ${err.getMessage()}")
-            case Right(resp) => Ok(s"User Request Made: ${resp.codeDeliveryDetails().toString()}")
+            case Left(err) => BadRequest(ResponseBody(s"User Request Failed: ${err.getMessage()}").asJson.toString())
+              .map(a => a.copy(headers = a.headers.put(Header.apply("Content-Type", "application/json"))))
+            case Right(resp) => Ok(ResponseBody(s"User Request Made: ${resp.codeDeliveryDetails().toString()}").asJson.toString())
+              .map(a => a.copy(headers = a.headers.put(Header.apply("Content-Type", "application/json"))))
           }
         } yield newResp
       }
@@ -104,10 +110,13 @@ object GardenshareRoutes {
 
           result.flatMap{mr =>
             mr match {
-              case Left(error) => NotAcceptable(s"Error Occurred: ${error}")
-              case Right(AuthenticatedUser(user, jwt, accToken)) => Ok(AuthenticatedUser(user, jwt, accToken).asJson.toString())
-              case Right(FailedToAuthenticate(msg)) => NotAcceptable(s"User failed to verify: ${msg}")
-              case _ => NotAcceptable(s"Unknown response")
+              case Left(error) => NotAcceptable(ResponseBody(s"Error Occurred: ${error}").asJson.toString())
+              case Right(AuthenticatedUser(user, jwt, accToken)) =>
+                Ok(ResponseBody(AuthenticatedUser(user, jwt, accToken).asJson.toString()).asJson.toString())
+                .map(a => a.copy(headers = a.headers.put(Header.apply("Content-Type", "application/json"))))
+                
+              case Right(FailedToAuthenticate(msg)) => NotAcceptable(ResponseBody(s"User failed to verify: ${msg}").asJson.toString())
+              case _ => NotAcceptable(ResponseBody(s"Unknown response").asJson.toString())
             }
           }
       }
@@ -118,10 +127,10 @@ object GardenshareRoutes {
 
           result.flatMap {rest =>
             rest match {
-              case Left(error) => NotAcceptable(s"Error occured: ${error}")
-              case Right(ValidToken()) => Ok("Token is valid")
-              case Right(InvalidToken(msg)) => Ok("Token is not valid")
-              case Right(_) => NotAcceptable("Unknown response")
+              case Left(error) => NotAcceptable(ResponseBody(s"Error occured: ${error}").asJson.toString())
+              case Right(ValidToken()) => Ok(ResponseBody("Token is valid").asJson.toString())
+              case Right(InvalidToken(msg)) => Ok(ResponseBody("Token is not valid").asJson.toString())
+              case Right(_) => NotAcceptable(ResponseBody("Unknown response").asJson.toString())
             }
           }
       }
