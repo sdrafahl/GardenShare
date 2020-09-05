@@ -68,6 +68,8 @@ object GardenshareRoutes {
 
   case class ResponseBody(msg: String)
   case class UserCreationRespose(msg: String, userCreated: Boolean)
+  case class AuthUserResponse(msg: String, auth: Option[AuthenticatedUser], authenticated: Boolean)
+  case class IsJwtValidResponse(msg: String, valid: Boolean)
 
   def userRoutes[F[_]:
       Async:
@@ -110,12 +112,15 @@ object GardenshareRoutes {
 
           result.flatMap{mr =>
             mr match {
-              case Left(error) => NotAcceptable(ResponseBody(s"Error Occurred: ${error}").asJson.toString())
+              case Left(error) => Ok(AuthUserResponse(s"Error Occurred: ${error}", None, false).asJson.toString())
               case Right(AuthenticatedUser(user, jwt, accToken)) =>
-                Ok(ResponseBody(AuthenticatedUser(user, jwt, accToken).asJson.toString()).asJson.toString())
+                Ok(AuthUserResponse("jwt token is valid", Option(AuthenticatedUser(user, jwt, accToken)), true).asJson.toString())
                 .map(a => a.copy(headers = a.headers.put(Header.apply("Content-Type", "application/json"))))
                 
-              case Right(FailedToAuthenticate(msg)) => NotAcceptable(ResponseBody(s"User failed to verify: ${msg}").asJson.toString())
+              case Right(FailedToAuthenticate(msg)) => {
+                val response = AuthUserResponse(s"User failed to verify: ${msg}",None, false)
+                Ok(response.asJson.toString())
+              }
               case _ => NotAcceptable(ResponseBody(s"Unknown response").asJson.toString())
             }
           }
@@ -127,9 +132,9 @@ object GardenshareRoutes {
 
           result.flatMap {rest =>
             rest match {
-              case Left(error) => NotAcceptable(ResponseBody(s"Error occured: ${error}").asJson.toString())
-              case Right(ValidToken()) => Ok(ResponseBody("Token is valid").asJson.toString())
-              case Right(InvalidToken(msg)) => Ok(ResponseBody("Token is not valid").asJson.toString())
+              case Left(error) => Ok(IsJwtValidResponse(s"Error occured: ${error}", false).asJson.toString())
+              case Right(ValidToken()) => Ok(IsJwtValidResponse("Token is valid", true).asJson.toString())
+              case Right(InvalidToken(msg)) => Ok(IsJwtValidResponse("Token is not valid", false).asJson.toString())
               case Right(_) => NotAcceptable(ResponseBody("Unknown response").asJson.toString())
             }
           }
