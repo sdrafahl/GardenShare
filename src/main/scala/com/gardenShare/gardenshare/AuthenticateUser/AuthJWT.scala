@@ -25,6 +25,8 @@ import scala.util.Success
 import software.amazon.awssdk.services.ecs.model.Failure
 import com.gardenShare.gardenshare.Config.GetUserPoolId
 import com.gardenShare.gardenshare.Config.GetUserPoolId._
+import com.gardenShare.gardenshare.ParseGroups.ParseGroups
+import com.gardenShare.gardenshare.ParseGroups.ParseGroups._
 
 abstract class AuthJWT[F[_]] {
   def authJWT(jwt:JWTValidationTokens)(implicit getUserPoolId: GetUserPoolId[F], builder: HttpsJwksBuilder[F], getRegion: GetRegion[F], joseProcessJwt:JoseProcessJwt, getUserPoolName: GetUserPoolName[F]): F[JWTValidationResult]
@@ -53,21 +55,25 @@ object AuthJWT {
 
 
 abstract class JoseProcessJwt {
-  def processJwt(c: JwtConsumer, jwt:JWTValidationTokens): JWTValidationResult  
+  def processJwt(c: JwtConsumer, jwt:JWTValidationTokens)(implicit parseGroups: ParseGroups): JWTValidationResult  
 }
 
 object JoseProcessJwt {
   implicit def apply() = default
   implicit object default extends JoseProcessJwt {
-    def processJwt(c: JwtConsumer, jwt:JWTValidationTokens): JWTValidationResult = {
+    def processJwt(c: JwtConsumer, jwt:JWTValidationTokens)(implicit parseGroups: ParseGroups): JWTValidationResult = {
       Try(c.processToClaims(jwt.idToken)).fold (        
         err => InvalidToken(""),
-        claim => ValidToken()
+        claim => {
+          val groups = claim
+            .getClaimValueAsString("cognito:groups")
+            .parseGroups
+          ValidToken(Option(claim.getClaimValueAsString("email")), groups)
+        }
       )
     }
   }
 }
-
 
 abstract class HttpsJwksBuilder[F[_]] {
   def build(url: String, userPoolId: UserPoolName): F[JwtConsumer]

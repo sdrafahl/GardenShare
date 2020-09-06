@@ -25,6 +25,7 @@ import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import com.gardenShare.gardenshare.Config.UserPoolID
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
 import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
+import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
 
 object AuthUserSpec extends TestSuite {
   val tests = Tests {
@@ -74,6 +75,28 @@ object AuthUserSpec extends TestSuite {
               .unsafeRunSync()
 
             assert(result equals AuthenticatedUser(User(Email("test@email.com"),Password("Password123$")),"idToken","accessToken"))
+          }
+          test("experiment") {
+
+            // val n = User(Email("shanedrafahl@gmail.com"), Password("Password12$"))
+            //   .signUp()
+            //   .unsafeRunSync()
+
+            val result: UserResponse = User(Email("shanedrafahl@gmail.com"), Password("Password12$"))
+              .auth
+              .unsafeRunSync()
+
+            println("###################################################")
+            println(result.asInstanceOf[AuthenticatedUser].jwt)
+
+            val token = JWTValidationTokens(result.asInstanceOf[AuthenticatedUser].jwt)
+            val author: JWTValidationResult = AuthJWT[IO]().authJWT(token).unsafeRunSync()
+
+            println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+            println(author)
+
+
+            assert(true)
           }
         }
       }

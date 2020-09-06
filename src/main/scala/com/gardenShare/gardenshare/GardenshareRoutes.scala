@@ -39,6 +39,8 @@ import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT.AuthJwtOps
 import org.http4s.dsl.impl.Responses.BadRequestOps
 import io.circe.generic.auto._, io.circe.syntax._
 import org.http4s.Header
+import com.gardenShare.gardenshare.UserEntities.Group
+import com.gardenShare.gardenshare.Encoders.Encoders._
 
 object GardenshareRoutes {
 
@@ -69,7 +71,7 @@ object GardenshareRoutes {
   case class ResponseBody(msg: String)
   case class UserCreationRespose(msg: String, userCreated: Boolean)
   case class AuthUserResponse(msg: String, auth: Option[AuthenticatedUser], authenticated: Boolean)
-  case class IsJwtValidResponse(msg: String, valid: Boolean)
+  case class IsJwtValidResponse(msg: String, valid: Boolean, groups: List[Group])
 
   def userRoutes[F[_]:
       Async:
@@ -132,9 +134,9 @@ object GardenshareRoutes {
 
           result.flatMap {rest =>
             rest match {
-              case Left(error) => Ok(IsJwtValidResponse(s"Error occured: ${error}", false).asJson.toString())
-              case Right(ValidToken()) => Ok(IsJwtValidResponse("Token is valid", true).asJson.toString())
-              case Right(InvalidToken(msg)) => Ok(IsJwtValidResponse("Token is not valid", false).asJson.toString())
+              case Left(error) => Ok(IsJwtValidResponse(s"Error occured: ${error}", false, List()).asJson.toString())
+              case Right(ValidToken(email, userGroups)) => Ok(IsJwtValidResponse("Token is valid", true, userGroups).asJson.toString())
+              case Right(InvalidToken(msg)) => Ok(IsJwtValidResponse("Token is not valid", false, List()).asJson.toString())
               case Right(_) => NotAcceptable(ResponseBody("Unknown response").asJson.toString())
             }
           }

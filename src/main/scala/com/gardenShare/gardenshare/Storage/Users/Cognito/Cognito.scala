@@ -34,6 +34,14 @@ import scala.jdk.CollectionConverters
 import scala.jdk.CollectionConverters._
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserRequest
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AddCustomAttributesRequest
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SchemaAttributeType
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeDataType
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest
+import com.gardenShare.gardenshare.UserEntities.Group
+import com.gardenShare.gardenshare.UserEntities.Seller
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse
 
 abstract class CogitoClient[F[_]:GetUserPoolName:Async] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]
@@ -101,7 +109,32 @@ object CogitoClient {
       )
   }
 
-    def authUserAdmin(user: User, userPoolId: String, clientId: String): F[AdminInitiateAuthResponse] = {
+    def addUserToGroup(email: String, userPoolName:UserPoolName, group: Group): F[AdminAddUserToGroupResponse] = {
+      val userRequest = AdminGetUserRequest
+        .builder()
+        .userPoolId(userPoolName.name)
+        .username(email)
+        .build()
+      Async[F].async {cb =>
+        group match {
+        case Seller() => {          
+          val req = AdminAddUserToGroupRequest
+            .builder()
+            .groupName("Sellers")
+            .username(email)
+            .userPoolId(userPoolName.name)
+            .build()
+
+          cb(Try(client.adminAddUserToGroup(req)).toEither) 
+        }
+        case _ => {
+          cb(Left(new Throwable("Group Not Implemented")))
+        }
+        }
+      }
+    }
+
+  def authUserAdmin(user: User, userPoolId: String, clientId: String): F[AdminInitiateAuthResponse] = {
 
       val params = Map(
           "USERNAME" -> user.email.underlying,
