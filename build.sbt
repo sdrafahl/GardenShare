@@ -28,12 +28,17 @@ lazy val root = (project in file("."))
       "com.typesafe.slick" %% "slick-hikaricp" % "3.3.2",
       "org.postgresql" % "postgresql" % "42.2.12",
       "software.amazon.awssdk" % "aws-sdk-java" % "2.13.30",
+      "com.github.seratch" %% "awscala-s3" % "0.8.+",
       "jakarta.xml.bind" % "jakarta.xml.bind-api" % "3.0.0-RC3",
       "com.walterjwhite.java.dependencies" % "bouncy-castle" % "0.0.17",
       "org.bouncycastle" % "bcprov-jdk15on" % "1.65.01",
       "com.pauldijou" %% "jwt-circe" % "4.2.0",
       "com.chatwork" %% "scala-jwk" % "1.0.5",
-      "org.bitbucket.b_c" % "jose4j" % "0.7.2"
+      "org.bitbucket.b_c" % "jose4j" % "0.7.2",
+      "co.fs2" %% "fs2-core" % "2.4.0",
+      "co.fs2" %% "fs2-io" % "2.4.0",
+      "co.fs2" %% "fs2-reactive-streams" % "2.4.0",
+      "co.fs2" %% "fs2-experimental" % "2.4.0"
     ),
     testFrameworks += new TestFramework("utest.runner.Framework"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),

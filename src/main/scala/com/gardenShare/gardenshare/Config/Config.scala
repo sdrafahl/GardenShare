@@ -94,6 +94,23 @@ object StringReps {
   }
 }
 
+abstract class GetAwsRegionFromMyRegion {
+  def convert(reg: Region): software.amazon.awssdk.regions.Region
+}
+
+object GetAwsRegionFromMyRegion {
+  implicit def apply() = default
+  implicit object default extends GetAwsRegionFromMyRegion {
+    def convert(reg: Region): software.amazon.awssdk.regions.Region = reg match {
+      case USEastOne() => software.amazon.awssdk.regions.Region.US_EAST_1
+    }
+  }
+  implicit class Ops(underlying: Region) {
+    def toAWSRegion(implicit toAwsRegion: GetAwsRegionFromMyRegion) = toAwsRegion.convert(underlying)
+  }
+}
+
+
 abstract class GetRegion[F[_]] {
   def exec: F[Region]
 }

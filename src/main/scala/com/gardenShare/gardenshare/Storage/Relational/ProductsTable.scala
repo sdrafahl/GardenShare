@@ -40,7 +40,7 @@ object GetProductsByStore {
       IO.fromFuture(IO(Setup.db.run(query.result)))
         .map(_.toList)
         .map(lst => lst.map(
-          f => Product(f._1, f._2, S3DescriptionAddress(f._3))
+          f => Product(f._1, f._2, DescriptionAddress(f._3))
         ))
     }
   }
@@ -53,25 +53,15 @@ abstract class InsertProduct[F[_]] {
 object InsertProduct {
   def apply[F[_]: InsertProduct] = implicitly[InsertProduct[F]]
 
-  implicit object IOInsertStore extends InsertProduct[IO] {
+  implicit object IOInsertProduct extends InsertProduct[IO] {
     def add(data: List[CreateProductRequest]): IO[List[Product]] = {
       val query = ProductTable.products
       val qu = ProductTable.products.returning(query)
-      val res = qu ++= data.map(da => (0, da.storeId, da.descriptionAddresss.getAddress))
+      val res = qu ++= data.map(da => (0, da.storeId, da.descriptionAddresss.address))
       val responses = IO.fromFuture(IO(Setup.db.run(res))).map(_.toList)
-      val s = SequenceEithers()
-      responses.map(res => res.map{i =>
-        DescriptionAddress(i._3)
-          .parse
-          .map(f => Product(i._1, i._2, f))        
+      responses.map(res => res.map{ resp =>
+        Product(resp._1, resp._2, DescriptionAddress(resp._3))
       })
-        .map(ab => s.sequenceList(ab))
-        .flatMap {a =>
-          a match {
-            case Right(ab) => IO(ab)
-            case Left(ac) => IO.raiseError(new Throwable("failed to get address to description"))
-          }
-        }
     }
   }
 }
