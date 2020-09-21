@@ -22,6 +22,7 @@ import java.io.File
 import scala.io.Source
 import org.apache.commons.codec.binary.Base64
 
+
 abstract class GetTypeSafeConfig[F[_]:Functor] {
   def get(key: String): F[String]
 }
@@ -31,6 +32,20 @@ object GetTypeSafeConfig {
   implicit object IOGetTypeSafeConfig extends GetTypeSafeConfig[IO] {
     private lazy implicit val conf: Config = ConfigFactory.load();
     def get(key: String) =  IO(conf.getString(key))
+  }
+}
+
+case class GraphDBEndpoint(url: String)
+abstract class GetGraphDBEndpoint[F[_]] {
+  def getGraphDBEndpoint(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[GraphDBEndpoint]
+}
+
+object GetGraphDBEndpoint {
+  def apply[F[_]: GetGraphDBEndpoint]() = implicitly[GetGraphDBEndpoint[F]]
+  implicit object IODefault extends GetGraphDBEndpoint[IO] {
+    def getGraphDBEndpoint(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[GraphDBEndpoint] = for {
+      conf <- getTypeSafeConfig.get("storesandproducsgraphdb.endpoint")
+    } yield GraphDBEndpoint(conf)
   }
 }
 
@@ -201,5 +216,19 @@ object GetPrivateKey {
   def apply() = DefaultGetPrivateKey
   implicit object DefaultGetPrivateKey extends GetPrivateKey {
     def exec(): PrivateKey = privateKey
+  }
+}
+
+case class GoogleMapsApiKey(key: String)
+abstract class GetGoogleMapsApiKey[F[_]] {
+  def get(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[GoogleMapsApiKey]
+}
+
+object GetGoogleMapsApiKey {
+  def apply[F[_]:GetGoogleMapsApiKey]() = implicitly[GetGoogleMapsApiKey[F]]
+  implicit object IOGetGoogleMapsApiKey extends GetGoogleMapsApiKey[IO] {
+    def get(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[GoogleMapsApiKey] = for {
+      key <- getTypeSafeConfig.get("googleMapsApi.apiKey")
+    } yield GoogleMapsApiKey(key)
   }
 }

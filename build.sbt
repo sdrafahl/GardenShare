@@ -4,6 +4,8 @@ val Specs2Version = "4.9.3"
 val LogbackVersion = "1.2.3"
 
 resolvers += "Sonatype OSS Release Repository" at "https://oss.sonatype.org/content/repositories/releases/"
+resolvers += Resolver.mavenLocal
+resolvers += "Apache public" at "https://repository.apache.org/content/groups/public/"
 
 lazy val root = (project in file("."))
   .enablePlugins(DockerPlugin)
@@ -38,7 +40,13 @@ lazy val root = (project in file("."))
       "co.fs2" %% "fs2-core" % "2.4.0",
       "co.fs2" %% "fs2-io" % "2.4.0",
       "co.fs2" %% "fs2-reactive-streams" % "2.4.0",
-      "co.fs2" %% "fs2-experimental" % "2.4.0"
+      "co.fs2" %% "fs2-experimental" % "2.4.0",
+      "com.michaelpollmeier" %% "macros" % "3.4.7.2",
+      "org.apache.tinkerpop" % "tinkergraph-gremlin" % "3.3.1",
+      "com.tinkerpop.gremlin" % "gremlin" % "2.6.0",
+      "org.apache.tinkerpop" % "gremlin-driver" % "3.4.1",
+      "com.google.maps" % "google-maps-services" % "0.15.0",
+      "org.slf4j" % "slf4j-simple" % "2.0.0-alpha1"
     ),
     testFrameworks += new TestFramework("utest.runner.Framework"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),

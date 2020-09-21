@@ -1,14 +1,35 @@
 package com.gardenShare.gardenshare.Storage.Relational
 
 import slick.jdbc.PostgresProfile.api._
-import scala.concurrent.ExecutionContext.Implicits.global
 import cats.effect.IO
+import cats.effect.IO._
 import slick.dbio.DBIOAction
 import java.util.concurrent.Executors
 import cats.effect._
 import slick.lifted.AbstractTable
 import com.gardenShare.gardenshare.Concurrency.Concurrency._
 import com.gardenShare.gardenshare.domain.Store._
+import com.gardenShare.gardenshare.GoogleMapsClient._
+import com.gardenShare.gardenshare.Config.GetGoogleMapsApiKey._
+import com.gardenShare.gardenshare.Config.GetGoogleMapsApiKey
+import cats.Monad
+import cats.syntax.MonadOps._
+import cats.syntax.flatMap._
+import cats.implicits._
+import com.gardenShare.gardenshare.GoogleMapsClient.IsWithinRange._
+import com.gardenShare.gardenshare.GoogleMapsClient.IsWithinRange
+import fs2.concurrent.Queue
+import cats.effect.{Concurrent, ExitCode, IO, IOApp, Timer}
+import fs2.Stream
+import scala.concurrent.ExecutionContext
+import com.gardenShare.gardenshare.Concurrency.Concurrency._
+import cats.effect.concurrent.Semaphore
+import cats.effect._
+import scala.concurrent.duration._
+import cats.effect.{Async, Fiber, CancelToken}
+import cats.Parallel._
+import cats.effect.concurrent.Ref
+
 
 object StoreTable {
   class StoreTable(tag: Tag) extends Table[(Int, String, String)](tag, "stores") {
@@ -55,6 +76,66 @@ object InsertStore {
       val res = qu ++= data.map(da => (0, da.address.underlying, da.sellerEmail.underlying))
       val responses = IO.fromFuture(IO(Setup.db.run(res))).map(_.toList)
       responses.map(res => res.map(i => Store(i._1, Address(i._2), Email(i._3))))
+    }
+  }
+}
+
+abstract class GetNearestStores[F[_]] {
+  def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[F], con: Concurrent[F]): F[List[Store]]
+}
+
+object GetNearestStores {
+  private def isWithinRange[F[_]: GetDistance:GetGoogleMapsApiKey:Monad](range: Distance, from: Address, to: Address, getDist: GetDistance[F]): F[Boolean] = {
+    for {
+      dist <- getDist.getDistanceFromAddress(from, to)
+    } yield dist.inRange(range)
+  }
+
+  def apply[F[_]: GetNearestStores] = implicitly[GetNearestStores[F]]
+  implicit object IOGetNearestStores extends GetNearestStores[IO] {
+    def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[IO], con: Concurrent[IO]): IO[List[Store]] = {
+      val queue = Queue.unbounded[IO, Store]
+      val query = for {
+        stores <- StoreTable.stores
+      } yield (stores.storeId, stores.storeAddress, stores.sellerEmail)
+      val stream = Setup.db.stream(query.result)
+      for {
+        queueDepth <- Ref[IO].of(0)
+        q <- queue
+        populateQueue = for {          
+          populateQueProgram <- IO(stream.mapResult(a => Store(a._1, Address(a._2), Email(a._3))).mapResult {
+            case Store(id, address, email) => {
+              isWithinRange[IO](n, fromLocation, address, getDist).map {isInRange =>
+                isInRange match {
+                  case true => {
+                    q.enqueue1(Store(id, address, email)).attempt.unsafeRunSync()
+                    queueDepth.modify{count => (count, count+1)}.attempt.unsafeRunSync()
+                  }
+                  case _ => IO.unit.attempt
+                }
+              }
+            }
+          }.mapResult(_.attempt.unsafeRunSync()))          
+        } yield populateQueProgram
+
+        checkOnQueueProgram = { 
+            def checkQueue: IO[Unit] = {
+              queueDepth.get.map {
+                case cou if cou < limit => {
+                  Thread.sleep(1000)
+                  checkQueue
+                }
+                case _ => ()
+              }
+            }
+            checkQueue
+          }
+
+        _ <- IO.race(populateQueue, checkOnQueueProgram).attempt
+        stores <- q.dequeue.map(st => st).compile.fold(List[Store]()) {
+          case (acc, sto) => sto :: acc 
+        }
+      } yield stores      
     }
   }
 }
