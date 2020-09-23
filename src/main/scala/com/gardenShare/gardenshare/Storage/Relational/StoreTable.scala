@@ -94,22 +94,19 @@ object GetNearestStores {
   def apply[F[_]: GetNearestStores] = implicitly[GetNearestStores[F]]
   implicit object IOGetNearestStores extends GetNearestStores[IO] {
     def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[IO], con: Concurrent[IO]): IO[List[Store]] = {
-      val queue = Queue.unbounded[IO, Store]
       val query = for {
         stores <- StoreTable.stores
       } yield (stores.storeId, stores.storeAddress, stores.sellerEmail)
       val stream = Setup.db.stream(query.result)
       for {
-        queueDepth <- Ref[IO].of(0)
-        q <- queue
+        queue <- Ref[IO].of(List[Store]())
         populateQueue = for {          
           populateQueProgram <- IO(stream.mapResult(a => Store(a._1, Address(a._2), Email(a._3))).mapResult {
             case Store(id, address, email) => {
               isWithinRange[IO](n, fromLocation, address, getDist).map {isInRange =>
                 isInRange match {
                   case true => {
-                    q.enqueue1(Store(id, address, email)).attempt.unsafeRunSync()
-                    queueDepth.modify{count => (count, count+1)}.attempt.unsafeRunSync()
+                    queue.modify(q => (List(Store(id, address, email)) ++ q, q)).attempt.unsafeRunSync()
                   }
                   case _ => IO.unit.attempt
                 }
@@ -120,8 +117,8 @@ object GetNearestStores {
 
         checkOnQueueProgram = { 
             def checkQueue: IO[Unit] = {
-              queueDepth.get.map {
-                case cou if cou < limit => {
+              queue.get.map {
+                case cou if cou.length < limit => {
                   Thread.sleep(1000)
                   checkQueue
                 }
@@ -132,9 +129,7 @@ object GetNearestStores {
           }
 
         _ <- IO.race(populateQueue, checkOnQueueProgram).attempt
-        stores <- q.dequeue.map(st => st).compile.fold(List[Store]()) {
-          case (acc, sto) => sto :: acc 
-        }
+        stores <- queue.get
       } yield stores      
     }
   }
