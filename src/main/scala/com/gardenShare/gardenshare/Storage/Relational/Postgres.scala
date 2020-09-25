@@ -19,8 +19,8 @@ object Setup {
     val setup = DBIO.seq(
       cleanupGardens,
       cleanupPlants,
-      Gardens.gardens.schema.create,
-      Plants.plants.schema.create
+      ProductTable.products.schema.create,
+      StoreTable.stores.schema.create
     )
     IO.fromFuture(IO(db.run(setup)))
   }

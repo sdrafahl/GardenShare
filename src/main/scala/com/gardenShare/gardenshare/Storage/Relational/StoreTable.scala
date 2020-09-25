@@ -29,7 +29,11 @@ import scala.concurrent.duration._
 import cats.effect.{Async, Fiber, CancelToken}
 import cats.Parallel._
 import cats.effect.concurrent.Ref
-
+import fs2._
+import fs2.interop.reactivestreams._
+import cats.effect.{ContextShift, IO}
+import scala.concurrent.ExecutionContext
+import fs2.interop.reactivestreams._
 
 object StoreTable {
   class StoreTable(tag: Tag) extends Table[(Int, String, String)](tag, "stores") {
@@ -81,7 +85,7 @@ object InsertStore {
 }
 
 abstract class GetNearestStores[F[_]] {
-  def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[F], con: Concurrent[F]): F[List[Store]]
+  def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[F]): F[List[Store]]
 }
 
 object GetNearestStores {
@@ -91,28 +95,32 @@ object GetNearestStores {
     } yield dist.inRange(range)
   }
 
-  def apply[F[_]: GetNearestStores] = implicitly[GetNearestStores[F]]
+  def apply[F[_]: GetNearestStores]() = implicitly[GetNearestStores[F]]
   implicit object IOGetNearestStores extends GetNearestStores[IO] {
-    def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[IO], con: Concurrent[IO]): IO[List[Store]] = {
+    def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[IO]): IO[List[Store]] = {
       val query = for {
         stores <- StoreTable.stores
-      } yield (stores.storeId, stores.storeAddress, stores.sellerEmail)
+      } yield (stores.storeId, stores.storeAddress, stores.sellerEmail)     
       val stream = Setup.db.stream(query.result)
       for {
         queue <- Ref[IO].of(List[Store]())
         populateQueue = for {          
-          populateQueProgram <- IO(stream.mapResult(a => Store(a._1, Address(a._2), Email(a._3))).mapResult {
-            case Store(id, address, email) => {
-              isWithinRange[IO](n, fromLocation, address, getDist).map {isInRange =>
+          populateQueProgram <- fromPublisher(stream).parEvalMapUnordered(4) {
+            case (id, address, email) => {
+              val store = Store(id, Address(address), Email(email))
+              isWithinRange[IO](n, fromLocation, store.address, getDist).map {isInRange =>
                 isInRange match {
                   case true => {
-                    queue.modify(q => (List(Store(id, address, email)) ++ q, q)).attempt.unsafeRunSync()
+                    queue.modify {
+                      case q if q.length < limit => (List(Store(id, store.address, store.sellerEmail)) ++ q, q)
+                      case q => (q, q)
+                    }
                   }
                   case _ => IO.unit.attempt
                 }
               }
             }
-          }.mapResult(_.attempt.unsafeRunSync()))          
+          }.compile.drain
         } yield populateQueProgram
 
         checkOnQueueProgram = { 

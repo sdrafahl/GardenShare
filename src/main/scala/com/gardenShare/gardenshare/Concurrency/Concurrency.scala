@@ -10,8 +10,8 @@ import cats.effect.Concurrent
 import cats.effect.Concurrent._
 
 object Concurrency {
-  implicit private val executor = Executors.newCachedThreadPool()
-  implicit private val ec = ExecutionContext.fromExecutor(executor)
+  implicit lazy val executor = Executors.newWorkStealingPool()
+  implicit lazy val ec = ExecutionContext.fromExecutor(executor)
   implicit lazy val cs = IO.contextShift(ec)  
   implicit lazy val blocker = Blocker.liftExecutorService(executor)
   implicit lazy val timer = IO.timer(ec)
