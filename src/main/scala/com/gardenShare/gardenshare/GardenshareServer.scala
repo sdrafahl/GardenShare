@@ -21,6 +21,9 @@ import com.gardenShare.gardenshare.Config.GetRegion
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.HttpsJwksBuilder
 import org.http4s.server.middleware._
 import scala.concurrent.duration._
+import com.gardenShare.gardenshare.Storage.Relational.InsertStore
+import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
+import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream
 
 object GardenshareServer {
 
@@ -35,7 +38,11 @@ object GardenshareServer {
       GetUserPoolId:
       AuthJWT:
       GetRegion:
-      HttpsJwksBuilder
+      HttpsJwksBuilder:
+      InsertStore:
+      GetNearestStores:
+      GetDistance:
+      GetStoresStream
   ](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
     for {
       client <- BlazeClientBuilder[F](global).stream
@@ -49,7 +56,8 @@ object GardenshareServer {
       httpApp = (
         GardenshareRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
         GardenshareRoutes.jokeRoutes[F](jokeAlg) <+>
-        GardenshareRoutes.userRoutes[F]()
+        GardenshareRoutes.userRoutes[F]() <+>
+        GardenshareRoutes.storeRoutes[F]()
       ).orNotFound
 
       // With Middlewares in place

@@ -48,6 +48,14 @@ import org.http4s.util.CaseInsensitiveString
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore.CreateStoreRequestOps
 import com.gardenShare.gardenshare.domain.Store.Store
+import scala.util.Try
+import com.gardenShare.gardenshare.GetNearestStores
+import com.gardenShare.gardenshare.GetNearestStore
+import com.gardenShare.gardenshare.GoogleMapsClient.Distance
+import com.gardenShare.gardenshare.GetNearestStores
+import com.gardenShare.gardenshare.GetNearestStores.GetNearestOps
+import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
+import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream
 
 object GardenshareRoutes {
 
@@ -91,7 +99,8 @@ object GardenshareRoutes {
       GetUserPoolId:
       AuthJWT:
       GetRegion:
-      HttpsJwksBuilder
+      HttpsJwksBuilder:
+      GetDistance
   ](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
     import dsl._
@@ -153,6 +162,9 @@ object GardenshareRoutes {
 
   case class NoJWTTokenProvided()
   case class StoresAdded(store: List[Store])
+  case class InvalidLimitProvided(msg: String)
+  case class InvalidRangeProvided(msg: String)
+  case class ListOfStores(l: List[Store])
 
   def storeRoutes[F[_]:
       Async:
@@ -166,7 +178,10 @@ object GardenshareRoutes {
       AuthJWT:
       GetRegion:
       HttpsJwksBuilder:
-      InsertStore
+      InsertStore:
+      GetNearestStores:
+      GetDistance:
+      GetStoresStream
   ]() : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F]{}
     import dsl._
@@ -200,6 +215,59 @@ object GardenshareRoutes {
             }
             .flatMap(a => a)            
         }.fold(a => a, b => b)
+      }
+      case req @ GET -> Root / "store" / address / limit / rangeInSeconds => {
+
+        val key = CaseInsensitiveString("authentication")
+
+        val maybeJwtHeader = req
+          .headers
+          .get(key)
+
+        val token = maybeJwtHeader match {
+          case Some(jwtToken) => Right(JWTValidationTokens(jwtToken.value))
+          case None => Left(Ok(NoJWTTokenProvided().asJson.toString()))
+        }
+
+        val lim = Try(limit.toInt)
+          .toEither
+          .left
+          .map(a => InvalidLimitProvided(a.getMessage()))
+
+        val range = Try(rangeInSeconds.toFloat)
+          .toEither
+          .left
+          .map(a => InvalidRangeProvided(a.getMessage()))
+         
+          
+        token.map {f =>
+          f
+            .auth        
+            .map {
+              case InvalidToken(msg) => Ok(InvalidToken(msg).asJson.toString())
+              case ValidToken(Some(email), _) => {
+                lim.map { li =>
+                  range.map {range =>                    
+                    GetNearestStore(Distance(range), li, Address(address))
+                      .nearest
+                      .map(ListOfStores)
+                      .map(_.asJson.toString())
+                      .attempt
+                      .map(_.left.map(err => ResponseBody(err.toString()).asJson.toString()))
+                      .map(_.map(msg => ResponseBody(msg).asJson.toString()))
+                      .map(_.fold(a => a, b => b))
+                      .map(respMsg => Ok(respMsg))
+                      .flatMap(a => a)
+                    
+                  }
+                    .fold(fa => Ok(fa.asJson.toString()), fb => fb)
+                }
+                  .fold(a => Ok(a.asJson.toString()), b => b)
+              }
+              case ValidToken(None, _) => Ok(InvalidToken("Token is valid but without email").asJson.toString())
+            }
+        }.map(_.flatMap(a => a))
+         .fold(a => a, b => b)
       }
     }
   }

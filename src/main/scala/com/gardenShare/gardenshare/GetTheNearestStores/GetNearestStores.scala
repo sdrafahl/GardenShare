@@ -18,10 +18,14 @@ import cats.Monad
 import com.gardenShare.gardenshare.GoogleMapsClient.IsWithinRange._
 import scala.concurrent.duration._
 import cats.effect.concurrent.Ref
+import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
+import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance._
 
 abstract class GetNearestStores[F[_]] {
   def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[F], getStores: GetStoresStream[F]): F[List[Store]]
 }
+
+case class GetNearestStore(n: Distance, limit: Int, fromLocation: Address)
 
 object GetNearestStores {
   def apply[F[_]: GetNearestStores]() = implicitly[GetNearestStores[F]]
@@ -68,6 +72,9 @@ object GetNearestStores {
         .fold(List[Store]()) { (a,b) => a ++ b }        
       } yield listOfStores
     }
+  }
+  implicit class GetNearestOps(underlying: GetNearestStore) {
+    def nearest[F[_]: GetNearestStores:GetDistance:GetStoresStream](implicit getNearest: GetNearestStores[F]) = getNearest.getNearest(underlying.n, underlying.limit, underlying.fromLocation)
   }
 
 }
