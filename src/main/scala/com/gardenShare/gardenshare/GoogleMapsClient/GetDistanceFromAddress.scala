@@ -47,7 +47,7 @@ object GetDistance {
           r.legs.foldLeft(Duration.ZERO) {
             case (acc, leg) => {
               val secs = leg.duration.inSeconds
-              val accsecs = acc.toSeconds()
+              val accsecs = acc.getSeconds()
               val totalTime = secs + accsecs
               Duration.ofSeconds(totalTime)
             }
@@ -55,7 +55,7 @@ object GetDistance {
         }
       } yield distance
       getContPgm.flatMap {
-        case Some(dur) => IO(Distance(dur.toSeconds()))
+        case Some(dur) => IO(Distance(dur.getSeconds()))
         case None => IO.raiseError(new Throwable("No direction information was returned"))
       }
     }
