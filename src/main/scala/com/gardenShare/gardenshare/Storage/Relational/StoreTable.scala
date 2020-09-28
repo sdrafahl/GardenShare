@@ -34,6 +34,7 @@ import fs2.interop.reactivestreams._
 import cats.effect.{ContextShift, IO}
 import scala.concurrent.ExecutionContext
 import fs2.interop.reactivestreams._
+import com.gardenShare.gardenshare.UserEntities._
 
 object StoreTable {
   class StoreTable(tag: Tag) extends Table[(Int, String, String)](tag, "stores") {
@@ -71,7 +72,7 @@ abstract class InsertStore[F[_]] {
 }
 
 object InsertStore {
-  def apply[F[_]: InsertStore] = implicitly[InsertStore[F]]
+  def apply[F[_]: InsertStore]() = implicitly[InsertStore[F]]
 
   implicit object IOInsertStore extends InsertStore[IO] {
     def add(data: List[CreateStoreRequest]): IO[List[Store]] = {
@@ -82,63 +83,28 @@ object InsertStore {
       responses.map(res => res.map(i => Store(i._1, Address(i._2), Email(i._3))))
     }
   }
-}
-
-abstract class GetNearestStores[F[_]] {
-  def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[F]): F[List[Store]]
-}
-
-object GetNearestStores {
-  private def isWithinRange[F[_]: GetDistance:GetGoogleMapsApiKey:Monad](range: Distance, from: Address, to: Address, getDist: GetDistance[F]): F[Boolean] = {
-    for {
-      dist <- getDist.getDistanceFromAddress(from, to)
-    } yield dist.inRange(range)
+  implicit class CreateStoreRequestOps[F[_]: InsertStore](underlying: List[CreateStoreRequest]) {
+    def insertStore(implicit inserter: InsertStore[F]) = inserter.add(underlying)
   }
+}
 
-  def apply[F[_]: GetNearestStores]() = implicitly[GetNearestStores[F]]
-  implicit object IOGetNearestStores extends GetNearestStores[IO] {
-    def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[IO]): IO[List[Store]] = {
+abstract class GetStoresStream[F[_]] {
+  def getLazyStores(): Stream[F, Store]
+}
+
+object GetStoresStream {
+  def apply[F[_]: GetStoresStream]() = implicitly[GetStoresStream[F]]
+  implicit object Fs2GetStoresStream extends GetStoresStream[IO] {
+    def getLazyStores(): Stream[IO, Store] = {
       val query = for {
         stores <- StoreTable.stores
-      } yield (stores.storeId, stores.storeAddress, stores.sellerEmail)     
-      val stream = Setup.db.stream(query.result)
-      for {
-        queue <- Ref[IO].of(List[Store]())
-        populateQueue = for {          
-          populateQueProgram <- fromPublisher(stream).parEvalMapUnordered(4) {
-            case (id, address, email) => {
-              val store = Store(id, Address(address), Email(email))
-              isWithinRange[IO](n, fromLocation, store.address, getDist).map {isInRange =>
-                isInRange match {
-                  case true => {
-                    queue.modify {
-                      case q if q.length < limit => (List(Store(id, store.address, store.sellerEmail)) ++ q, q)
-                      case q => (q, q)
-                    }
-                  }
-                  case _ => IO.unit.attempt
-                }
-              }
-            }
-          }.compile.drain
-        } yield populateQueProgram
-
-        checkOnQueueProgram = { 
-            def checkQueue: IO[Unit] = {
-              queue.get.map {
-                case cou if cou.length < limit => {
-                  Thread.sleep(1000)
-                  checkQueue
-                }
-                case _ => ()
-              }
-            }
-            checkQueue
-          }
-
-        _ <- IO.race(populateQueue, checkOnQueueProgram).attempt
-        stores <- queue.get
-      } yield stores      
+      } yield (stores.storeId, stores.storeAddress, stores.sellerEmail)
+      val reactiveStream = Setup.db.stream(query.result)      
+      fromPublisher(reactiveStream).map {
+        case (id, address, email) => {
+          Store(id, Address(address), Email(email))
+        }
+      }
     }
   }
 }

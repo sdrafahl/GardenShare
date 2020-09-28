@@ -41,6 +41,13 @@ import io.circe.generic.auto._, io.circe.syntax._
 import org.http4s.Header
 import com.gardenShare.gardenshare.UserEntities.Group
 import com.gardenShare.gardenshare.Encoders.Encoders._
+import com.gardenShare.gardenshare.domain.Store.Address
+import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream._
+import com.gardenShare.gardenshare.domain.Store.CreateStoreRequest
+import org.http4s.util.CaseInsensitiveString
+import com.gardenShare.gardenshare.Storage.Relational.InsertStore
+import com.gardenShare.gardenshare.Storage.Relational.InsertStore.CreateStoreRequestOps
+import com.gardenShare.gardenshare.domain.Store.Store
 
 object GardenshareRoutes {
 
@@ -140,6 +147,59 @@ object GardenshareRoutes {
               case Right(_) => NotAcceptable(ResponseBody("Unknown response").asJson.toString())
             }
           }
+      }
+    }
+  }
+
+  case class NoJWTTokenProvided()
+  case class StoresAdded(store: List[Store])
+
+  def storeRoutes[F[_]:
+      Async:
+      CogitoClient:
+      GetUserPoolName:
+      GetTypeSafeConfig:
+      SignupUser:
+      GetUserPoolSecret:
+      AuthUser:
+      GetUserPoolId:
+      AuthJWT:
+      GetRegion:
+      HttpsJwksBuilder:
+      InsertStore
+  ]() : HttpRoutes[F] = {
+    val dsl = new Http4sDsl[F]{}
+    import dsl._
+    HttpRoutes.of[F] {
+      case req @ POST -> Root / "store" / "create" / address => {
+        val key = CaseInsensitiveString("authentication")
+        val maybeJwtHeader = req
+          .headers
+          .get(key)
+
+        val token = maybeJwtHeader match {
+          case Some(jwtToken) => Right(JWTValidationTokens(jwtToken.value))
+          case None => Left(Ok(NoJWTTokenProvided().asJson.toString()))
+        }
+
+        token.map {f =>
+          f
+            .auth        
+            .map {
+              case InvalidToken(msg) => Ok(InvalidToken(msg).asJson.toString())
+              case ValidToken(Some(email), _) => {
+                val addressOfSeller = Address(address)
+                val emailOfSeller = Email(email)
+                val request = CreateStoreRequest(addressOfSeller, Email(email))
+                List(request)
+                  .insertStore
+                  .map(st => Ok(StoresAdded(st).asJson.toString()))
+                  .flatMap(a => a)
+              }
+              case ValidToken(None, _) => Ok(InvalidToken("Token is valid but without email").asJson.toString())
+            }
+            .flatMap(a => a)            
+        }.fold(a => a, b => b)
       }
     }
   }
