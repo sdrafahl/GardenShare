@@ -232,3 +232,17 @@ object GetGoogleMapsApiKey {
     } yield GoogleMapsApiKey(key)
   }
 }
+
+case class BucketName(underlying: String)
+abstract class GetDescriptionBucketName[F[_]] {
+  def get(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[BucketName]
+}
+
+object GetDescriptionBucketName {
+  def apply[F[_]: GetDescriptionBucketName]() = implicitly[GetDescriptionBucketName[F]]
+  implicit object IOGetDescriptionBucketName extends GetDescriptionBucketName[IO] {
+    def get(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[BucketName] = for {
+      bucketName <- getTypeSafeConfig.get("descriptions.bucketName")
+    } yield BucketName(bucketName) 
+  }
+}

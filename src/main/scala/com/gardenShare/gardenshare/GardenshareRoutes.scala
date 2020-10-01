@@ -56,6 +56,15 @@ import com.gardenShare.gardenshare.GetNearestStores
 import com.gardenShare.gardenshare.GetNearestStores.GetNearestOps
 import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
 import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream
+import com.gardenShare.gardenshare.Storage.S3.GetKeys
+import com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames
+import com.gardenShare.gardenshare.Config.GetDescriptionBucketName
+import com.gardenShare.gardenshare.GetListOfProductNames.DescriptionName
+import com.gardenShare.gardenshare.Storage.Relational.InsertProduct
+import com.gardenShare.gardenshare.domain.Products.CreateProductRequest
+import com.gardenShare.gardenshare.domain.Products.DescriptionAddress
+import com.gardenShare.gardenshare.Storage.Relational.GetProductsByStore
+import cats.Applicative
 
 object GardenshareRoutes {
 
@@ -271,4 +280,114 @@ object GardenshareRoutes {
       }
     }
   }
+
+  case class InvalidDescriptionName()
+  case class InvalidStoreIDInput()
+  def productRoutes[F[_]:
+      Async:
+      CogitoClient:
+      GetUserPoolName:
+      GetTypeSafeConfig:
+      SignupUser:
+      GetUserPoolSecret:
+      AuthUser:
+      GetUserPoolId:
+      AuthJWT:
+      GetRegion:
+      HttpsJwksBuilder:
+      InsertStore:
+      GetNearestStores:
+      GetDistance:
+      GetStoresStream:
+      GetListOfProductNames:
+      GetKeys:
+      GetDescriptionBucketName:
+      InsertProduct:
+      GetProductsByStore
+  ]() : HttpRoutes[F] = {
+    val dsl = new Http4sDsl[F]{}
+    import dsl._
+    HttpRoutes.of[F] {
+      case req @ POST -> Root / "product" / "create" / storeId / descripKey => {
+        val key = CaseInsensitiveString("authentication")
+        val insertProduct = InsertProduct[F]()
+
+        val maybeJwtHeader = req
+          .headers
+          .get(key)
+
+        val storeIdentification = storeId.toIntOption match {
+          case None => Left(Ok(InvalidStoreIDInput().asJson.toString()))
+          case Some(a) => Right(a)
+        }
+
+        val token = maybeJwtHeader match {
+          case Some(jwtToken) => Right(JWTValidationTokens(jwtToken.value))
+          case None => Left(Ok(NoJWTTokenProvided().asJson.toString()))
+        }
+
+        val isValidDescProgram = GetListOfProductNames().getListOfProducts.map {(f: List[DescriptionName]) =>
+          (f.contains(DescriptionName(descripKey)), token)
+        }
+
+        val currentError = isValidDescProgram.map {
+          case (_, Left(err)) => Left(err)
+          case (true, Right(l)) => Right(l)
+          case (false, _) => Left(Ok(InvalidDescriptionName().asJson.toString()))
+        }
+
+        currentError.map { maybeToken =>
+          maybeToken
+            .map(token => token.auth)
+            .map(a => a.map{
+              case InvalidToken(msg) => Left(Ok(InvalidToken(msg).asJson.toString()))
+              case ValidToken(maybeEmail, groups) => {
+                storeIdentification.map { stoId =>
+                  insertProduct.add(List(CreateProductRequest(stoId, DescriptionAddress(descripKey))))
+                    .map(_.asJson.toString())
+                    .flatMap(Ok(_))
+                }                
+              }
+            })
+        }.flatMap(ac =>
+          ac.fold(b => b, c => c.flatMap(d => d.fold(e => e, f => f)))
+        )
+      }
+      case req @ GET -> Root / "product" / storeId => {
+
+        val getProducts = GetProductsByStore[F]()
+
+        val storeIden = storeId.toIntOption match {
+          case None => Left(Ok(InvalidStoreIDInput().asJson.toString()))
+          case Some(a) => Right(a)
+        }
+
+        val key = CaseInsensitiveString("authentication")
+
+        val maybeJwtHeader = req
+          .headers
+          .get(key)
+
+        val token = maybeJwtHeader match {
+          case Some(jwtToken) => Right(JWTValidationTokens(jwtToken.value))
+          case None => Left(Ok(NoJWTTokenProvided().asJson.toString()))
+        }
+
+        storeIden.flatMap{ id =>
+          token.map(_.auth).flatMap {
+            case InvalidToken(msg) => Left(Ok(InvalidToken(msg).asJson.toString()))
+            case ValidToken(maybeEmail, groups) => {
+              Right(getProducts.getProductsByStore(id).flatMap(lst => Ok(lst.asJson.toString())))
+            }
+          }
+        }
+          .fold(a => a, b => b)
+          .attempt
+          .map(_.left.map(az => Ok(ResponseBody(az.getMessage()).asJson.toString())))
+          .map(_.map(a => Applicative[F].pure(a)))
+          .map(_.fold(a => a, b => b))
+          .flatten
+      }
+    }
+  }  
 }

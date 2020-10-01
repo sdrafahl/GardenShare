@@ -19,23 +19,23 @@ object ProductTable {
   class ProductTable(tag: Tag) extends Table[(Int, Int, String)](tag, "products") {
     def productId = column[Int]("productId", O.PrimaryKey, O.AutoInc)
     def storeId = column[Int]("storeId")
-    def s3productInfo = column[String]("storeId")
+    def s3productInfo = column[String]("s3productInfo")
     def * = (productId, storeId, s3productInfo)    
   }
   val products = TableQuery[ProductTable]
 }
 
 abstract class GetProductsByStore[F[_]: Async] {
-  def getProductsByStore(store: Store): F[List[Product]]
+  def getProductsByStore(storeid: Int): F[List[Product]]
 }
 
 object GetProductsByStore {
   def apply[F[_]: GetProductsByStore]() = implicitly[GetProductsByStore[F]]
 
   implicit object IOGetProductsByStore extends GetProductsByStore[IO]{
-    def getProductsByStore(store: Store): IO[List[Product]] = {
+    def getProductsByStore(storeid: Int): IO[List[Product]] = {
       val query = for {
-        products <- ProductTable.products if products.storeId equals store.id
+        products <- ProductTable.products if products.storeId equals storeid
       } yield (products.productId, products.storeId, products.s3productInfo)
       IO.fromFuture(IO(Setup.db.run(query.result)))
         .map(_.toList)
@@ -51,7 +51,7 @@ abstract class InsertProduct[F[_]] {
 }
 
 object InsertProduct {
-  def apply[F[_]: InsertProduct] = implicitly[InsertProduct[F]]
+  def apply[F[_]: InsertProduct]() = implicitly[InsertProduct[F]]
 
   implicit object IOInsertProduct extends InsertProduct[IO] {
     def add(data: List[CreateProductRequest]): IO[List[Product]] = {
