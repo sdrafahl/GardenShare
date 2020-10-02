@@ -20,20 +20,16 @@ abstract class GetDescription[F[_]] {
 }
 
 object GetDescription {
-  implicit def apply[F[_]: GetDescription] = implicitly[GetDescription[F]]
+  def apply[F[_]: GetDescription]() = implicitly[GetDescription[F]]
   implicit object IOS3GetDescription extends GetDescription[IO] {
     def getDescription(t: S3DescriptionAddress)(implicit readSeFile: ReadS3File[IO]): IO[ProductDescription] = {
       readSeFile
         .readFromS3(t.bucketName, t.path)
         .map{b =>
-          parse(b)
-          .map(js => js.as[ProductDescription].toOption)
-        }.flatMap {maybeParsed =>
-          maybeParsed match {
-            case Right(Some(proDes)) => IO(proDes)
-            case Right(None) => IO.raiseError(new Throwable("Nothing to Parse"))
-            case Left(err) => IO.raiseError(new Throwable(s"Error: ${err.message}"))
-          }
+          parser.decode[ProductDescription](b)
+        }.flatMap {          
+            case Right(proDes) => IO(proDes)
+            case Left(err) => IO.raiseError(new Throwable(s"Error: ${err.getMessage()}"))
         }
     }
   }

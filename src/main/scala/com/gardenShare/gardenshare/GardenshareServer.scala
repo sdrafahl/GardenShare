@@ -24,6 +24,11 @@ import scala.concurrent.duration._
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore
 import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
 import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream
+import com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames
+import com.gardenShare.gardenshare.Storage.S3.GetKeys
+import com.gardenShare.gardenshare.Config.GetDescriptionBucketName
+import com.gardenShare.gardenshare.Storage.Relational.InsertProduct
+import com.gardenShare.gardenshare.Storage.S3.ReadS3File
 
 object GardenshareServer {
 
@@ -42,7 +47,13 @@ object GardenshareServer {
       InsertStore:
       GetNearestStores:
       GetDistance:
-      GetStoresStream
+      GetStoresStream:
+      GetListOfProductNames:
+      GetKeys:
+      GetDescriptionBucketName:
+      InsertProduct:
+      GetDescription:
+      ReadS3File
   ](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
     for {
       client <- BlazeClientBuilder[F](global).stream
@@ -57,7 +68,8 @@ object GardenshareServer {
         GardenshareRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
         GardenshareRoutes.jokeRoutes[F](jokeAlg) <+>
         GardenshareRoutes.userRoutes[F]() <+>
-        GardenshareRoutes.storeRoutes[F]()
+        GardenshareRoutes.storeRoutes[F]() <+>
+        GardenshareRoutes.productDescriptionRoutes[F]()
       ).orNotFound
 
       // With Middlewares in place

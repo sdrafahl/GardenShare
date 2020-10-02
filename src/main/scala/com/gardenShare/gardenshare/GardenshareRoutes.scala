@@ -65,6 +65,10 @@ import com.gardenShare.gardenshare.domain.Products.CreateProductRequest
 import com.gardenShare.gardenshare.domain.Products.DescriptionAddress
 import com.gardenShare.gardenshare.Storage.Relational.GetProductsByStore
 import cats.Applicative
+import com.gardenShare.gardenshare.domain.Products.S3DescriptionAddress
+import com.gardenShare.gardenshare.GetDescription.Ops
+import com.gardenShare.gardenshare.domain.Products.ParseDescriptionAddress
+import com.gardenShare.gardenshare.Storage.S3.ReadS3File
 
 object GardenshareRoutes {
 
@@ -352,6 +356,11 @@ object GardenshareRoutes {
         }.flatMap(ac =>
           ac.fold(b => b, c => c.flatMap(d => d.fold(e => e, f => f)))
         )
+          .attempt
+          .map(_.left.map(err => Ok(ResponseBody(err.getMessage()).asJson.toString())))
+          .map(_.map(a => Applicative[F].pure(a)))
+          .map(_.fold(a => a, b => b))
+          .flatten
       }
       case req @ GET -> Root / "product" / storeId => {
 
@@ -389,5 +398,53 @@ object GardenshareRoutes {
           .flatten
       }
     }
-  }  
+  }
+  case class CantFindDescriptionBucketName(msg: String)
+  def productDescriptionRoutes[F[_]:
+      Async:
+      CogitoClient:
+      GetUserPoolName:
+      GetTypeSafeConfig:
+      SignupUser:
+      GetUserPoolSecret:
+      AuthUser:
+      GetUserPoolId:
+      AuthJWT:
+      GetRegion:
+      HttpsJwksBuilder:
+      InsertStore:
+      GetNearestStores:
+      GetDistance:
+      GetStoresStream:
+      GetListOfProductNames:
+      GetKeys:
+      GetDescriptionBucketName:
+      InsertProduct:
+      GetDescription:
+      ReadS3File
+  ]() : HttpRoutes[F] = {
+    val dsl = new Http4sDsl[F]{}
+    import dsl._
+    HttpRoutes.of[F] {
+      case GET -> Root / "productDescription" / descKey => {
+        GetDescriptionBucketName()
+          .get
+          .attempt
+          .map(_.left.map(a => Ok(CantFindDescriptionBucketName(a.getMessage()).asJson.toString())))
+          .map(_.map { bucketName => 
+            val address = S3DescriptionAddress(bucketName.underlying, descKey)
+            address
+              .getDesc
+              .map(_.asJson.toString())
+              .attempt
+              .map(_.left.map(a => ResponseBody(a.getMessage()).asJson.toString()))
+              .map(_.fold(a => a, b => b))
+              .map(Ok(_))
+              .flatten
+          })
+          .map(_.fold(a => a, b => b))
+          .flatten
+      }
+    }
+  }
 }
