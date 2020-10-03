@@ -9,7 +9,7 @@ import cats.effect.IO
 import fs2.concurrent.Queue
 import cats.syntax.all._
 import cats.effect.{Concurrent, ExitCode, IO, IOApp, Timer}
-import fs2.concurrent.Queue
+import fs2.concurrent.InspectableQueue
 import fs2.Stream
 import scala.concurrent.duration._
 import com.gardenShare.gardenshare.Concurrency.Concurrency._
@@ -38,15 +38,14 @@ object GetNearestStores {
     def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[IO], getStores: GetStoresStream[IO]): IO[List[Store]] = {
       val stores = getStores.getLazyStores()     
       for {
-        queue <- Queue.bounded[IO, Store](limit)
-        stackDepth <- Ref[IO].of(0)
-        populateQueue <- for {          
-          approximateDepth <- stackDepth.get
+        queue <- InspectableQueue.bounded[IO, Store](limit)
+        populateQueue = for {
+          approximateDepth <- queue.getSize
           processQueue = stores.parEvalMap(com.gardenShare.gardenshare.Concurrency.Concurrency.threadCount) {
             store =>
             if(approximateDepth < limit) { 
                 isWithinRange[IO](n, fromLocation, store.address, getDist).map {
-                  case true => queue.enqueue1(store).map(_ => stackDepth.modify(d => (d + 1, d))).flatMap(a => a)
+                  case true => queue.enqueue1(store)
                   case false => IO.unit                
                 }.flatMap(a => a)
               } else { IO.unit }
@@ -55,7 +54,7 @@ object GetNearestStores {
         checkQueueProgram = {
           def checkQueue: IO[Unit] = {
             (for {
-              aproxDepth <- stackDepth.get
+              aproxDepth <- queue.getSize
             } yield aproxDepth match {
               case d if d < limit => {
                 Thread.sleep(1000)
