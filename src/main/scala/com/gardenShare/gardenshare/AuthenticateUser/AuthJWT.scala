@@ -27,15 +27,20 @@ import com.gardenShare.gardenshare.Config.GetUserPoolId
 import com.gardenShare.gardenshare.Config.GetUserPoolId._
 import com.gardenShare.gardenshare.ParseGroups.ParseGroups
 import com.gardenShare.gardenshare.ParseGroups.ParseGroups._
+import cats.syntax.flatMap._
+import cats.syntax.functor._
+import cats.FlatMap
+import cats.Functor
 
 abstract class AuthJWT[F[_]] {
-  def authJWT(jwt:JWTValidationTokens)(implicit getUserPoolId: GetUserPoolId[F], builder: HttpsJwksBuilder[F], getRegion: GetRegion[F], joseProcessJwt:JoseProcessJwt, getUserPoolName: GetUserPoolName[F]): F[JWTValidationResult]
+  def authJWT(jwt:JWTValidationTokens): F[JWTValidationResult]
 }
 
 object AuthJWT {
-  implicit def apply[F[_]: AuthJWT: GetUserPoolId: GetRegion: HttpsJwksBuilder: GetUserPoolName]() = implicitly[AuthJWT[F]]
-  implicit object default extends AuthJWT[IO] {
-    def authJWT(jwt:JWTValidationTokens)(implicit getUserPoolId: GetUserPoolId[IO], builder: HttpsJwksBuilder[IO], getRegion: GetRegion[IO],joseProcessJwt:JoseProcessJwt, getUserPoolName: GetUserPoolName[IO]): IO[JWTValidationResult] = {
+  implicit def apply[F[_]: AuthJWT]() = implicitly[AuthJWT[F]]
+
+  implicit def createAuthJWT[F[_]: FlatMap: Functor](implicit getUserPoolId: GetUserPoolId[F], builder: HttpsJwksBuilder[F], getRegion: GetRegion[F],joseProcessJwt:JoseProcessJwt, getUserPoolName: GetUserPoolName[F], get: GetTypeSafeConfig[F]) = new AuthJWT[F] {
+    def authJWT(jwt:JWTValidationTokens): F[JWTValidationResult] = {
       for {
         id <- getUserPoolId.exec()
         region <- getRegion.exec
@@ -49,7 +54,7 @@ object AuthJWT {
   }
 
   implicit class AuthJwtOps(underlying:JWTValidationTokens) {
-    def auth[F[_]: AuthJWT: GetUserPoolId:HttpsJwksBuilder:GetRegion:GetUserPoolName](implicit auth: AuthJWT[F], joe: JoseProcessJwt) = auth.authJWT(underlying)
+    def auth[F[_]](implicit auth: AuthJWT[F], joe: JoseProcessJwt) = auth.authJWT(underlying)
   }
 }
 

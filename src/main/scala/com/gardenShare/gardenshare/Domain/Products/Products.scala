@@ -31,5 +31,5 @@ object ParseDescriptionAddress {
   }
 }
 
-case class CreateProductRequest(storeId: Int,descriptionAddresss: DescriptionAddress)
-case class Product(id: Int, storeId: Int, descriptionS3Address: DescriptionAddress)
+case class CreateProductRequest(storeId: Int, orderId: Int,descriptionAddresss: DescriptionAddress)
+case class Product(id: Int, storeId: Int, orderId: Int, descriptionS3Address: DescriptionAddress)

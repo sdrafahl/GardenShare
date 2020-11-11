@@ -21,6 +21,8 @@ import java.io.FileReader
 import java.io.File
 import scala.io.Source
 import org.apache.commons.codec.binary.Base64
+import com.gardenShare.gardenshare.domain.S3.BucketN
+import eu.timepit.refined.types.string.NonEmptyString
 
 
 abstract class GetTypeSafeConfig[F[_]:Functor] {
@@ -35,17 +37,17 @@ object GetTypeSafeConfig {
   }
 }
 
-case class GraphDBEndpoint(url: String)
-abstract class GetGraphDBEndpoint[F[_]] {
-  def getGraphDBEndpoint(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[GraphDBEndpoint]
+case class StripePrivateKey(n: String)
+abstract class GetStripePrivateKey[F[_]: GetTypeSafeConfig] {
+  def getKey(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[StripePrivateKey]
 }
 
-object GetGraphDBEndpoint {
-  def apply[F[_]: GetGraphDBEndpoint]() = implicitly[GetGraphDBEndpoint[F]]
-  implicit object IODefault extends GetGraphDBEndpoint[IO] {
-    def getGraphDBEndpoint(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[GraphDBEndpoint] = for {
-      conf <- getTypeSafeConfig.get("storesandproducsgraphdb.endpoint")
-    } yield GraphDBEndpoint(conf)
+object GetStripePrivateKey {
+  def apply[F[_]:GetStripePrivateKey]() = implicitly[GetStripePrivateKey[F]]
+  implicit object IOGetStripePrivateKey extends GetStripePrivateKey[IO] {    
+    def getKey(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[StripePrivateKey] = for {
+      conf <- getTypeSafeConfig.get("stripe.privateKey")
+    } yield StripePrivateKey(conf)
   }
 }
 
@@ -74,7 +76,8 @@ abstract class GetUserPoolName[F[_]: GetTypeSafeConfig:Functor] {
 object GetUserPoolName {
   implicit def apply[F[_]: GetUserPoolName]() = implicitly[GetUserPoolName[F]]
   implicit object IOGetUserPoolName extends GetUserPoolName[IO] {
-    def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[UserPoolName] = {
+
+    def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO] = GetTypeSafeConfig[IO]): IO[UserPoolName] = {
       for {
         conf <- getTypeSafeConfig.get("users.standardUserPoolName")
       } yield UserPoolName(conf)
@@ -233,16 +236,18 @@ object GetGoogleMapsApiKey {
   }
 }
 
-case class BucketName(underlying: String)
 abstract class GetDescriptionBucketName[F[_]] {
-  def get(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[BucketName]
+  def get(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[BucketN]
 }
 
 object GetDescriptionBucketName {
   def apply[F[_]: GetDescriptionBucketName]() = implicitly[GetDescriptionBucketName[F]]
   implicit object IOGetDescriptionBucketName extends GetDescriptionBucketName[IO] {
-    def get(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[BucketName] = for {
+    def get(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[BucketN] = {
+      (for {
       bucketName <- getTypeSafeConfig.get("descriptions.bucketName")
-    } yield BucketName(bucketName) 
+      maybeBucket = NonEmptyString.from(bucketName).fold(err => IO.raiseError(new Throwable(err)), parsed => IO(BucketN(parsed)))
+      } yield maybeBucket).flatMap(a => a)
+    }      
   }
 }

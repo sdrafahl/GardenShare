@@ -14,21 +14,19 @@ import fs2.{io, text, Stream}
 import cats.effect.{Blocker, ExitCode, IO, IOApp, Resource}
 import com.gardenShare.gardenshare.Concurrency.Concurrency._
 import scala.concurrent.ExecutionContext
-import com.gardenShare.gardenshare.ParseDescription.ParseDescription.Ops
-import com.gardenShare.gardenshare.ParseDescription.ParseDescription
-import com.gardenShare.gardenshare.Config.BucketName
+import com.gardenShare.gardenshare.domain.S3.BucketN
 
 
 case class S3Key(underlying: String)
 abstract class GetKeys[F[_]] {
-  def getKeys(bucketName: BucketName)(implicit client: S3): F[List[S3Key]]
+  def getKeys(bucketName: BucketN)(implicit client: S3): F[List[S3Key]]
 }
 
 object GetKeys {
   implicit object IOGetKeys extends GetKeys[IO] {
-    def getKeys(bucketName: BucketName)(implicit client: S3): IO[List[S3Key]] = {
+    def getKeys(bucketName: BucketN)(implicit client: S3): IO[List[S3Key]] = {
       val bucket = IO(client
-        .bucket(bucketName.underlying)
+        .bucket(bucketName.n.value)
         .map(_.keys)
         .map(_.toList)
         .map(_.map(a => S3Key(a))))
@@ -38,7 +36,7 @@ object GetKeys {
       }
     }
   }
-  implicit class GetKeysOps(underlying: BucketName) {
+  implicit class GetKeysOps(underlying: BucketN) {
     import com.gardenShare.gardenshare.Storage.S3.Clients._
     def keys[F[_]: GetKeys](implicit getKeys:GetKeys[F]) = getKeys.getKeys(underlying)
   }

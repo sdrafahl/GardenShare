@@ -46,6 +46,26 @@ object StoreTable {
   val stores = TableQuery[StoreTable]
 }
 
+abstract class GetStoreByID[F[_]] {
+  def getStore(id: Int): F[Option[Store]]
+}
+
+object GetStoreByID {
+  implicit object GetStoreByIDIO extends GetStoreByID[IO] {
+    def getStore(id: Int): IO[Option[Store]] = {
+      val query = for {
+        stores <- StoreTable.stores if stores.storeId equals id
+      } yield (stores.storeId, stores.storeAddress, stores.sellerEmail)
+      IO.fromFuture(IO(Setup.db.run(query.result)))
+        .map(_.toList)
+        .map(_.headOption)
+        .map(_.map{l =>
+          Store(l._1, Address(l._2), Email(l._3))
+        })        
+    }
+  }
+}
+
 abstract class GetStore[F[_]: Async] {
   def getStoresByUserEmail(email: Email): F[List[Store]]
 }
@@ -83,8 +103,8 @@ object InsertStore {
       responses.map(res => res.map(i => Store(i._1, Address(i._2), Email(i._3))))
     }
   }
-  implicit class CreateStoreRequestOps[F[_]: InsertStore](underlying: List[CreateStoreRequest]) {
-    def insertStore(implicit inserter: InsertStore[F]) = inserter.add(underlying)
+  implicit class CreateStoreRequestOps(underlying: List[CreateStoreRequest]) {
+    def insertStore[F[_]: InsertStore](implicit inserter: InsertStore[F]) = inserter.add(underlying)
   }
 }
 

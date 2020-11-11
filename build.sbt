@@ -46,7 +46,15 @@ lazy val root = (project in file("."))
       "com.tinkerpop.gremlin" % "gremlin" % "2.6.0",
       "org.apache.tinkerpop" % "gremlin-driver" % "3.4.1",
       "com.google.maps" % "google-maps-services" % "0.15.0",
-      "org.slf4j" % "slf4j-simple" % "2.0.0-alpha1"
+      "org.slf4j" % "slf4j-simple" % "2.0.0-alpha1",
+      "io.circe" %% "circe-fs2" % "0.13.0",
+      "io.laserdisc" %% "fs2-aws" % "3.0.2",
+      "io.laserdisc" %% "fs2-aws-s3" % "3.0.2",
+      "eu.timepit" %% "refined" % "0.9.17",
+      "com.github.jacke" %% "stripe-scala" % "0.5.2",
+      "com.typesafe.akka" %% "akka-http-core" % "10.2.1",
+      "com.github.jacke" %% "stripe-scala" % "0.5.2",
+      "com.typesafe.akka" %% "akka-stream" % "2.6.8"
     ),
     testFrameworks += new TestFramework("utest.runner.Framework"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),

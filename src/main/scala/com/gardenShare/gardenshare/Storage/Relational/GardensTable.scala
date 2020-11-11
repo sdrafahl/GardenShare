@@ -47,7 +47,6 @@ object InsertGarden {
     def add(data: List[String]): IO[List[(Int, String)]] = {
       val query = Gardens.gardens
       val qu = Gardens.gardens.returning(query)
-      val res = qu ++= (data.map(da => (0, da)))
       IO.fromFuture(IO(Setup.db.run(qu ++= data.map(da => (0, da))))).map(_.toList)
     }
   }

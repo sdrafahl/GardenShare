@@ -29,6 +29,7 @@ case class GetNearestStore(n: Distance, limit: Int, fromLocation: Address)
 
 object GetNearestStores {
   def apply[F[_]: GetNearestStores]() = implicitly[GetNearestStores[F]]
+
   private def isWithinRange[F[_]: GetDistance:GetGoogleMapsApiKey:Monad](range: Distance, from: Address, to: Address, getDist: GetDistance[F]): F[Boolean] = {
     for {
       dist <- getDist.getDistanceFromAddress(from, to)

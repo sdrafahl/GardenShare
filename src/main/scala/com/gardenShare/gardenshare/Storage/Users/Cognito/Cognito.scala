@@ -53,7 +53,7 @@ abstract class CogitoClient[F[_]:GetUserPoolName:Async] {
 
 object CogitoClient {
   implicit lazy val cognitoIdentityClient = CognitoIdentityProviderClient.builder().build()
-  implicit def apply[F[_]:GetUserPoolName:GetTypeSafeConfig:Async]()(implicit client: CognitoIdentityProviderClient): CogitoClient[F] = new CogitoClient[F] {
+  def apply[F[_]:GetUserPoolName:GetTypeSafeConfig:Async]()(implicit client: CognitoIdentityProviderClient): CogitoClient[F] = new CogitoClient[F] {
     def createUserPool(userPoolName: String) = {
     Async[F].async { (cb: Either[Throwable, CreateUserPoolResponse] => Unit) =>
       val response = Try(client.createUserPool(

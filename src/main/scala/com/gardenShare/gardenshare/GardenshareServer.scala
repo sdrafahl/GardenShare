@@ -28,7 +28,16 @@ import com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames
 import com.gardenShare.gardenshare.Storage.S3.GetKeys
 import com.gardenShare.gardenshare.Config.GetDescriptionBucketName
 import com.gardenShare.gardenshare.Storage.Relational.InsertProduct
-import com.gardenShare.gardenshare.Storage.S3.ReadS3File
+import com.gardenShare.gardenshare.StoreRoutes
+import com.gardenShare.gardenshare.Storage.Relational.GetProductsByStore
+import com.gardenShare.gardenshare.ParseDescription.ParseDescriptionStream
+import com.gardenShare.gardenshare.GetProductDescription.GetproductDescription
+import com.gardenShare.gardenshare.Orders.CreateOrder
+import com.gardenShare.gardenshare.Storage.Relational.AddOrderIdToProduct
+import com.gardenShare.gardenshare.Storage.Relational.GetProductByID
+import com.gardenShare.gardenshare.Storage.Relational.GetStore._
+import com.gardenShare.gardenshare.Storage.Relational.GetStore
+import com.gardenShare.gardenshare.Storage.Relational.GetStoreByID
 
 object GardenshareServer {
 
@@ -52,25 +61,30 @@ object GardenshareServer {
       GetKeys:
       GetDescriptionBucketName:
       InsertProduct:
-      GetDescription:
-      ReadS3File
+      GetProductsByStore:
+      ParseDescriptionStream:
+      GetproductDescription:
+      CreateOrder:
+      AddOrderIdToProduct:
+      GetProductByID:
+      GetStore:
+      GetStoreByID
   ](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
     for {
       client <- BlazeClientBuilder[F](global).stream
-      helloWorldAlg = HelloWorld.impl[F]
-      jokeAlg = Jokes.impl[F](client)
 
       // Combine Service Routes into an HttpApp.
       // Can also be done via a Router if you
       // want to extract a segments not checked
       // in the underlying routes.
-      httpApp = (
-        GardenshareRoutes.helloWorldRoutes[F](helloWorldAlg) <+>
-        GardenshareRoutes.jokeRoutes[F](jokeAlg) <+>
-        GardenshareRoutes.userRoutes[F]() <+>
-        GardenshareRoutes.storeRoutes[F]() <+>
-        GardenshareRoutes.productDescriptionRoutes[F]()
-      ).orNotFound
+      
+      httpApp = (                
+          UserRoutes.userRoutes[F]() <+>
+          StoreRoutes.storeRoutes[F]() <+>
+          ProductRoutes.productRoutes[F]() <+>
+          ProductDescription.productDescriptionRoutes[F]() <+>
+          OrderRoutes.orderRoutes[F]()
+      ).orNotFound      
 
       // With Middlewares in place
       finalHttpApp = Logger.httpApp(true, true)(httpApp)

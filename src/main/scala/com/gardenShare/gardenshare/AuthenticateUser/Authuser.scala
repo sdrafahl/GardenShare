@@ -35,7 +35,6 @@ object AuthUser {
         }
       }
     }
-    implicit lazy val default = AuthUser[IO]()
   }
 
   implicit class AuthUserOps[F[_]: AuthUser:CogitoClient:GetUserPoolName:GetUserPoolId](underlying: User) {
