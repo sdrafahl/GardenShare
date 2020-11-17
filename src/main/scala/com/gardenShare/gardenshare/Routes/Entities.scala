@@ -19,6 +19,8 @@ case class IsJwtValidResponse(
 
 case class NoJWTTokenProvided()
 case class StoresAdded(store: List[Store])
+case class FailedToAddStore(msg: String)
+case class FailedToFindStore(msg: String)
 case class InvalidLimitProvided(msg: String)
 case class InvalidRangeProvided(msg: String)
 case class ListOfStores(l: List[Store])

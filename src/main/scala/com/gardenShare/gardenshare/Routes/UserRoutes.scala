@@ -34,6 +34,12 @@ import com.gardenShare.gardenshare.UserEntities.FailedToAuthenticate
 import com.gardenShare.gardenshare.UserEntities.ValidToken
 import com.gardenShare.gardenshare.Encoders.Encoders._
 import com.gardenShare.gardenshare.UserEntities.InvalidToken
+import com.gardenShare.gardenshare.ProcessAndJsonResponse
+import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
+import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
+import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
+import com.gardenShare.gardenshare.UserEntities.UserResponse
+import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
 
 object UserRoutes {
   def userRoutes[F[_]: Async: GetTypeSafeConfig: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient]()
@@ -45,97 +51,54 @@ object UserRoutes {
         val emailToPass = Email(email)
         val passwordToPass = Password(password)
         val user = User(emailToPass, passwordToPass)
-        val processRequest = (for {
-          resp <- user.signUp[F]()
-        } yield resp).attempt
-        for {
-          result <- processRequest
-          newResp <- result match {
-            case Left(err) =>
-              Ok(
-                UserCreationRespose(
-                  s"User Request Failed: ${err.getMessage()}",
-                  false
-                ).asJson.toString()
-              )
-            case Right(resp) =>
-              Ok(
-                UserCreationRespose(
-                  s"User Request Made: ${resp.codeDeliveryDetails().toString()}",
-                  true
-                ).asJson.toString()
-              ).map(a =>
-                a.copy(headers =
-                  a.headers.put(
-                    Header.apply("Content-Type", "application/json")
-                  )
-                )
-              )
-          }
-        } yield newResp
+
+        addJsonHeaders(
+          ProcessData(
+            user.signUp[F](),
+            (resp:SignUpResponse) => UserCreationRespose(
+              s"User Request Made: ${resp.codeDeliveryDetails().toString()}",
+              true
+            ),
+            (err:Throwable) => UserCreationRespose(
+              s"User Request Failed: ${err.getMessage()}",
+              false
+            )
+          )
+            .process
+            .flatMap(js => Ok(js.toString()))
+        )
       }
 
       case GET -> Root / "user" / "auth" / email / password => {
-        val result = User(Email(email), Password(password)).auth.attempt
-
-        result.flatMap { mr =>
-          mr match {
-            case Left(error) =>
-              Ok(
-                AuthUserResponse(s"Error Occurred: ${error}", None, false).asJson
-                  .toString()
-              )
-            case Right(AuthenticatedUser(user, jwt, accToken)) =>
-              Ok(
-                AuthUserResponse(
-                  "jwt token is valid",
-                  Option(AuthenticatedUser(user, jwt, accToken)),
-                  true
-                ).asJson.toString()
-              ).map(a =>
-                a.copy(headers =
-                  a.headers.put(
-                    Header.apply("Content-Type", "application/json")
-                  )
-                )
-              )
-
-            case Right(FailedToAuthenticate(msg)) => {
-              val response =
-                AuthUserResponse(s"User failed to verify: ${msg}", None, false)
-              Ok(response.asJson.toString())
-            }
-            case _ =>
-              NotAcceptable(ResponseBody(s"Unknown response").asJson.toString())
-          }
-        }
+        addJsonHeaders(ProcessData(
+          User(Email(email), Password(password)).auth,
+          (usr:UserResponse) => usr match {
+            case AuthenticatedUser(user, jwt, accToken) => AuthUserResponse(
+              "jwt token is valid",
+              Option(AuthenticatedUser(user, jwt, accToken)),
+              true
+            )
+            case FailedToAuthenticate(msg) => AuthUserResponse(s"User failed to verify: ${msg}", None, false)
+          },
+          (error: Throwable) => AuthUserResponse(s"Error Occurred: ${error}", None, false)
+        )
+          .process
+          .flatMap(js => Ok(js.toString()))
+        )
       }
       case GET -> Root / "user" / "jwt" / jwtToken => {
-        val result = JWTValidationTokens(jwtToken)
-          .auth[F]
-          .attempt
-
-        result.flatMap { rest =>
-          rest match {
-            case Left(error) =>
-              Ok(
-                IsJwtValidResponse(s"Error occured: ${error}", false, List()).asJson
-                  .toString()
-              )
-            case Right(ValidToken(email, userGroups)) =>
-              Ok(
-                IsJwtValidResponse("Token is valid", true, userGroups).asJson
-                  .toString()
-              )
-            case Right(InvalidToken(msg)) =>
-              Ok(
-                IsJwtValidResponse("Token is not valid", false, List()).asJson
-                  .toString()
-              )
-            case Right(_) =>
-              NotAcceptable(ResponseBody("Unknown response").asJson.toString())
-          }
-        }
+        addJsonHeaders(
+          ProcessData(
+            JWTValidationTokens(jwtToken).auth[F],
+            (jwtR:JWTValidationResult) => jwtR match {
+              case ValidToken(email, userGroups) => IsJwtValidResponse("Token is valid", true, userGroups)
+              case InvalidToken(msg) => IsJwtValidResponse("Token is not valid", false, List())
+            },
+            (error:Throwable) => IsJwtValidResponse(s"Error occured: ${error}", false, List())
+          )
+            .process
+            .flatMap(js => Ok(js.toString()))
+        )
       }
     }
   }

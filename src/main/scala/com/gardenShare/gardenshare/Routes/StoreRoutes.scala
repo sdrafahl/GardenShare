@@ -26,6 +26,14 @@ import com.gardenShare.gardenshare.Storage.Relational.InsertStore
 import scala.util.Try
 import com.gardenShare.gardenshare.GoogleMapsClient.Distance
 import com.gardenShare.gardenshare.GetNearestStores.GetNearestOps
+import com.gardenShare.gardenshare.Helpers._
+import cats.Applicative
+import com.gardenShare.gardenshare.ProcessAndJsonResponse
+import com.gardenShare.gardenshare.ProcessAndJsonResponse._
+import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
+import com.gardenShare.gardenshare.domain.Store.Store
+import com.gardenShare.gardenshare.FoldOver.FoldOverEithers
+import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
 
 object StoreRoutes {
   def storeRoutes[F[_]: Async: com.gardenShare.gardenshare.SignupUser.SignupUser: AuthUser: AuthJWT: InsertStore: GetNearestStores: GetDistance: GetStoresStream]()
@@ -34,99 +42,61 @@ object StoreRoutes {
     import dsl._
     HttpRoutes.of[F] {
       case req @ POST -> Root / "store" / "create" / address => {
-        val key = CaseInsensitiveString("authentication")
-        val maybeJwtHeader = req.headers
-          .get(key)
-
-        val token = maybeJwtHeader match {
-          case Some(jwtToken) => Right(JWTValidationTokens(jwtToken.value))
-          case None           => Left(Ok(NoJWTTokenProvided().asJson.toString()))
-        }
-
-        token
-          .map { f =>
-            f.auth
-              .map {
-                case InvalidToken(msg) =>
-                  Ok(InvalidToken(msg).asJson.toString())
+        addJsonHeaders(
+          parseJWTokenFromRequest(req)
+            .map(_.auth)
+            .map{resultOfValidation =>
+              resultOfValidation.flatMap{
+                case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
                 case ValidToken(Some(email), _) => {
                   val addressOfSeller = Address(address)
                   val emailOfSeller = Email(email)
-                  val request =
-                    CreateStoreRequest(addressOfSeller, Email(email))
-                  List(request).insertStore
-                    .map(st => Ok(StoresAdded(st).asJson.toString()))
-                    .flatMap(a => a)
+                  val request = CreateStoreRequest(addressOfSeller, Email(email))
+
+                  ProcessData(
+                    List(request).insertStore,
+                    (lst: List[Store]) => StoresAdded(lst),
+                    (err:Throwable) => FailedToAddStore(err.getMessage()),                    
+                  ).process
+
                 }
-                case ValidToken(None, _) =>
-                  Ok(
-                    InvalidToken("Token is valid but without email").asJson
-                      .toString()
-                  )
+                case ValidToken(None, _) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
               }
-              .flatMap(a => a)
-          }
-          .fold(a => a, b => b)
+            }
+            .left
+            .map(n => Applicative[F].pure(n.asJson))
+            .fold(a1 => a1, a2 => a2)
+            .map(_.toString())
+            .flatMap(msg => Ok(msg)))
       }
       case req @ GET -> Root / "store" / address / limit / rangeInSeconds => {
 
-        val key = CaseInsensitiveString("authentication")
-
-        val maybeJwtHeader = req.headers
-          .get(key)
-
-        val token = maybeJwtHeader match {
-          case Some(jwtToken) => Right(JWTValidationTokens(jwtToken.value))
-          case None           => Left(Ok(NoJWTTokenProvided().asJson.toString()))
-        }
-
-        val lim = Try(limit.toInt).toEither.left
+        val maybeLimit = Try(limit.toInt).toEither.left
           .map(a => InvalidLimitProvided(a.getMessage()))
 
-        val range = Try(rangeInSeconds.toFloat).toEither.left
+        val maybeRange = Try(rangeInSeconds.toFloat).toEither.left
           .map(a => InvalidRangeProvided(a.getMessage()))
 
-        token
-          .map { f =>
-            f.auth
-              .map {
-                case InvalidToken(msg) =>
-                  Ok(InvalidToken(msg).asJson.toString())
-                case ValidToken(Some(email), _) => {
-                  lim
-                    .map { li =>
-                      range
-                        .map { range =>
-                          GetNearestStore(Distance(range), li, Address(address)).nearest
-                            .map(ListOfStores)
-                            .map(_.asJson.toString())
-                            .attempt
-                            .map(
-                              _.left.map(err =>
-                                ResponseBody(err.toString()).asJson.toString()
-                              )
-                            )
-                            .map(
-                              _.map(msg => ResponseBody(msg).asJson.toString())
-                            )
-                            .map(_.fold(a => a, b => b))
-                            .map(respMsg => Ok(respMsg))
-                            .flatMap(a => a)
-
-                        }
-                        .fold(fa => Ok(fa.asJson.toString()), fb => fb)
-                    }
-                    .fold(a => Ok(a.asJson.toString()), b => b)
+        addJsonHeaders(maybeLimit.map{limit =>
+          maybeRange.map{range =>
+            parseJWTokenFromRequest(req)
+              .map(_.auth)
+              .map{resultOfValidation =>
+                resultOfValidation.flatMap{
+                  case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
+                  case ValidToken(None, _) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+                  case ValidToken(Some(email), _) => {
+                    ProcessData(
+                      GetNearestStore(Distance(range), limit, Address(address)).nearest,
+                      (lst: List[Store]) => StoresAdded(lst),
+                      (err:Throwable) => FailedToFindStore(err.getMessage())
+                    ).process
+                  }
                 }
-                case ValidToken(None, _) =>
-                  Ok(
-                    InvalidToken("Token is valid but without email").asJson
-                      .toString()
-                  )
-              }
-          }
-          .map(_.flatMap(a => a))
-          .fold(a => a, b => b)
+              }.foldIntoJson
+          }.foldIntoJson
+        }.foldIntoJson
+        .flatMap(js => Ok(js.toString())))
       }
     }
   }
