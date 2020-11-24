@@ -11,14 +11,14 @@ import com.gardenShare.gardenshare.Concurrency.Concurrency._
 object Setup {
   val db = Database.forConfig("postgres")
 
-  val cleanupGardens: DBIO[Int] = sqlu"DROP TABLE IF EXISTS gardens;"
-  val cleanupPlants: DBIO[Int] = sqlu"DROP TABLE IF EXISTS plants;"
+  val cleanupProducts: DBIO[Int] = sqlu"DROP TABLE IF EXISTS products;"
+  val cleanupStores: DBIO[Int] = sqlu"DROP TABLE IF EXISTS products;"
 
   def createPostGresDBTables = {
-    
+
     val setup = DBIO.seq(
-      cleanupGardens,
-      cleanupPlants,
+      cleanupProducts,
+      cleanupStores,
       ProductTable.products.schema.create,
       StoreTable.stores.schema.create
     )

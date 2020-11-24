@@ -7,14 +7,11 @@ resolvers += "Sonatype OSS Release Repository" at "https://oss.sonatype.org/cont
 resolvers += Resolver.mavenLocal
 resolvers += "Apache public" at "https://repository.apache.org/content/groups/public/"
 
-lazy val root = (project in file("."))
-  .enablePlugins(DockerPlugin)
-  .settings(
-    organization := "com.gardenShare",
-    name := "gardenshare",
-    version := "0.0.1-SNAPSHOT",
-    scalaVersion := "2.13.1",
-    libraryDependencies ++= Seq(
+lazy val apiDependencies = Seq(
+  "com.github.jacke" %% "stripe-scala" % "0.5.2",
+)
+
+lazy val commonDependencies = Seq(
       "org.http4s"      %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s"      %% "http4s-blaze-client" % Http4sVersion,
       "org.http4s"      %% "http4s-circe"        % Http4sVersion,
@@ -51,15 +48,34 @@ lazy val root = (project in file("."))
       "io.laserdisc" %% "fs2-aws" % "3.0.2",
       "io.laserdisc" %% "fs2-aws-s3" % "3.0.2",
       "eu.timepit" %% "refined" % "0.9.17",
-      "com.github.jacke" %% "stripe-scala" % "0.5.2",
       "com.typesafe.akka" %% "akka-http-core" % "10.2.1",
-      "com.github.jacke" %% "stripe-scala" % "0.5.2",
       "com.typesafe.akka" %% "akka-stream" % "2.6.8"
-    ),
+    )
+
+lazy val root = (project in file("."))
+  .enablePlugins(DockerPlugin)
+  .settings(
+    organization := "com.gardenShare",
+    name := "gardenshare",
+    version := "0.0.1-SNAPSHOT",
+    scalaVersion := "2.13.1",
+    libraryDependencies ++= commonDependencies,
+    libraryDependencies ++= apiDependencies,
     testFrameworks += new TestFramework("utest.runner.Framework"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
     addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1")
   )
+
+lazy val migratorSettings = Seq(
+  name := "Migrator",
+  libraryDependencies ++= commonDependencies,
+  scalaVersion := "2.13.1",
+  Compile / run / mainClass := Some("com.gardenShare.gardenshare.migrator.Main")
+)
+
+lazy val migrator = (project in file("Migrator"))
+  .settings(migratorSettings)
+  .dependsOn(root)
 
 dockerfile in docker := {
   val artifact: File = assembly.value
