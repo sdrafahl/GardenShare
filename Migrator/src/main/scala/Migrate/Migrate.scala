@@ -22,9 +22,8 @@ abstract class MigrateDB[F[_]] {
 
 object MigrateDB {
   def apply[F[_]]()(implicit mdb: MigrateDB[F]) = mdb
-  implicit def createIOMigrator[F[_]](cm: CreateMigrator[F]) = new MigrateDB[F] {
-    def up: F[Unit] = cm.up 
-    def down: F[Unit] = cm.down
-  }
-     
+  implicit def createIOMigrator(cm: CreateMigrator[IO])(implicit db: Database, cs: ContextShift[IO]) = new MigrateDB[IO] {
+    def up: IO[Unit] = IO.fromFuture(IO(db.run(cm.up)))
+    def down: IO[Unit] = IO.fromFuture(IO(db.run(cm.down)))
+  }     
 }

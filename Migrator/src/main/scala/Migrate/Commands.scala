@@ -14,4 +14,4 @@ import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.JdbcBackend.DatabaseDef
 import scala.concurrent.ExecutionContext
 
-case class CreateMigrator[F[_]](up: F[Unit], down: F[Unit])
+case class CreateMigrator[F[_]](up: DBIOAction[Unit, NoStream, Nothing], down: DBIOAction[Unit, NoStream, Nothing])
