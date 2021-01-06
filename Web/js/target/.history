@@ -1,0 +1,14 @@
+fastOptJS
+show discoveredMainClasses
+reload
+fastOptJS
+show discoveredMainClasses
+reload
+fastOptJS
+reload
+fastOptJS
+reload
+fastOptJS
+test:compile
+fastOptJS
+test:compile

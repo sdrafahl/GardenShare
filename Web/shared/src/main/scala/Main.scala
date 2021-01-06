@@ -4,10 +4,10 @@ import org.scalajs.dom.document
 import org.scalajs.dom
 import dom.document
 import scalatags.JsDom.all._
+import cats.effect.IO
 
-
-object Main {
-  def main(args: Array[String]): Unit = {
+object MainJVM {
+  def run(args: Array[String]): IO[Unit] = IO{
      val btn = button(
             "Click me",
             onclick := { () =>
@@ -23,8 +23,8 @@ object Main {
                 )
             )
 
-        val root = dom.document.getElementById("root")
-        root.innerHTML = "hiiiii"
-        root.appendChild(content.render)
-     }
+    val root = dom.document.getElementById("root")
+    root.innerHTML = ""
+    root.appendChild(content.render)
+  }
 }

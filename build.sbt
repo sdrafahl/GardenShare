@@ -66,21 +66,25 @@ lazy val root = (project in file("."))
     addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1")
   )
 
-lazy val web = (project in file("Web"))
-  .enablePlugins(ScalaJSPlugin)
+lazy val Web = crossProject(JSPlatform, JVMPlatform).in(file("Web"))
   .enablePlugins(ScalaJSBundlerPlugin)
   .settings(Seq(
-    name := "Web Interface",
-    scalaJSUseMainModuleInitializer := true,
+    name := "Web Interface",    
     version := "0.0.1-SNAPSHOT",    
     npmDependencies in Compile ++= Seq("react" -> "16.13.1", "react-dom" -> "16.13.1"),
     libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "1.1.0",
     libraryDependencies += "com.lihaoyi" %%% "scalatags" % "0.9.2",
     libraryDependencies += "org.querki" %%% "jquery-facade" % "2.0",
+    libraryDependencies += "com.github.japgolly.scalacss" %%% "ext-scalatags" % "0.6.1",
     libraryDependencies ++= commonDependencies,
-    libraryDependencies += "org.webjars" % "jquery" % "2.1.4",    
+    libraryDependencies += "org.webjars" % "jquery" % "2.1.4",        
+  )).jsSettings(
+    scalaJSUseMainModuleInitializer := true,
+    name := "web",
+    libraryDependencies += "org.typelevel" %%% "cats-core" % "2.3.0",
+    libraryDependencies += "org.typelevel" %%% "cats-effect" % "2.3.0",
     Compile / run / mainClass := Some("com.gardenShare.gardenshare.web.Main")
-  ))
+  )
 
 lazy val migratorSettings = Seq(
   name := "Migrator",
