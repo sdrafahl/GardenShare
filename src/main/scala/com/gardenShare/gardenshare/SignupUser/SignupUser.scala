@@ -16,6 +16,7 @@ import cats.syntax.flatMap._
 import cats.FlatMap
 import cats.syntax.functor._
 import cats.Functor
+import com.gardenShare.gardenshare.UserEntities.UserType
 
 abstract class SignupUser[F[_]: CogitoClient: GetUserPoolName] {
   def signupUser(email: Email, password: Password): F[SignUpResponse]

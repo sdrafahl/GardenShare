@@ -24,20 +24,17 @@ import scala.concurrent.duration._
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore
 import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
 import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream
-import com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames
 import com.gardenShare.gardenshare.Storage.S3.GetKeys
 import com.gardenShare.gardenshare.Config.GetDescriptionBucketName
 import com.gardenShare.gardenshare.Storage.Relational.InsertProduct
-import com.gardenShare.gardenshare.StoreRoutes
 import com.gardenShare.gardenshare.Storage.Relational.GetProductsByStore
-import com.gardenShare.gardenshare.ParseDescription.ParseDescriptionStream
-import com.gardenShare.gardenshare.GetProductDescription.GetproductDescription
 import com.gardenShare.gardenshare.Orders.CreateOrder
 import com.gardenShare.gardenshare.Storage.Relational.AddOrderIdToProduct
 import com.gardenShare.gardenshare.Storage.Relational.GetProductByID
 import com.gardenShare.gardenshare.Storage.Relational.GetStore._
 import com.gardenShare.gardenshare.Storage.Relational.GetStore
 import com.gardenShare.gardenshare.Storage.Relational.GetStoreByID
+import com.gardenShare.gardenshare.Storage.Relational.GetWorker
 
 object GardenshareServer {
 
@@ -54,21 +51,18 @@ object GardenshareServer {
       GetRegion:
       HttpsJwksBuilder:
       InsertStore:
-      GetNearestStores:
       GetDistance:
       GetStoresStream:
-      GetListOfProductNames:
       GetKeys:
       GetDescriptionBucketName:
       InsertProduct:
       GetProductsByStore:
-      ParseDescriptionStream:
-      GetproductDescription:
       CreateOrder:
       AddOrderIdToProduct:
       GetProductByID:
       GetStore:
-      GetStoreByID
+      GetStoreByID:
+      GetWorker
   ](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
     for {
       client <- BlazeClientBuilder[F](global).stream
@@ -79,11 +73,7 @@ object GardenshareServer {
       // in the underlying routes.
       
       httpApp = (                
-          UserRoutes.userRoutes[F]() <+>
-          StoreRoutes.storeRoutes[F]() <+>
-          ProductRoutes.productRoutes[F]() <+>
-          ProductDescription.productDescriptionRoutes[F]() <+>
-          OrderRoutes.orderRoutes[F]()
+          UserRoutes.userRoutes[F]()
       ).orNotFound      
 
       // With Middlewares in place

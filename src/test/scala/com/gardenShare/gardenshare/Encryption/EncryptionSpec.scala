@@ -2,7 +2,6 @@ package com.gardenShare.gardenshare.GetGarden
 
 import utest._
 import cats.effect.IO
-import com.gardenShare.gardenshare.CreateGarden.CreateGarden
 import com.gardenShare.gardenshare.Storage.Relational.InsertGarden
 import com.gardenShare.gardenshare.Storage.Relational.Gardens._
 import com.gardenShare.gardenshare.Storage.Relational.Plants._

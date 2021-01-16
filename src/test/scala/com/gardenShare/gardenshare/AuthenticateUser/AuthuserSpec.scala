@@ -24,8 +24,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.Authenticat
 import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import com.gardenShare.gardenshare.Config.UserPoolID
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
-import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
-import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
+import com.gardenShare.gardenshare.UserEntities._
 
 object AuthUserSpec extends TestSuite {
   val tests = Tests {

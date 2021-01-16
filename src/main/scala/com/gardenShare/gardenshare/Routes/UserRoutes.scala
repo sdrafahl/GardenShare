@@ -38,20 +38,23 @@ import com.gardenShare.gardenshare.ProcessAndJsonResponse
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
 import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
-import com.gardenShare.gardenshare.UserEntities.UserResponse
-import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
+import com.gardenShare.gardenshare.UserEntities._
+import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser.AuthUserOps
+import com.gardenShare.gardenshare.Storage.Relational.GetWorker
+
 
 object UserRoutes {
-  def userRoutes[F[_]: Async: GetTypeSafeConfig: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient]()
+  def userRoutes[F[_]: Async: GetTypeSafeConfig: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient: GetWorker]()
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
-      case POST -> Root / "user" / "signup" / email / password => {
+      case POST -> Root / "user" / "signup" / email / password / userType => {
         val emailToPass = Email(email)
         val passwordToPass = Password(password)
+        val userT = parseUserType(userType)
         val user = User(emailToPass, passwordToPass)
-
+        
         addJsonHeaders(
           ProcessData(
             user.signUp[F](),

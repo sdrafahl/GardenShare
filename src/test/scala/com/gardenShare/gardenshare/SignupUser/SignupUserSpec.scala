@@ -2,7 +2,6 @@ package com.gardenShare.gardenshare.SignupUser
 
 import utest._
 import cats.effect.IO
-import com.gardenShare.gardenshare.CreateGarden.CreateGarden
 import com.gardenShare.gardenshare.Storage.Relational.InsertGarden
 import com.gardenShare.gardenshare.Storage.Relational.Gardens._
 import com.gardenShare.gardenshare.Storage.Relational.Plants._
@@ -27,6 +26,7 @@ import com.gardenShare.gardenshare.Config.GetUserPoolName
 import com.gardenShare.gardenshare.Config.UserPoolName
 import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse
+import com.gardenShare.gardenshare.UserEntities._
 
 object SignupUserSpec extends TestSuite {
   val tests = Tests {

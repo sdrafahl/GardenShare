@@ -25,12 +25,12 @@ import scala.util.Success
 import software.amazon.awssdk.services.ecs.model.Failure
 import com.gardenShare.gardenshare.Config.GetUserPoolId
 import com.gardenShare.gardenshare.Config.GetUserPoolId._
-import com.gardenShare.gardenshare.ParseGroups.ParseGroups
-import com.gardenShare.gardenshare.ParseGroups.ParseGroups._
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.FlatMap
 import cats.Functor
+import com.gardenShare.gardenshare.ParseGroups.ParseGroups
+import com.gardenShare.gardenshare.ParseGroups.ParseGroups.ParseOps
 
 abstract class AuthJWT[F[_]] {
   def authJWT(jwt:JWTValidationTokens): F[JWTValidationResult]
