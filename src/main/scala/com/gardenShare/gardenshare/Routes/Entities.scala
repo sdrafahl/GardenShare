@@ -31,3 +31,7 @@ case class InvalidStoreIDInput()
 case class CantFindDescriptionBucketName(msg: String)
 case class NoEmail()
 case class InvalidProductId(msg: String)
+
+abstract class RoutesTypes
+case class TestingAndProductionRoutes() extends RoutesTypes
+case class OnlyProductionRoutes() extends RoutesTypes

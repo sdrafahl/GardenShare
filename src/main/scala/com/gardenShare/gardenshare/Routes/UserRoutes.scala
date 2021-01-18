@@ -49,10 +49,9 @@ object UserRoutes {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
-      case POST -> Root / "user" / "signup" / email / password / userType => {
+      case POST -> Root / "user" / "signup" / email / password => {
         val emailToPass = Email(email)
         val passwordToPass = Password(password)
-        val userT = parseUserType(userType)
         val user = User(emailToPass, passwordToPass)
         
         addJsonHeaders(

@@ -27,6 +27,8 @@ import com.gardenShare.gardenshare.Config.UserPoolName
 import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse
 import com.gardenShare.gardenshare.UserEntities._
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
+import com.gardenShare.gardenshare.Config.UserPoolID
 
 object SignupUserSpec extends TestSuite {
   val tests = Tests {
@@ -48,6 +50,7 @@ object SignupUserSpec extends TestSuite {
               def createUserPool(userPoolName: String) = ???
               def createUserPoolClient(clientName: String, userPoolId: String) = ???
               def adminCreateUser(userName: String) = ???
+              def adminDeleteUser(email: Email, userPoolId: UserPoolID): IO[AdminDeleteUserResponse] = ???
               def authUserAdmin(user: User, userPoolId: String, clientId: String): IO[AdminInitiateAuthResponse] = ???
               def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = {
                 assert(correctPassword equals Password(password))

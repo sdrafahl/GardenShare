@@ -35,6 +35,8 @@ import com.gardenShare.gardenshare.Storage.Relational.GetStore._
 import com.gardenShare.gardenshare.Storage.Relational.GetStore
 import com.gardenShare.gardenshare.Storage.Relational.GetStoreByID
 import com.gardenShare.gardenshare.Storage.Relational.GetWorker
+import com.gardenShare.gardenshare.Config.GetEnvironment
+import com.gardenShare.gardenshare.Environment.SystemEnvionment
 
 object GardenshareServer {
 
@@ -62,35 +64,40 @@ object GardenshareServer {
       GetProductByID:
       GetStore:
       GetStoreByID:
-      GetWorker
-  ](implicit T: Timer[F], C: ContextShift[F]): Stream[F, Nothing] = {
-    for {
-      client <- BlazeClientBuilder[F](global).stream
+      GetWorker:
+      GetEnvironment:
+      GetRoutesForEnv
+  ](implicit T: Timer[F], C: ContextShift[F]): F[Unit] = {
 
-      // Combine Service Routes into an HttpApp.
-      // Can also be done via a Router if you
-      // want to extract a segments not checked
-      // in the underlying routes.
+    GetEnvironment().getEnv.flatMap { sysEnv =>
+      (for {
+        client <- BlazeClientBuilder[F](global).stream
+     
+        // Combine Service Routes into an HttpApp.
+        // Can also be done via a Router if you
+        // want to extract a segments not checked
+        // in the underlying routes.
       
-      httpApp = (                
-          UserRoutes.userRoutes[F]()
-      ).orNotFound      
+        httpApp = (
+          GetRoutesForEnv().getRoutesGivenEnv(sysEnv) <+> GetRoutesForEnv().getRoutesGivenEnv(sysEnv)
+        ).orNotFound
 
-      // With Middlewares in place
-      finalHttpApp = Logger.httpApp(true, true)(httpApp)
+        // With Middlewares in place
+        finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
-      methodConfig = CORSConfig(
-        anyOrigin = true,
-        anyMethod = true,
-        allowCredentials = true,
-        maxAge = 1.day.toSeconds)
+        methodConfig = CORSConfig(
+          anyOrigin = true,
+          anyMethod = true,
+          allowCredentials = true,
+          maxAge = 1.day.toSeconds)
 
-      corsService = CORS(finalHttpApp, methodConfig)
+        corsService = CORS(finalHttpApp, methodConfig)
 
-      exitCode <- BlazeServerBuilder[F]
-        .bindHttp(8080, "0.0.0.0")      
-        .withHttpApp(corsService)       
+        exitCode <- BlazeServerBuilder[F]
+        .bindHttp(8080, "0.0.0.0")
+        .withHttpApp(corsService)
         .serve
-    } yield exitCode
-  }.drain
+      } yield exitCode).drain.compile.drain
+    }
+  }
 }
