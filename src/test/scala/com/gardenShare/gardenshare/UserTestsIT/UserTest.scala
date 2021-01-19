@@ -16,48 +16,106 @@ import utest.Tests
 object UserTestSpec extends TestSuite {
   val tests = Tests {
     test("User Routes") {
-      test("Should register a user") {
+      val testEmail = "shanedrafahl@gmail.com"
+      val testPassword = "teST12$5jljasdf"
+      test("/user/signup/shanedrafahl@gmail.com/teST12$5jljasdf") {
+        test("Should register a user") {
 
-        val testEmail = "shanedrafahl@gmail.com"
-        val testPassword = "teST12$5jljasdf"
+          UserTestsHelper.deleteUserAdmin(testEmail)
+                          
+          val responseFromCreatingUser = UserTestsHelper.createUser(testEmail, testPassword)
 
-        val uriToDeleteUser =
-          Uri.fromString(s"/user/delete/${testEmail}").toOption.get
-        val requestToDelteUser = Request[IO](Method.DELETE, uriToDeleteUser)
-
-        TestUserRoutes
-          .userRoutes[IO]
-          .orNotFound(requestToDelteUser)
-          .attempt
-          .unsafeRunSync()
-
-        val registrationArgs = s"${testEmail}/${testPassword}"
-
-        val uriArg =
-          Uri.fromString(s"/user/signup/$registrationArgs").toOption.get
-
-        val regTestReq = Request[IO](Method.POST, uriArg)
-
-        val responseFromCreatingUser = UserRoutes
-          .userRoutes[IO]
-          .orNotFound(regTestReq)
-          .unsafeRunSync()
-          .body
-          .through(text.utf8Decode)
-          .through(stringArrayParser)
-          .through(decoder[IO, UserCreationRespose])
-          .compile
-          .toList
-          .unsafeRunSync()
-          .head
-
-        val expectedUserCreatedResponse = UserCreationRespose(
-          "User Request Made: CodeDeliveryDetailsType(Destination=s***@g***.com, DeliveryMedium=EMAIL, AttributeName=email)",
-          true
-        )
-        println(responseFromCreatingUser)
-        assert(responseFromCreatingUser equals expectedUserCreatedResponse)
+          val expectedUserCreatedResponse = UserCreationRespose(
+            "User Request Made: CodeDeliveryDetailsType(Destination=s***@g***.com, DeliveryMedium=EMAIL, AttributeName=email)",
+            true
+          )
+          assert(responseFromCreatingUser equals expectedUserCreatedResponse)
+        }
+      }
+      test("/user/auth/shanedrafahl@gmail.com/teST12$5jljasdf") {
+        test("Should authenticate a valid user") {
+          UserTestsHelper.deleteUserAdmin(testEmail)
+          UserTestsHelper.adminCreateUser(testEmail, testPassword)
+          val r = UserTestsHelper.authUser(testEmail, testPassword)
+          assert(r.auth.isDefined)
+          assert(r.msg equals "jwt token is valid")
+        }
       }
     }
+  }
+}
+
+object UserTestsHelper {
+  /**
+    Do Not Use in production
+    */
+  def deleteUserAdmin(email: String) = {
+    val uriToDeleteUser =
+      Uri.fromString(s"/user/delete/${email}").toOption.get
+    val requestToDelteUser = Request[IO](Method.DELETE, uriToDeleteUser)
+
+    TestUserRoutes
+      .userRoutes[IO]
+      .orNotFound(requestToDelteUser)
+      .attempt
+      .unsafeRunSync()
+  }
+
+  def createUser(email: String, password: String) = {
+    val registrationArgs = s"${email}/${password}"
+
+    val uriArg =
+      Uri.fromString(s"/user/signup/$registrationArgs").toOption.get
+
+    val regTestReq = Request[IO](Method.POST, uriArg)
+
+    UserRoutes
+      .userRoutes[IO]
+      .orNotFound(regTestReq)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, UserCreationRespose])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def adminCreateUser(email: String, password: String) = {
+    val registrationArgs = s"${email}/${password}"
+
+    val uriArg =
+      Uri.fromString(s"/user/$registrationArgs").toOption.get
+
+    val regTestReq = Request[IO](Method.POST, uriArg)
+
+    TestUserRoutes
+      .userRoutes[IO]
+      .orNotFound(regTestReq)
+      .unsafeRunSync()
+  }
+
+  def authUser(email: String, password: String) = {
+    val registrationArgs = s"${email}/${password}"
+
+    val uriArg =
+      Uri.fromString(s"/user/auth/$registrationArgs").toOption.get
+
+    val regTestReq = Request[IO](Method.GET, uriArg)
+
+    UserRoutes
+      .userRoutes[IO]
+      .orNotFound(regTestReq)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, AuthUserResponse])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
   }
 }

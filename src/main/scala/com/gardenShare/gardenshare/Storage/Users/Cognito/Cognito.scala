@@ -46,11 +46,17 @@ import com.gardenShare.gardenshare.UserEntities.Email
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
 import com.gardenShare.gardenshare.Config.UserPoolID
+import com.gardenShare.gardenshare.UserEntities.Password
+import cats.implicits._
+import cats.FlatMap
+import com.amazonaws.auth.AnonymousAWSCredentials
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeRequest
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse
 
-abstract class CogitoClient[F[_]:GetUserPoolName:Async] {
+abstract class CogitoClient[F[_]:GetUserPoolName:Async:FlatMap] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]
   def createUserPoolClient(clientName: String, userPoolId: String): F[UserPoolClientType]
-  def adminCreateUser(userName: String): F[AdminCreateUserResponse]
+  def adminCreateUser(userName: Email, password: Password, userPoolId: UserPoolID, clientId: String): F[AdminRespondToAuthChallengeResponse]
   def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse
   def authUserAdmin(user: User, userPoolId: String, clientId: String): F[AdminInitiateAuthResponse]
   def adminDeleteUser(email: Email, userPoolId: UserPoolID): F[AdminDeleteUserResponse]
@@ -58,7 +64,7 @@ abstract class CogitoClient[F[_]:GetUserPoolName:Async] {
 
 object CogitoClient {
   implicit lazy val cognitoIdentityClient = CognitoIdentityProviderClient.builder().build()
-  def apply[F[_]:GetUserPoolName:GetTypeSafeConfig:Async]()(implicit client: CognitoIdentityProviderClient): CogitoClient[F] = new CogitoClient[F] {
+  def apply[F[_]:GetUserPoolName:GetTypeSafeConfig:Async:FlatMap]()(implicit client: CognitoIdentityProviderClient): CogitoClient[F] = new CogitoClient[F] {
     def createUserPool(userPoolName: String) = {
     Async[F].async { (cb: Either[Throwable, CreateUserPoolResponse] => Unit) =>
       val response = Try(client.createUserPool(
@@ -88,19 +94,46 @@ object CogitoClient {
     }
   }
 
-  def adminCreateUser(userName: String) = {
-    Async[F].async { (cb: Either[Throwable, AdminCreateUserResponse] => Unit) =>
-      val maybeResponse = Try(client.adminCreateUser(
-        AdminCreateUserRequest
-          .builder()
-          .username(userName)
-          .desiredDeliveryMediums(EMAIL)
-          .build()))
-      maybeResponse match {
-        case Success(resp) => cb(Right(resp))
-        case Failure(error) => cb(Left(error))
+    def adminCreateUser(userName: Email, password: Password, userPoolId: UserPoolID, clientId: String) = {
+
+      val tempPassword = "tempPassword123$$"
+
+      val userCreated = Async[F].async { (cb: Either[Throwable, AdminCreateUserResponse] => Unit) =>
+        
+
+        val maybeResponse = Try(client.adminCreateUser(        
+          AdminCreateUserRequest
+            .builder()
+            .username(userName.underlying)
+            .userPoolId(userPoolId.id)
+            .temporaryPassword(tempPassword)
+            .build()))
+
+        maybeResponse match {
+          case Success(resp) => cb(Right(resp))
+          case Failure(error) => cb(Left(error))
+        }
       }
-    }
+      userCreated.flatMap{adminResp =>
+        authUserAdmin(User(userName, Password(tempPassword)), userPoolId.id, clientId).flatMap{authResp =>
+
+          val chngPassRequest = AdminRespondToAuthChallengeRequest
+            .builder()
+            .challengeName("NEW_PASSWORD_REQUIRED")
+            .challengeResponses(Map(
+              "NEW_PASSWORD" -> password.underlying,
+              "USERNAME" -> userName.underlying
+            ).asJava)
+            .clientId(clientId)
+            .userPoolId(userPoolId.id)
+            .session(authResp.session())
+            .build()
+
+          Async[F].async { cb: (Either[Throwable, AdminRespondToAuthChallengeResponse] => Unit) =>
+            cb(Try(client.adminRespondToAuthChallenge(chngPassRequest)).toEither)
+          }
+        }
+      }
   }
 
   def createUser(password: String, email: String, userPoolName:UserPoolName) = {   
@@ -144,7 +177,7 @@ object CogitoClient {
       val params = Map(
           "USERNAME" -> user.email.underlying,
           "PASSWORD" -> user.password.underlying
-      ).asJava
+      ).asJava    
 
       val request = AdminInitiateAuthRequest
         .builder()
@@ -158,17 +191,18 @@ object CogitoClient {
         cb(Try(client.adminInitiateAuth(request)).toEither)
       }
   }
-    def adminDeleteUser(email: Email, userPoolId: UserPoolID): F[AdminDeleteUserResponse] = {
-      val request = AdminDeleteUserRequest
-        .builder()
-        .userPoolId(userPoolId.id)
-        .username(email.underlying)
-        .build()
 
-      Async[F].async { cb =>
-        cb(Try(client.adminDeleteUser(request)).toEither)
-      }
+  def adminDeleteUser(email: Email, userPoolId: UserPoolID): F[AdminDeleteUserResponse] = {
+    val request = AdminDeleteUserRequest
+      .builder()
+      .userPoolId(userPoolId.id)
+      .username(email.underlying)
+      .build()
+
+    Async[F].async { cb =>
+      cb(Try(client.adminDeleteUser(request)).toEither)
     }
+  }
 
   }
   implicit lazy val defaultCognitoClient: CogitoClient[IO] = CogitoClient[IO]()

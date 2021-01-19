@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitia
 import com.gardenShare.gardenshare.UserEntities._
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
 import com.gardenShare.gardenshare.Config.UserPoolID
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse
 
 object SignupUserSpec extends TestSuite {
   val tests = Tests {
@@ -49,7 +50,7 @@ object SignupUserSpec extends TestSuite {
             implicit val mockCognitoClient = new CogitoClient[IO] {
               def createUserPool(userPoolName: String) = ???
               def createUserPoolClient(clientName: String, userPoolId: String) = ???
-              def adminCreateUser(userName: String) = ???
+              def adminCreateUser(userName: Email, password: Password, userPoolId: UserPoolID, clientId: String): IO[AdminRespondToAuthChallengeResponse] = ???
               def adminDeleteUser(email: Email, userPoolId: UserPoolID): IO[AdminDeleteUserResponse] = ???
               def authUserAdmin(user: User, userPoolId: String, clientId: String): IO[AdminInitiateAuthResponse] = ???
               def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = {
