@@ -34,8 +34,8 @@ object WorkerRoutes {
           .map{jwtToken =>
             jwtToken.auth.map {
               case InvalidToken(msg) => Left(InvalidToken(msg).asJson.toString())
-              case ValidToken(None, _) => Left(InvalidToken(s"Token is valid but without email").asJson.toString())
-              case ValidToken(Some(email), g) => {
+              case ValidToken(None) => Left(InvalidToken(s"Token is valid but without email").asJson.toString())
+              case ValidToken(Some(email)) => {
                 Right(ProcessData(
                   CreateWorker().createWorker(Email(email)),
                   (response: CreateWorkerResponse) => response,

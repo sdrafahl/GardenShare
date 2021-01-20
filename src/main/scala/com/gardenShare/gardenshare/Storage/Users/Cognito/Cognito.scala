@@ -39,8 +39,6 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AddCustomAt
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SchemaAttributeType
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeDataType
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest
-import com.gardenShare.gardenshare.UserEntities.Group
-import com.gardenShare.gardenshare.UserEntities.Seller
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse
 import com.gardenShare.gardenshare.UserEntities.Email
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserRequest
@@ -147,16 +145,14 @@ object CogitoClient {
       )
   }
 
-    def addUserToGroup(email: String, userPoolName:UserPoolName, group: Group): F[AdminAddUserToGroupResponse] = {
+    def addUserToGroup(email: String, userPoolName:UserPoolName): F[AdminAddUserToGroupResponse] = {
       val userRequest = AdminGetUserRequest
         .builder()
         .userPoolId(userPoolName.name)
         .username(email)
         .build()
       Async[F].async {cb =>
-        group match {
-        case Seller() => {          
-          val req = AdminAddUserToGroupRequest
+        val req = AdminAddUserToGroupRequest
             .builder()
             .groupName("Sellers")
             .username(email)
@@ -164,11 +160,6 @@ object CogitoClient {
             .build()
 
           cb(Try(client.adminAddUserToGroup(req)).toEither) 
-        }
-        case _ => {
-          cb(Left(new Throwable("Group Not Implemented")))
-        }
-        }
       }
     }
 

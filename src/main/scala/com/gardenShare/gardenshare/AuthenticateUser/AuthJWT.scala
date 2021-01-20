@@ -29,8 +29,6 @@ import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.FlatMap
 import cats.Functor
-import com.gardenShare.gardenshare.ParseGroups.ParseGroups
-import com.gardenShare.gardenshare.ParseGroups.ParseGroups.ParseOps
 
 abstract class AuthJWT[F[_]] {
   def authJWT(jwt:JWTValidationTokens): F[JWTValidationResult]
@@ -60,20 +58,17 @@ object AuthJWT {
 
 
 abstract class JoseProcessJwt {
-  def processJwt(c: JwtConsumer, jwt:JWTValidationTokens)(implicit parseGroups: ParseGroups): JWTValidationResult  
+  def processJwt(c: JwtConsumer, jwt:JWTValidationTokens): JWTValidationResult  
 }
 
 object JoseProcessJwt {
   implicit def apply() = default
   implicit object default extends JoseProcessJwt {
-    def processJwt(c: JwtConsumer, jwt:JWTValidationTokens)(implicit parseGroups: ParseGroups): JWTValidationResult = {
+    def processJwt(c: JwtConsumer, jwt:JWTValidationTokens): JWTValidationResult = {
       Try(c.processToClaims(jwt.idToken)).fold (        
         err => InvalidToken(""),
         claim => {
-          val groups = claim
-            .getClaimValueAsString("cognito:groups")
-            .parseGroups
-          ValidToken(Option(claim.getClaimValueAsString("email")), groups)
+          ValidToken(Option(claim.getClaimValueAsString("email")))
         }
       )
     }

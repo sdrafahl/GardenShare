@@ -1,7 +1,6 @@
 package com.gardenShare.gardenshare
 
 import com.gardenShare.gardenshare.UserEntities.AuthenticatedUser
-import com.gardenShare.gardenshare.UserEntities.Group
 import com.gardenShare.gardenshare.domain.Store.Store
 
 case class ResponseBody(msg: String)
@@ -13,9 +12,7 @@ case class AuthUserResponse(
 )
 case class IsJwtValidResponse(
   msg: String,
-  valid: Boolean,
-      groups: List[Group]
-  )  
+  valid: Boolean)  
 
 case class NoJWTTokenProvided()
 case class StoresAdded(store: List[Store])

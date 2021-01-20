@@ -20,11 +20,8 @@ object UserTestSpec extends TestSuite {
       val testPassword = "teST12$5jljasdf"
       test("/user/signup/shanedrafahl@gmail.com/teST12$5jljasdf") {
         test("Should register a user") {
-
-          UserTestsHelper.deleteUserAdmin(testEmail)
-                          
+          UserTestsHelper.deleteUserAdmin(testEmail)                          
           val responseFromCreatingUser = UserTestsHelper.createUser(testEmail, testPassword)
-
           val expectedUserCreatedResponse = UserCreationRespose(
             "User Request Made: CodeDeliveryDetailsType(Destination=s***@g***.com, DeliveryMedium=EMAIL, AttributeName=email)",
             true
@@ -39,6 +36,16 @@ object UserTestSpec extends TestSuite {
           val r = UserTestsHelper.authUser(testEmail, testPassword)
           assert(r.auth.isDefined)
           assert(r.msg equals "jwt token is valid")
+        }
+      }
+      test("/user/jwt/") {
+        test("Should authenticate a value JWT token") {
+          UserTestsHelper.deleteUserAdmin(testEmail)
+          UserTestsHelper.adminCreateUser(testEmail, testPassword)
+          val r = UserTestsHelper.authUser(testEmail, testPassword)
+          val jwtToken = r.auth.get.jwt
+          val authResponse = UserTestsHelper.authToken(jwtToken)
+          assert(authResponse.msg equals "Token is valid")
         }
       }
     }
@@ -113,6 +120,25 @@ object UserTestsHelper {
       .through(text.utf8Decode)
       .through(stringArrayParser)
       .through(decoder[IO, AuthUserResponse])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def authToken(jwtToken: String) = {
+    val uriArg = Uri.fromString(s"/user/jwt/${jwtToken}").toOption.get
+
+    val authRequest = Request[IO](Method.GET, uriArg)
+
+    UserRoutes
+      .userRoutes[IO]
+      .orNotFound(authRequest)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, IsJwtValidResponse])
       .compile
       .toList
       .unsafeRunSync()

@@ -93,10 +93,10 @@ object UserRoutes {
           ProcessData(
             JWTValidationTokens(jwtToken).auth[F],
             (jwtR:JWTValidationResult) => jwtR match {
-              case ValidToken(email, userGroups) => IsJwtValidResponse("Token is valid", true, userGroups)
-              case InvalidToken(msg) => IsJwtValidResponse("Token is not valid", false, List())
+              case ValidToken(email) => IsJwtValidResponse("Token is valid", true)
+              case InvalidToken(msg) => IsJwtValidResponse("Token is not valid", false)
             },
-            (error:Throwable) => IsJwtValidResponse(s"Error occured: ${error}", false, List())
+            (error:Throwable) => IsJwtValidResponse(s"Error occured: ${error}", false)
           )
             .process
             .flatMap(js => Ok(js.toString()))

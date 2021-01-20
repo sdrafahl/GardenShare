@@ -10,10 +10,7 @@ case class FailedToAuthenticate(msg: String) extends UserResponse
 abstract class JWTValidationResult
 case class InvalidToken(msg: String) extends JWTValidationResult
 
-abstract class Group
-case class Seller() extends Group
-
-case class ValidToken(email: Option[String], groups: List[Group]) extends JWTValidationResult
+case class ValidToken(email: Option[String]) extends JWTValidationResult
 case class JWTValidationTokens(idToken: String)
 
 abstract class UserType
