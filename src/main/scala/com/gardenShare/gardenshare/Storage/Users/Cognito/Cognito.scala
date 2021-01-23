@@ -39,9 +39,12 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AddCustomAt
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SchemaAttributeType
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeDataType
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest
-import com.gardenShare.gardenshare.UserEntities.Group
-import com.gardenShare.gardenshare.UserEntities.Seller
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse
+import com.gardenShare.gardenshare.UserEntities.Email
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserRequest
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
+import com.gardenShare.gardenshare.Config.UserPoolID
+import com.gardenShare.gardenshare.UserEntities._
 
 abstract class CogitoClient[F[_]:GetUserPoolName:Async] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]
@@ -49,6 +52,8 @@ abstract class CogitoClient[F[_]:GetUserPoolName:Async] {
   def adminCreateUser(userName: String): F[AdminCreateUserResponse]
   def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse
   def authUserAdmin(user: User, userPoolId: String, clientId: String): F[AdminInitiateAuthResponse]
+  def adminDeleteUser(email: Email, userPoolId: UserPoolID): F[AdminDeleteUserResponse]
+  def addUserToGroup(email: String, userPoolName:UserPoolName, group: UserType): F[AdminAddUserToGroupResponse]
 }
 
 object CogitoClient {
@@ -109,7 +114,7 @@ object CogitoClient {
       )
   }
 
-    def addUserToGroup(email: String, userPoolName:UserPoolName, group: Group): F[AdminAddUserToGroupResponse] = {
+    def addUserToGroup(email: String, userPoolName:UserPoolName, group: UserType): F[AdminAddUserToGroupResponse] = {
       val userRequest = AdminGetUserRequest
         .builder()
         .userPoolId(userPoolName.name)
@@ -152,7 +157,19 @@ object CogitoClient {
       Async[F].async { cb =>
         cb(Try(client.adminInitiateAuth(request)).toEither)
       }
+  }
+    def adminDeleteUser(email: Email, userPoolId: UserPoolID): F[AdminDeleteUserResponse] = {
+      val request = AdminDeleteUserRequest
+        .builder()
+        .userPoolId(userPoolId.id)
+        .username(email.underlying)
+        .build()
+
+      Async[F].async { cb =>
+        cb(Try(client.adminDeleteUser(request)).toEither)
+      }
     }
+
   }
   implicit lazy val defaultCognitoClient: CogitoClient[IO] = CogitoClient[IO]()
 }

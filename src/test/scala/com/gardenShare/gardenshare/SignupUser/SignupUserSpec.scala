@@ -2,7 +2,6 @@ package com.gardenShare.gardenshare.SignupUser
 
 import utest._
 import cats.effect.IO
-import com.gardenShare.gardenshare.CreateGarden.CreateGarden
 import com.gardenShare.gardenshare.Storage.Relational.InsertGarden
 import com.gardenShare.gardenshare.Storage.Relational.Gardens._
 import com.gardenShare.gardenshare.Storage.Relational.Plants._
@@ -27,6 +26,10 @@ import com.gardenShare.gardenshare.Config.GetUserPoolName
 import com.gardenShare.gardenshare.Config.UserPoolName
 import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse
+import com.gardenShare.gardenshare.UserEntities._
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
+import com.gardenShare.gardenshare.Config.UserPoolID
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse
 
 object SignupUserSpec extends TestSuite {
   val tests = Tests {
@@ -48,6 +51,8 @@ object SignupUserSpec extends TestSuite {
               def createUserPool(userPoolName: String) = ???
               def createUserPoolClient(clientName: String, userPoolId: String) = ???
               def adminCreateUser(userName: String) = ???
+              def addUserToGroup(email: String, userPoolName: com.gardenShare.gardenshare.Config.UserPoolName, group: com.gardenShare.gardenshare.UserEntities.UserType): IO[AdminAddUserToGroupResponse] = ???
+              def adminDeleteUser(email: Email, userPoolId: UserPoolID): IO[AdminDeleteUserResponse] = ???
               def authUserAdmin(user: User, userPoolId: String, clientId: String): IO[AdminInitiateAuthResponse] = ???
               def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = {
                 assert(correctPassword equals Password(password))

@@ -48,7 +48,7 @@ object StoreRoutes {
             .map{resultOfValidation =>
               resultOfValidation.flatMap{
                 case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-                case ValidToken(Some(email), _) => {
+                case ValidToken(Some(email)) => {
                   val addressOfSeller = Address(address)
                   val emailOfSeller = Email(email)
                   val request = CreateStoreRequest(addressOfSeller, Email(email))
@@ -60,7 +60,7 @@ object StoreRoutes {
                   ).process
 
                 }
-                case ValidToken(None, _) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+                case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
               }
             }
             .left
@@ -84,8 +84,8 @@ object StoreRoutes {
               .map{resultOfValidation =>
                 resultOfValidation.flatMap{
                   case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-                  case ValidToken(None, _) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-                  case ValidToken(Some(email), _) => {
+                  case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+                  case ValidToken(Some(email)) => {
                     ProcessData(
                       GetNearestStore(Distance(range), limit, Address(address)).nearest,
                       (lst: List[Store]) => StoresAdded(lst),

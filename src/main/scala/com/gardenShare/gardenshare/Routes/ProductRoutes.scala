@@ -52,7 +52,7 @@ object ProductRoutes {
             jwtToken.auth.map {
               case InvalidToken(msg) =>
                 Left(Ok(InvalidToken(msg).asJson.toString()))
-              case ValidToken(e, g) =>
+              case ValidToken(e) =>
                 Right {
                   GetListOfProductNames().getListOfProducts.map {
                     (f: List[DescriptionName]) =>
@@ -138,7 +138,7 @@ object ProductRoutes {
             token.map(_.auth).flatMap {
               case InvalidToken(msg) =>
                 Left(Ok(InvalidToken(msg).asJson.toString()))
-              case ValidToken(maybeEmail, groups) => {
+              case ValidToken(maybeEmail) => {
                 Right(
                   getProducts
                     .getProductsByStore(id)

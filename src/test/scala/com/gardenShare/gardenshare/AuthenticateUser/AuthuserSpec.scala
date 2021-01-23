@@ -24,8 +24,9 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.Authenticat
 import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import com.gardenShare.gardenshare.Config.UserPoolID
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
-import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
-import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
+import com.gardenShare.gardenshare.UserEntities._
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse
 
 object AuthUserSpec extends TestSuite {
   val tests = Tests {
@@ -50,7 +51,9 @@ object AuthUserSpec extends TestSuite {
               def createUserPool(userPoolName: String): IO[CreateUserPoolResponse] = ???
               def createUserPoolClient(clientName: String, userPoolId: String): IO[UserPoolClientType] = ???
               def adminCreateUser(userName: String): IO[AdminCreateUserResponse] = ???
+              def addUserToGroup(email: String, userPoolName: com.gardenShare.gardenshare.Config.UserPoolName, group: com.gardenShare.gardenshare.UserEntities.UserType): IO[AdminAddUserToGroupResponse] = ???
               def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = ???
+              def adminDeleteUser(email: Email, userPoolId: UserPoolID): IO[AdminDeleteUserResponse] = ???
               def authUserAdmin(user: User, userPoolId: String, clientId: String): IO[AdminInitiateAuthResponse] = {
                 (user, userPoolId, clientId) match {
                   case (User(Email("test@email.com"), Password("Password123$")), "idToken", "clientId") => {

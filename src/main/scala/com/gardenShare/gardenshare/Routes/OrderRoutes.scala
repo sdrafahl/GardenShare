@@ -74,8 +74,8 @@ object OrderRoutes {
           .map{a => a.auth}
           .map(_.map{
             case InvalidToken(msg) => Left(Ok(InvalidToken(msg).asJson.toString()))
-            case ValidToken(None, _) => Left(Ok(NoEmail().asJson.toString()))
-            case ValidToken(Some(email), groups) => {
+            case ValidToken(None) => Left(Ok(NoEmail().asJson.toString()))
+            case ValidToken(Some(email)) => {
               Right(Ok(for {
                 prodIds <- maybeProductId
                 af <- CreateOrderCommand(prodIds).create
