@@ -10,7 +10,6 @@ import com.gardenShare.gardenshare.UserEntities._
 import scala.jdk.OptionConverters._
 import com.gardenShare.gardenshare.Config.GetUserPoolName
 import com.gardenShare.gardenshare.Config.GetUserPoolId
-import scala.util.Try
 
 abstract class AuthUser[F[_]] {
   def authTheUser(user: User)(implicit client: CogitoClient[F], getUserPoolName:GetUserPoolName[F], getUserPoolId: GetUserPoolId[F]): F[UserResponse]
@@ -20,7 +19,7 @@ object AuthUser {
   implicit def apply[F[_]:AuthUser]() = implicitly[AuthUser[F]]
   implicit object IOAuthUser extends AuthUser[IO] {
     def authTheUser(user: User)(implicit client: CogitoClient[IO], getUserPoolName:GetUserPoolName[IO], getUserPoolId: GetUserPoolId[IO]): IO[UserResponse] = {
-     for {
+      for {
         clientId <- getUserPoolName.exec()
         userPoolId <- getUserPoolId.exec()
         resp <- client.authUserAdmin(user, userPoolId.id, clientId.name).attempt
@@ -34,7 +33,7 @@ object AuthUser {
             FailedToAuthenticate(s"Error: ${err.getMessage()}")
           }
         }
-     }
+      }
     }
   }
 

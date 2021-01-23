@@ -23,7 +23,7 @@ import scala.io.Source
 import org.apache.commons.codec.binary.Base64
 import com.gardenShare.gardenshare.domain.S3.BucketN
 import eu.timepit.refined.types.string.NonEmptyString
-import com.gardenShare.gardenshare.Environment._
+
 
 abstract class GetTypeSafeConfig[F[_]:Functor] {
   def get(key: String): F[String]
@@ -251,21 +251,3 @@ object GetDescriptionBucketName {
     }      
   }
 }
-
-abstract class GetEnvironment[F[_]] {
-  def getEnv: F[SystemEnvionment]
-}
-
-object GetEnvironment {
-  def apply[F[_]: GetEnvironment]() = implicitly[GetEnvironment[F]]
-
-  implicit def createIOGetEnvironment(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]) = new GetEnvironment[IO] {
-    def getEnv: IO[SystemEnvionment] = for {
-      envName <- getTypeSafeConfig.get("environment.name")      
-    } yield envName match {
-      case "testing" => Testing()
-      case "production" => Production()
-    }
-  }
-}
-

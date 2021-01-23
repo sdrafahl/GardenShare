@@ -2,8 +2,6 @@ val Http4sVersion = "0.21.3"
 val CirceVersion = "0.13.0"
 val Specs2Version = "4.9.3"
 val LogbackVersion = "1.2.3"
-val MunitVersion = "0.7.20"
-val MunitCatsEffectVersion = "0.12.0"
 
 resolvers += "Sonatype OSS Release Repository" at "https://oss.sonatype.org/content/repositories/releases/"
 resolvers += Resolver.mavenLocal
@@ -51,9 +49,7 @@ lazy val commonDependencies = Seq(
       "io.laserdisc" %% "fs2-aws-s3" % "3.0.2",
       "eu.timepit" %% "refined" % "0.9.17",
       "com.typesafe.akka" %% "akka-http-core" % "10.2.1",
-      "com.typesafe.akka" %% "akka-stream" % "2.6.8",
-      "org.scalameta"   %% "munit"               % MunitVersion           % Test,
-      "org.typelevel"   %% "munit-cats-effect-2" % MunitCatsEffectVersion % Test
+      "com.typesafe.akka" %% "akka-stream" % "2.6.8"
     )
 
 lazy val root = (project in file("."))
