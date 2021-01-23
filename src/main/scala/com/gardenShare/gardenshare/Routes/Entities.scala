@@ -1,6 +1,7 @@
 package com.gardenShare.gardenshare
 
 import com.gardenShare.gardenshare.UserEntities.AuthenticatedUser
+import com.gardenShare.gardenshare.UserEntities.Group
 import com.gardenShare.gardenshare.domain.Store.Store
 
 case class ResponseBody(msg: String)
@@ -12,7 +13,9 @@ case class AuthUserResponse(
 )
 case class IsJwtValidResponse(
   msg: String,
-  valid: Boolean)  
+  valid: Boolean,
+      groups: List[Group]
+  )  
 
 case class NoJWTTokenProvided()
 case class StoresAdded(store: List[Store])
@@ -28,7 +31,3 @@ case class InvalidStoreIDInput()
 case class CantFindDescriptionBucketName(msg: String)
 case class NoEmail()
 case class InvalidProductId(msg: String)
-
-abstract class RoutesTypes
-case class TestingAndProductionRoutes() extends RoutesTypes
-case class OnlyProductionRoutes() extends RoutesTypes

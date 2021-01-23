@@ -13,7 +13,6 @@ import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT.AuthJwtOps
 import com.gardenShare.gardenshare.UserEntities.ValidToken
 import cats.Functor
 import cats.syntax.functor
-import com.gardenShare.gardenshare.UserEntities._
 
 object Helpers {
   def parseJWTokenFromRequest[F[_]: Functor](req: Request[F]) = {
@@ -31,12 +30,6 @@ object Helpers {
         Header.apply("Content-Type", "application/json")
       )
     ))
-  }
-
-  def parseUserType(u: String): UserType = u match {
-    case "Worker" => Worker()
-    case "Requester" => Requester()
-    case _ => InvalidType()
   }
 }
 
