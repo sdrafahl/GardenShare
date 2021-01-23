@@ -38,11 +38,13 @@ import com.gardenShare.gardenshare.ProcessAndJsonResponse
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
 import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
-import com.gardenShare.gardenshare.UserEntities.UserResponse
-import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
+import com.gardenShare.gardenshare.UserEntities._
+import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser.AuthUserOps
+import com.gardenShare.gardenshare.Storage.Relational.GetWorker
+
 
 object UserRoutes {
-  def userRoutes[F[_]: Async: GetTypeSafeConfig: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient]()
+  def userRoutes[F[_]: Async: GetTypeSafeConfig: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient: GetWorker]()
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -51,7 +53,7 @@ object UserRoutes {
         val emailToPass = Email(email)
         val passwordToPass = Password(password)
         val user = User(emailToPass, passwordToPass)
-
+        
         addJsonHeaders(
           ProcessData(
             user.signUp[F](),
@@ -91,10 +93,10 @@ object UserRoutes {
           ProcessData(
             JWTValidationTokens(jwtToken).auth[F],
             (jwtR:JWTValidationResult) => jwtR match {
-              case ValidToken(email, userGroups) => IsJwtValidResponse("Token is valid", true, userGroups)
-              case InvalidToken(msg) => IsJwtValidResponse("Token is not valid", false, List())
+              case ValidToken(email) => IsJwtValidResponse("Token is valid", true)
+              case InvalidToken(msg) => IsJwtValidResponse("Token is not valid", false)
             },
-            (error:Throwable) => IsJwtValidResponse(s"Error occured: ${error}", false, List())
+            (error:Throwable) => IsJwtValidResponse(s"Error occured: ${error}", false)
           )
             .process
             .flatMap(js => Ok(js.toString()))
