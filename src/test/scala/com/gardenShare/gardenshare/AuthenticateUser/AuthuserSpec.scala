@@ -27,6 +27,7 @@ import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
 import com.gardenShare.gardenshare.UserEntities._
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse
 
 object AuthUserSpec extends TestSuite {
   val tests = Tests {
@@ -50,7 +51,7 @@ object AuthUserSpec extends TestSuite {
             implicit val testCognitoClient = new CogitoClient[IO] {
               def createUserPool(userPoolName: String): IO[CreateUserPoolResponse] = ???
               def createUserPoolClient(clientName: String, userPoolId: String): IO[UserPoolClientType] = ???
-              def adminCreateUser(userName: String): IO[AdminCreateUserResponse] = ???
+              def adminCreateUser(userName: Email, password: Password, userPoolId: UserPoolID, clientId: String): IO[AdminRespondToAuthChallengeResponse] = ???
               def addUserToGroup(email: String, userPoolName: com.gardenShare.gardenshare.Config.UserPoolName, group: com.gardenShare.gardenshare.UserEntities.UserType): IO[AdminAddUserToGroupResponse] = ???
               def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = ???
               def adminDeleteUser(email: Email, userPoolId: UserPoolID): IO[AdminDeleteUserResponse] = ???
