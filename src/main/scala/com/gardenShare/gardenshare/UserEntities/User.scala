@@ -14,10 +14,11 @@ case class ValidToken(email: Option[String]) extends JWTValidationResult
 case class JWTValidationTokens(idToken: String)
 
 abstract class UserType
-case class Requester() extends UserType
-case class Seller() extends UserType
+object Requester extends UserType
+object Sellers extends UserType
 case object InvalidType extends UserType
 
 abstract class CreateWorkerResponse
 case class WorkerCreatedSuccessfully() extends CreateWorkerResponse
 case class WorkerFailedToCreate(msg: String) extends CreateWorkerResponse 
+

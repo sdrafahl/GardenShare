@@ -55,6 +55,7 @@ object AuthUserSpec extends TestSuite {
               def addUserToGroup(email: String, userPoolName: com.gardenShare.gardenshare.Config.UserPoolName, group: com.gardenShare.gardenshare.UserEntities.UserType): IO[AdminAddUserToGroupResponse] = ???
               def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = ???
               def adminDeleteUser(email: Email, userPoolId: UserPoolID): IO[AdminDeleteUserResponse] = ???
+              def addUserToGroup(email: String, userPoolName:UserPoolName, usertype: String): IO[AdminAddUserToGroupResponse] = ???
               def authUserAdmin(user: User, userPoolId: String, clientId: String): IO[AdminInitiateAuthResponse] = {
                 (user, userPoolId, clientId) match {
                   case (User(Email("test@email.com"), Password("Password123$")), "idToken", "clientId") => {

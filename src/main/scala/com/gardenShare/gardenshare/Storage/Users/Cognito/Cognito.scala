@@ -50,6 +50,8 @@ import cats.FlatMap
 import com.amazonaws.auth.AnonymousAWSCredentials
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse
+import com.gardenShare.gardenshare.UserEntities.UserType
+import com.gardenShare.gardenshare.UserEntities.InvalidType
 
 abstract class CogitoClient[F[_]:GetUserPoolName:Async:FlatMap] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]
@@ -58,6 +60,7 @@ abstract class CogitoClient[F[_]:GetUserPoolName:Async:FlatMap] {
   def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse
   def authUserAdmin(user: User, userPoolId: String, clientId: String): F[AdminInitiateAuthResponse]
   def adminDeleteUser(email: Email, userPoolId: UserPoolID): F[AdminDeleteUserResponse]
+  def addUserToGroup(email: String, userPoolName:UserPoolName, usertype: String): F[AdminAddUserToGroupResponse]
 }
 
 object CogitoClient {
@@ -145,21 +148,15 @@ object CogitoClient {
       )
   }
 
-    def addUserToGroup(email: String, userPoolName:UserPoolName): F[AdminAddUserToGroupResponse] = {
-      val userRequest = AdminGetUserRequest
-        .builder()
-        .userPoolId(userPoolName.name)
-        .username(email)
-        .build()
+    def addUserToGroup(email: String, userPoolName:UserPoolName, usertype: String): F[AdminAddUserToGroupResponse] = {
       Async[F].async {cb =>
         val req = AdminAddUserToGroupRequest
-            .builder()
-            .groupName("Sellers")
-            .username(email)
-            .userPoolId(userPoolName.name)
-            .build()
-
-          cb(Try(client.adminAddUserToGroup(req)).toEither) 
+          .builder()
+          .groupName(usertype)
+          .username(email)
+          .userPoolId(userPoolName.name)
+          .build()
+        cb(Try(client.adminAddUserToGroup(req)).toEither)
       }
     }
 
@@ -168,15 +165,16 @@ object CogitoClient {
       val params = Map(
           "USERNAME" -> user.email.underlying,
           "PASSWORD" -> user.password.underlying
-      ).asJava    
+      ).asJava
 
-      val request = AdminInitiateAuthRequest
-        .builder()
-        .authFlow(ADMIN_NO_SRP_AUTH)
-        .authParameters(params)
-        .userPoolId(userPoolId)
-        .clientId(clientId)
-        .build()
+
+    val request = AdminInitiateAuthRequest
+      .builder()
+      .authFlow(ADMIN_NO_SRP_AUTH)
+      .authParameters(params)
+      .userPoolId(userPoolId)
+      .clientId(clientId)
+      .build()
 
       Async[F].async { cb =>
         cb(Try(client.adminInitiateAuth(request)).toEither)

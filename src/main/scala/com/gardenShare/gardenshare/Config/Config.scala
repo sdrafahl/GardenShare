@@ -87,7 +87,7 @@ abstract class GetUserPoolName[F[_]: GetTypeSafeConfig:Functor] {
 }
 
 object GetUserPoolName {
-  implicit def apply[F[_]: GetUserPoolName]() = implicitly[GetUserPoolName[F]]
+  def apply[F[_]: GetUserPoolName]() = implicitly[GetUserPoolName[F]]
   implicit object IOGetUserPoolName extends GetUserPoolName[IO] {
 
     def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO] = GetTypeSafeConfig[IO]): IO[UserPoolName] = {

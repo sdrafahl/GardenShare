@@ -54,6 +54,7 @@ object SignupUserSpec extends TestSuite {
               def adminCreateUser(userName: Email, password: Password, userPoolId: UserPoolID, clientId: String): IO[AdminRespondToAuthChallengeResponse] = ???
               def addUserToGroup(email: String, userPoolName: com.gardenShare.gardenshare.Config.UserPoolName, group: com.gardenShare.gardenshare.UserEntities.UserType): IO[AdminAddUserToGroupResponse] = ???
               def adminDeleteUser(email: Email, userPoolId: UserPoolID): IO[AdminDeleteUserResponse] = ???
+              def addUserToGroup(email: String, userPoolName:UserPoolName, usertype: String): IO[AdminAddUserToGroupResponse] = ???
               def authUserAdmin(user: User, userPoolId: String, clientId: String): IO[AdminInitiateAuthResponse] = ???
               def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = {
                 assert(correctPassword equals Password(password))

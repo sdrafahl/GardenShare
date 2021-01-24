@@ -40,9 +40,12 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRespo
 import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
 import com.gardenShare.gardenshare.UserEntities.UserResponse
 import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
+import cats.Applicative
+import com.gardenShare.gardenshare.UserEntities.Sellers
+import com.gardenShare.gardenshare.domain._
 
 object UserRoutes {
-  def userRoutes[F[_]: Async: GetTypeSafeConfig: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient]()
+  def userRoutes[F[_]: Async: GetTypeSafeConfig: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller]()
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -99,6 +102,25 @@ object UserRoutes {
             .process
             .flatMap(js => Ok(js.toString()))
         )
+      }
+      case req @ POST -> Root / "user" / "apply-to-become-seller" => {
+        parseJWTokenFromRequest(req)
+          .map(_.auth)
+          .map{
+            case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
+            case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+            case ValidToken(Some(email)) => {
+              ProcessData(
+                implicitly[ApplyUserToBecomeSeller[F]].applyUser(Email(email), Sellers),
+                (_: Unit) => SellerRequestSuccessful(),
+                (err:Throwable) => SellerRequestFailed(err.getMessage())
+              )
+                .process
+            }
+          }
+          .left.map(noValidJwt => Ok(noValidJwt.asJson.toString()))
+          .map(_.flatMap(js => Ok(js.toString())))
+          .fold(a => a, b => b)
       }
     }
   }
