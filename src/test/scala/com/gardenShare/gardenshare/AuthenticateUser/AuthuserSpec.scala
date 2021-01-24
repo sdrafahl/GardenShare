@@ -28,6 +28,7 @@ import com.gardenShare.gardenshare.UserEntities._
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserResponse
 
 object AuthUserSpec extends TestSuite {
   val tests = Tests {
@@ -52,10 +53,11 @@ object AuthUserSpec extends TestSuite {
               def createUserPool(userPoolName: String): IO[CreateUserPoolResponse] = ???
               def createUserPoolClient(clientName: String, userPoolId: String): IO[UserPoolClientType] = ???
               def adminCreateUser(userName: Email, password: Password, userPoolId: UserPoolID, clientId: String): IO[AdminRespondToAuthChallengeResponse] = ???
-              def addUserToGroup(email: String, userPoolName: com.gardenShare.gardenshare.Config.UserPoolName, group: com.gardenShare.gardenshare.UserEntities.UserType): IO[AdminAddUserToGroupResponse] = ???
+              def addUserToGroup(email: String, userPoolId: UserPoolID, group: com.gardenShare.gardenshare.UserEntities.UserType): IO[AdminAddUserToGroupResponse] = ???
               def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse = ???
+              def listGroupsForUser(email: String, userPoolId: UserPoolID): IO[AdminListGroupsForUserResponse] = ???
               def adminDeleteUser(email: Email, userPoolId: UserPoolID): IO[AdminDeleteUserResponse] = ???
-              def addUserToGroup(email: String, userPoolName:UserPoolName, usertype: String): IO[AdminAddUserToGroupResponse] = ???
+              def addUserToGroup(email: String, userPoolName:UserPoolID, usertype: String): IO[AdminAddUserToGroupResponse] = ???
               def authUserAdmin(user: User, userPoolId: String, clientId: String): IO[AdminInitiateAuthResponse] = {
                 (user, userPoolId, clientId) match {
                   case (User(Email("test@email.com"), Password("Password123$")), "idToken", "clientId") => {

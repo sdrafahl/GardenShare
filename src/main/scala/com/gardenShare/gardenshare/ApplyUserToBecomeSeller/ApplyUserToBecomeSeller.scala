@@ -6,6 +6,7 @@ import cats.effect.IO
 import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient
 import com.gardenShare.gardenshare.UserEntities.UserType
 import com.gardenShare.gardenshare.UserEntities.Sellers
+import com.gardenShare.gardenshare.Config.GetUserPoolId
 
 abstract class ApplyUserToBecomeSeller[F[_]] {
   def applyUser(userName: Email, userType: UserType): F[Unit]
@@ -14,7 +15,7 @@ abstract class ApplyUserToBecomeSeller[F[_]] {
 object ApplyUserToBecomeSeller {
   def apply[F[_]: ApplyUserToBecomeSeller] = implicitly[ApplyUserToBecomeSeller[F]]
 
-  implicit def createIOApplyUserToBecomeSeller(implicit gupn: GetUserPoolName[IO], cognito: CogitoClient[IO]) = new ApplyUserToBecomeSeller[IO] {
+  implicit def createIOApplyUserToBecomeSeller(implicit gupn: GetUserPoolId[IO], cognito: CogitoClient[IO]) = new ApplyUserToBecomeSeller[IO] {
     def applyUser(userName: Email, userType: UserType): IO[Unit] = {
       userType match {
         case Sellers => gupn.exec().flatMap(userPoolName => cognito.addUserToGroup(userName.underlying, userPoolName, Sellers.toString)).map(_ => ())

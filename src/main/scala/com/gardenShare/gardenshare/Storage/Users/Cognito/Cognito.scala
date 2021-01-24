@@ -52,147 +52,229 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespon
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse
 import com.gardenShare.gardenshare.UserEntities.UserType
 import com.gardenShare.gardenshare.UserEntities.InvalidType
+import software.amazon.awssdk.services.iam.model.ListGroupsForUserRequest
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserResponse
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserRequest
 
-abstract class CogitoClient[F[_]:GetUserPoolName:Async:FlatMap] {
+abstract class CogitoClient[F[_]: GetUserPoolName: Async: FlatMap] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]
-  def createUserPoolClient(clientName: String, userPoolId: String): F[UserPoolClientType]
-  def adminCreateUser(userName: Email, password: Password, userPoolId: UserPoolID, clientId: String): F[AdminRespondToAuthChallengeResponse]
-  def createUser(password: String, email: String, userPoolName:UserPoolName): SignUpResponse
-  def authUserAdmin(user: User, userPoolId: String, clientId: String): F[AdminInitiateAuthResponse]
-  def adminDeleteUser(email: Email, userPoolId: UserPoolID): F[AdminDeleteUserResponse]
-  def addUserToGroup(email: String, userPoolName:UserPoolName, usertype: String): F[AdminAddUserToGroupResponse]
+  def createUserPoolClient(
+      clientName: String,
+      userPoolId: String
+  ): F[UserPoolClientType]
+  def adminCreateUser(
+      userName: Email,
+      password: Password,
+      userPoolId: UserPoolID,
+      clientId: String
+  ): F[AdminRespondToAuthChallengeResponse]
+  def createUser(
+      password: String,
+      email: String,
+      userPoolName: UserPoolName
+  ): SignUpResponse
+  def authUserAdmin(
+      user: User,
+      userPoolId: String,
+
+    clientId: String
+  ): F[AdminInitiateAuthResponse]
+  def adminDeleteUser(
+      email: Email,
+      userPoolId: UserPoolID
+  ): F[AdminDeleteUserResponse]
+  def addUserToGroup(
+      email: String,
+      userPoolId: UserPoolID,
+      usertype: String
+  ): F[AdminAddUserToGroupResponse]
+  def listGroupsForUser(
+      email: String,
+      userPoolId: UserPoolID
+  ): F[AdminListGroupsForUserResponse]
 }
 
 object CogitoClient {
-  implicit lazy val cognitoIdentityClient = CognitoIdentityProviderClient.builder().build()
-  def apply[F[_]:GetUserPoolName:GetTypeSafeConfig:Async:FlatMap]()(implicit client: CognitoIdentityProviderClient): CogitoClient[F] = new CogitoClient[F] {
+  implicit lazy val cognitoIdentityClient =
+    CognitoIdentityProviderClient.builder().build()
+  def apply[F[_]: GetUserPoolName: GetTypeSafeConfig: Async: FlatMap]()(
+      implicit client: CognitoIdentityProviderClient
+  ): CogitoClient[F] = new CogitoClient[F] {
     def createUserPool(userPoolName: String) = {
-    Async[F].async { (cb: Either[Throwable, CreateUserPoolResponse] => Unit) =>
-      val response = Try(client.createUserPool(
-        CreateUserPoolRequest
-          .builder()
-          .poolName(userPoolName)
-          .build())
-      )
-      response match {
-        case Success(response) => cb(Right(response))
-        case Failure(error) => cb(Left(error))
+      Async[F].async {
+        (cb: Either[Throwable, CreateUserPoolResponse] => Unit) =>
+          val response = Try(
+            client.createUserPool(
+              CreateUserPoolRequest
+                .builder()
+                .poolName(userPoolName)
+                .build()
+            )
+          )
+          response match {
+            case Success(response) => cb(Right(response))
+            case Failure(error)    => cb(Left(error))
+          }
       }
     }
-    }
 
-  def createUserPoolClient(clientName: String, userPoolId: String) = {
-    Async[F].async { (cb: Either[Throwable, UserPoolClientType] => Unit) =>
-      val response = Try(client.createUserPoolClient(CreateUserPoolClientRequest
-        .builder()
-        .clientName(clientName)
-        .userPoolId(userPoolId)
-        .build()))
-      response match {
-        case Success(resp) => cb(Right(resp.userPoolClient()))
-        case Failure(error) => cb(Left(error))
-      }
-    }
-  }
-
-    def adminCreateUser(userName: Email, password: Password, userPoolId: UserPoolID, clientId: String) = {
-
-      val tempPassword = "tempPassword123$$"
-
-      val userCreated = Async[F].async { (cb: Either[Throwable, AdminCreateUserResponse] => Unit) =>
-        
-
-        val maybeResponse = Try(client.adminCreateUser(        
-          AdminCreateUserRequest
-            .builder()
-            .username(userName.underlying)
-            .userPoolId(userPoolId.id)
-            .temporaryPassword(tempPassword)
-            .build()))
-
-        maybeResponse match {
-          case Success(resp) => cb(Right(resp))
+    def createUserPoolClient(clientName: String, userPoolId: String) = {
+      Async[F].async { (cb: Either[Throwable, UserPoolClientType] => Unit) =>
+        val response = Try(
+          client.createUserPoolClient(
+            CreateUserPoolClientRequest
+              .builder()
+              .clientName(clientName)
+              .userPoolId(userPoolId)
+              .build()
+          )
+        )
+        response match {
+          case Success(resp)  => cb(Right(resp.userPoolClient()))
           case Failure(error) => cb(Left(error))
         }
       }
-      userCreated.flatMap{adminResp =>
-        authUserAdmin(User(userName, Password(tempPassword)), userPoolId.id, clientId).flatMap{authResp =>
+    }
 
+    def adminCreateUser(
+        userName: Email,
+        password: Password,
+        userPoolId: UserPoolID,
+        clientId: String
+    ) = {
+
+      val tempPassword = "tempPassword123$$"
+
+      val userCreated = Async[F].async {
+        (cb: Either[Throwable, AdminCreateUserResponse] => Unit) =>
+          val maybeResponse = Try(
+            client.adminCreateUser(
+              AdminCreateUserRequest
+                .builder()
+                .username(userName.underlying)
+                .userPoolId(userPoolId.id)
+                .temporaryPassword(tempPassword)
+                .build()
+            )
+          )
+
+          maybeResponse match {
+            case Success(resp)  => cb(Right(resp))
+            case Failure(error) => cb(Left(error))
+          }
+      }
+      userCreated.flatMap { adminResp =>
+        authUserAdmin(
+          User(userName, Password(tempPassword)),
+          userPoolId.id,
+          clientId
+        ).flatMap { authResp =>
           val chngPassRequest = AdminRespondToAuthChallengeRequest
             .builder()
             .challengeName("NEW_PASSWORD_REQUIRED")
-            .challengeResponses(Map(
-              "NEW_PASSWORD" -> password.underlying,
-              "USERNAME" -> userName.underlying
-            ).asJava)
+            .challengeResponses(
+              Map(
+                "NEW_PASSWORD" -> password.underlying,
+                "USERNAME" -> userName.underlying
+              ).asJava
+            )
             .clientId(clientId)
             .userPoolId(userPoolId.id)
             .session(authResp.session())
             .build()
 
-          Async[F].async { cb: (Either[Throwable, AdminRespondToAuthChallengeResponse] => Unit) =>
-            cb(Try(client.adminRespondToAuthChallenge(chngPassRequest)).toEither)
+          Async[F].async {
+            cb: (Either[Throwable, AdminRespondToAuthChallengeResponse] => Unit) =>
+              cb(
+                Try(client.adminRespondToAuthChallenge(chngPassRequest)).toEither
+              )
           }
         }
       }
-  }
+    }
 
-  def createUser(password: String, email: String, userPoolName:UserPoolName) = {   
+    def createUser(
+        password: String,
+        email: String,
+        userPoolName: UserPoolName
+    ) = {
       client.signUp(
-          SignUpRequest
-            .builder()
-            .password(password)
-            .clientId(userPoolName.name)
-            .username(email)
-            .build()
+        SignUpRequest
+          .builder()
+          .password(password)
+          .clientId(userPoolName.name)
+          .username(email)
+          .build()
       )
-  }
+    }
 
-    def addUserToGroup(email: String, userPoolName:UserPoolName, usertype: String): F[AdminAddUserToGroupResponse] = {
-      Async[F].async {cb =>
+    def addUserToGroup(
+        email: String,
+        userPoolId: UserPoolID,
+        usertype: String
+    ): F[AdminAddUserToGroupResponse] = {
+      Async[F].async { cb =>
         val req = AdminAddUserToGroupRequest
           .builder()
           .groupName(usertype)
           .username(email)
-          .userPoolId(userPoolName.name)
+          .userPoolId(userPoolId.id)
           .build()
         cb(Try(client.adminAddUserToGroup(req)).toEither)
       }
     }
 
-  def authUserAdmin(user: User, userPoolId: String, clientId: String): F[AdminInitiateAuthResponse] = {
+    def authUserAdmin(
+        user: User,
+        userPoolId: String,
+        clientId: String
+    ): F[AdminInitiateAuthResponse] = {
 
       val params = Map(
-          "USERNAME" -> user.email.underlying,
-          "PASSWORD" -> user.password.underlying
+        "USERNAME" -> user.email.underlying,
+        "PASSWORD" -> user.password.underlying
       ).asJava
 
-
-    val request = AdminInitiateAuthRequest
-      .builder()
-      .authFlow(ADMIN_NO_SRP_AUTH)
-      .authParameters(params)
-      .userPoolId(userPoolId)
-      .clientId(clientId)
-      .build()
+      val request = AdminInitiateAuthRequest
+        .builder()
+        .authFlow(ADMIN_NO_SRP_AUTH)
+        .authParameters(params)
+        .userPoolId(userPoolId)
+        .clientId(clientId)
+        .build()
 
       Async[F].async { cb =>
         cb(Try(client.adminInitiateAuth(request)).toEither)
       }
-  }
-
-  def adminDeleteUser(email: Email, userPoolId: UserPoolID): F[AdminDeleteUserResponse] = {
-    val request = AdminDeleteUserRequest
-      .builder()
-      .userPoolId(userPoolId.id)
-      .username(email.underlying)
-      .build()
-
-    Async[F].async { cb =>
-      cb(Try(client.adminDeleteUser(request)).toEither)
     }
-  }
 
+    def adminDeleteUser(
+        email: Email,
+        userPoolId: UserPoolID
+    ): F[AdminDeleteUserResponse] = {
+      val request = AdminDeleteUserRequest
+        .builder()
+        .userPoolId(userPoolId.id)
+        .username(email.underlying)
+        .build()
+
+      Async[F].async { cb => cb(Try(client.adminDeleteUser(request)).toEither) }
+    }
+
+    def listGroupsForUser(
+        email: String,
+        userPoolId: UserPoolID
+    ): F[AdminListGroupsForUserResponse] = {
+      val request = AdminListGroupsForUserRequest
+        .builder()
+        .username(email)
+        .userPoolId(userPoolId.id)
+        .build()
+
+      Async[F].async { cb =>
+        cb(Try(client.adminListGroupsForUser(request)).toEither)
+      }
+    }
   }
   implicit lazy val defaultCognitoClient: CogitoClient[IO] = CogitoClient[IO]()
 }

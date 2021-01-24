@@ -43,9 +43,11 @@ import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
 import cats.Applicative
 import com.gardenShare.gardenshare.UserEntities.Sellers
 import com.gardenShare.gardenshare.domain._
+import com.gardenShare.gardenshare.GetUserInfo.GetUserInfoOps
+import com.gardenShare.gardenshare.domain.User.UserInfo
 
 object UserRoutes {
-  def userRoutes[F[_]: Async: GetTypeSafeConfig: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller]()
+  def userRoutes[F[_]: Async: GetTypeSafeConfig:GetUserInfo: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller]()
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -114,6 +116,25 @@ object UserRoutes {
                 implicitly[ApplyUserToBecomeSeller[F]].applyUser(Email(email), Sellers),
                 (_: Unit) => SellerRequestSuccessful(),
                 (err:Throwable) => SellerRequestFailed(err.getMessage())
+              )
+                .process
+            }
+          }
+          .left.map(noValidJwt => Ok(noValidJwt.asJson.toString()))
+          .map(_.flatMap(js => Ok(js.toString())))
+          .fold(a => a, b => b)
+      }
+      case req @ GET -> Root / "user" / "info" => {
+        parseJWTokenFromRequest(req)
+          .map(_.auth)
+          .map{
+            case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
+            case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+            case ValidToken(Some(email)) => {
+              ProcessData(
+                Email(email).getUserInfo,
+                (a:UserInfo ) => a.asJson,
+                (err:Throwable) => FailedToGetUserInfo(err.getMessage())
               )
                 .process
             }
