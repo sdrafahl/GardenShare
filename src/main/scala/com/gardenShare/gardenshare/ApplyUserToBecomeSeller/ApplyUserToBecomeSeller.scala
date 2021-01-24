@@ -18,7 +18,7 @@ object ApplyUserToBecomeSeller {
   implicit def createIOApplyUserToBecomeSeller(implicit gupn: GetUserPoolId[IO], cognito: CogitoClient[IO]) = new ApplyUserToBecomeSeller[IO] {
     def applyUser(userName: Email, userType: UserType): IO[Unit] = {
       userType match {
-        case Sellers => gupn.exec().flatMap(userPoolName => cognito.addUserToGroup(userName.underlying, userPoolName, Sellers.toString)).map(_ => ())
+        case Sellers => gupn.exec().flatMap(userPoolName => cognito.addUserToGroup(userName.underlying, userPoolName, "Sellers")).map(_ => ())
         case g => IO.raiseError(new Throwable(s"group does not exist: ${g}"))
       }
     }

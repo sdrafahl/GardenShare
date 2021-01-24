@@ -9,6 +9,7 @@ import com.gardenShare.gardenshare.Config.GetUserPoolId
 import scala.jdk.CollectionConverters._
 import com.gardenShare.gardenshare.UserEntities.Sellers
 import com.gardenShare.gardenshare.UserEntities.Requester
+import io.circe.generic.auto._, io.circe.syntax._
 
 abstract class GetUserInfo[F[_]] {
   def getInfo(userName: Email): F[UserInfo]

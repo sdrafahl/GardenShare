@@ -9,13 +9,13 @@ case class AuthenticatedUser(user: User, jwt: String, accessToken: String) exten
 case class FailedToAuthenticate(msg: String) extends UserResponse
 abstract class JWTValidationResult
 case class InvalidToken(msg: String) extends JWTValidationResult
-
 case class ValidToken(email: Option[String]) extends JWTValidationResult
+
 case class JWTValidationTokens(idToken: String)
 
-abstract class UserType
-object Requester extends UserType
-object Sellers extends UserType
+sealed trait UserType
+case object Requester extends UserType
+case object Sellers extends UserType
 case object InvalidType extends UserType
 
 abstract class CreateWorkerResponse

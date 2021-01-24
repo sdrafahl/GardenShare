@@ -12,6 +12,11 @@ import io.circe.generic.auto._, io.circe.syntax._
 import utest.TestSuite
 import utest.test
 import utest.Tests
+import com.gardenShare.gardenshare.domain.SellerResponse
+import com.gardenShare.gardenshare.domain.SellerRequestSuccessful
+import com.gardenShare.gardenshare.domain.User.UserInfo
+import com.gardenShare.gardenshare.UserEntities.Sellers
+import com.gardenShare.gardenshare.Encoders.Encoders._
 
 object UserTestSpec extends TestSuite {
   val tests = Tests {
@@ -46,6 +51,20 @@ object UserTestSpec extends TestSuite {
           val jwtToken = r.auth.get.jwt
           val authResponse = UserTestsHelper.authToken(jwtToken)
           assert(authResponse.msg equals "Token is valid")
+        }
+      }
+      test("/user/apply-to-become-seller") {
+        test("Should create application to become a seller"){
+          UserTestsHelper.deleteUserAdmin(testEmail)
+          UserTestsHelper.adminCreateUser(testEmail, testPassword)
+          val r = UserTestsHelper.authUser(testEmail, testPassword)
+          val jwtToken = r.auth.get.jwt
+          val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken)
+          val expectedSellerResponse = SellerRequestSuccessful()
+          assert(responseForApplication equals expectedSellerResponse)
+          val info = UserTestsHelper.getUserInfo(jwtToken)
+          val expectedInfo = UserInfo(Email(testEmail), Sellers)
+          assert(info equals expectedInfo)
         }
       }
     }
@@ -144,4 +163,43 @@ object UserTestsHelper {
       .unsafeRunSync()
       .head
   }
+
+  def applyUserToBecomeSeller(jwt: String): SellerResponse = {
+    val uriArg = Uri.fromString("/user/apply-to-become-seller").toOption.get
+    val headers = Headers.of(Header("authentication", jwt))
+    val applicationRequest = Request[IO](Method.POST, uriArg, headers = headers)
+
+    UserRoutes
+      .userRoutes[IO]
+      .orNotFound(applicationRequest)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, SellerResponse])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def getUserInfo(jwt: String): UserInfo = {
+    val uriArg = Uri.fromString("/user/info").toOption.get
+    val headers = Headers.of(Header("authentication", jwt))
+    val infoRequest = Request[IO](Method.GET, uriArg, headers = headers)
+
+    UserRoutes
+      .userRoutes[IO]
+      .orNotFound(infoRequest)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, UserInfo])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
 }

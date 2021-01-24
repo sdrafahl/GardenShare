@@ -105,43 +105,51 @@ object UserRoutes {
             .flatMap(js => Ok(js.toString()))
         )
       }
-      case req @ POST -> Root / "user" / "apply-to-become-seller" => {
+      case req @ POST -> Root / "user" / "apply-to-become-seller" => {        
+        addJsonHeaders(
         parseJWTokenFromRequest(req)
-          .map(_.auth)
-          .map{
-            case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-            case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-            case ValidToken(Some(email)) => {
-              ProcessData(
-                implicitly[ApplyUserToBecomeSeller[F]].applyUser(Email(email), Sellers),
-                (_: Unit) => SellerRequestSuccessful(),
-                (err:Throwable) => SellerRequestFailed(err.getMessage())
-              )
-                .process
+          .map(_.auth)          
+          .map{a =>
+            a.flatMap {
+              case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
+              case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+              case ValidToken(Some(email)) => {
+                ProcessData(
+                  implicitly[ApplyUserToBecomeSeller[F]].applyUser(Email(email), Sellers),
+                  (_: Unit) => SellerRequestSuccessful(),
+                  (err:Throwable) => SellerRequestFailed(err.getMessage())
+                )
+                  .process
+              }
             }
           }
           .left.map(noValidJwt => Ok(noValidJwt.asJson.toString()))
           .map(_.flatMap(js => Ok(js.toString())))
           .fold(a => a, b => b)
+        )
       }
       case req @ GET -> Root / "user" / "info" => {
+        addJsonHeaders(
         parseJWTokenFromRequest(req)
           .map(_.auth)
-          .map{
-            case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-            case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-            case ValidToken(Some(email)) => {
-              ProcessData(
-                Email(email).getUserInfo,
-                (a:UserInfo ) => a.asJson,
-                (err:Throwable) => FailedToGetUserInfo(err.getMessage())
-              )
-                .process
+          .map{a =>
+            a.flatMap {
+              case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
+              case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+              case ValidToken(Some(email)) => {
+                ProcessData(
+                  Email(email).getUserInfo,
+                  (a:UserInfo) => a.asJson,
+                  (err:Throwable) => FailedToGetUserInfo(err.getMessage())
+                )
+                  .process
+              }
             }
           }
           .left.map(noValidJwt => Ok(noValidJwt.asJson.toString()))
           .map(_.flatMap(js => Ok(js.toString())))
           .fold(a => a, b => b)
+        )
       }
     }
   }
