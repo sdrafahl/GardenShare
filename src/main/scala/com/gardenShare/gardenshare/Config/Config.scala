@@ -37,6 +37,19 @@ object GetTypeSafeConfig {
   }
 }
 
+abstract class GetTypeSafeConfigBoolean[F[_]:Functor] {
+  def get(key: String): F[Boolean]
+}
+
+object GetTypeSafeConfigBoolean {
+  def apply[F[_]:GetTypeSafeConfigBoolean]() = implicitly[GetTypeSafeConfigBoolean[F]]
+
+  implicit object IOGetTypeSafeConfigBoolean extends GetTypeSafeConfigBoolean[IO] {
+    private lazy implicit val conf: Config = ConfigFactory.load();
+    def get(key: String) =  IO(conf.getBoolean(key))
+  }
+}
+
 case class StripePrivateKey(n: String)
 abstract class GetStripePrivateKey[F[_]: GetTypeSafeConfig] {
   def getKey(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[StripePrivateKey]
@@ -266,5 +279,20 @@ object GetEnvironment {
       case "testing" => Testing()
       case "production" => Production()
     }
+  }
+}
+
+abstract class GetPostgreConfig[F[_]] {
+  def getConfig: F[PostgreConfig]
+}
+
+object GetPostgreConfig {
+  implicit def createIOGetPostgreConfig(implicit getTypeSafeConfig: GetTypeSafeConfig[IO], getBooleanConfig:GetTypeSafeConfigBoolean[IO]) = new GetPostgreConfig[IO] {
+    def getConfig: IO[PostgreConfig] = for {
+      url <- IO("jdbc:postgresql://localhost/garden_share?user=postgres&password=postgres")//getTypeSafeConfig.get("postgres.url")
+      driver <- IO("org.postgresql.Driver")//getTypeSafeConfig.get("postgres.driver")
+      connectionPool <- IO("disabled")//getTypeSafeConfig.get("postgres.connectionPool")
+      keepAliveConnection <- IO(true) //getBooleanConfig.get("postgres.keepAliveConnection")
+    } yield PostgreConfig(url, driver,connectionPool, keepAliveConnection)
   }
 }

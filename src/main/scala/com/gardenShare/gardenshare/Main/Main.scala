@@ -8,7 +8,6 @@ import com.gardenShare.gardenshare.GetRoutes._
 
 object Main extends IOApp {
   def run(args: List[String]) = for {
-    _ <- Setup.createPostGresDBTables
     exitCode <- GardenshareServer.stream[IO].as(ExitCode.Success)
   } yield exitCode
 }
