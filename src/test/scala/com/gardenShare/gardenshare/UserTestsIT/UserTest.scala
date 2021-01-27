@@ -17,6 +17,7 @@ import com.gardenShare.gardenshare.domain.SellerRequestSuccessful
 import com.gardenShare.gardenshare.domain.User.UserInfo
 import com.gardenShare.gardenshare.UserEntities.Sellers
 import com.gardenShare.gardenshare.Encoders.Encoders._
+import com.gardenShare.gardenshare.Shows._
 
 object UserTestSpec extends TestSuite {
   val tests = Tests {
@@ -72,6 +73,8 @@ object UserTestSpec extends TestSuite {
 }
 
 object UserTestsHelper {
+
+
   /**
     Do Not Use in production
     */

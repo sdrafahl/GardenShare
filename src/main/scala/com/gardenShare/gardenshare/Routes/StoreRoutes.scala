@@ -36,40 +36,14 @@ import com.gardenShare.gardenshare.FoldOver.FoldOverEithers
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
 
 object StoreRoutes {
-  def storeRoutes[F[_]: Async: com.gardenShare.gardenshare.SignupUser.SignupUser: AuthUser: AuthJWT: InsertStore: GetNearestStores: GetDistance: GetStoresStream]()
+  def storeRoutes[F[_]: Async: com.gardenShare.gardenshare.SignupUser.SignupUser: AuthUser: AuthJWT: InsertStore: GetNearestStores: GetDistance: GetStoresStream](implicit d: Decoder[Address], e: Encoder[Address])
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
-    HttpRoutes.of[F] {
-      case req @ POST -> Root / "store" / "create" / address => {
-        addJsonHeaders(
-          parseJWTokenFromRequest(req)
-            .map(_.auth)
-            .map{resultOfValidation =>
-              resultOfValidation.flatMap{
-                case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-                case ValidToken(Some(email)) => {
-                  val addressOfSeller = Address(address)
-                  val emailOfSeller = Email(email)
-                  val request = CreateStoreRequest(addressOfSeller, Email(email))
-
-                  ProcessData(
-                    List(request).insertStore,
-                    (lst: List[Store]) => StoresAdded(lst),
-                    (err:Throwable) => FailedToAddStore(err.getMessage()),                    
-                  ).process
-
-                }
-                case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-              }
-            }
-            .left
-            .map(n => Applicative[F].pure(n.asJson))
-            .fold(a1 => a1, a2 => a2)
-            .map(_.toString())
-            .flatMap(msg => Ok(msg)))
-      }
+    HttpRoutes.of[F] {      
       case req @ GET -> Root / "store" / address / limit / rangeInSeconds => {
+
+        
 
         val maybeLimit = Try(limit.toInt).toEither.left
           .map(a => InvalidLimitProvided(a.getMessage()))
@@ -86,8 +60,9 @@ object StoreRoutes {
                   case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
                   case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
                   case ValidToken(Some(email)) => {
+                    val address = parseBodyFromRequest[Address, F](req)
                     ProcessData(
-                      GetNearestStore(Distance(range), limit, Address(address)).nearest,
+                      GetNearestStore(Distance(range), limit, ???).nearest,
                       (lst: List[Store]) => StoresAdded(lst),
                       (err:Throwable) => FailedToFindStore(err.getMessage())
                     ).process

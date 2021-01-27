@@ -13,6 +13,14 @@ import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT.AuthJwtOps
 import com.gardenShare.gardenshare.UserEntities.ValidToken
 import cats.Functor
 import cats.syntax.functor
+import io.circe.fs2._
+import io.circe.generic.auto._, io.circe.syntax._
+import fs2.text
+import com.gardenShare.gardenshare.domain.Store.Address
+import cats.effect.IO
+import cats.effect.Sync
+import com.gardenShare.gardenshare.Encoders.Encoders._
+import io.circe.Decoder
 
 object Helpers {
   def parseJWTokenFromRequest[F[_]: Functor](req: Request[F]) = {
@@ -30,6 +38,17 @@ object Helpers {
         Header.apply("Content-Type", "application/json")
       )
     ))
+  }
+
+  def parseBodyFromRequest[T, F[_]: Sync](req: Request[F])(implicit d: Decoder[T]): F[Option[T]] = {
+    req
+      .body
+      .through(text.utf8Decode)
+      .through(stringStreamParser)
+      .through(decoder[F, T])
+      .compile
+      .toList
+      .map(_.headOption)
   }
 }
 

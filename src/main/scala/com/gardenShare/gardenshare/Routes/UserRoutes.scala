@@ -45,6 +45,9 @@ import com.gardenShare.gardenshare.UserEntities.Sellers
 import com.gardenShare.gardenshare.domain._
 import com.gardenShare.gardenshare.GetUserInfo.GetUserInfoOps
 import com.gardenShare.gardenshare.domain.User.UserInfo
+import com.gardenShare.gardenshare.domain.Store.Address
+import com.gardenShare.gardenshare.UserEntities.AddressNotProvided
+import com.gardenShare.gardenshare.UserEntities.UnknownError
 
 object UserRoutes {
   def userRoutes[F[_]: Async: GetTypeSafeConfig:GetUserInfo: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller]()
@@ -105,28 +108,28 @@ object UserRoutes {
             .flatMap(js => Ok(js.toString()))
         )
       }
-      case req @ POST -> Root / "user" / "apply-to-become-seller" => {        
-        addJsonHeaders(
+      case req @ POST -> Root / "user" / "apply-to-become-seller" => {
         parseJWTokenFromRequest(req)
-          .map(_.auth)          
+          .map(_.auth)
+          .map(a => a.flatMap(ab => parseBodyFromRequest[Address, F](req).map(ac => (ab, ac))))
           .map{a =>
-            a.flatMap {
-              case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-              case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-              case ValidToken(Some(email)) => {
+            a.flatMap{
+              case (InvalidToken(msg), _) => Applicative[F].pure(InvalidToken(msg).asJson)
+              case (ValidToken(None), _) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+              case (_, None) => Applicative[F].pure(AddressNotProvided().asJson)
+              case (ValidToken(Some(email)), Some(address)) => {
                 ProcessData(
-                  implicitly[ApplyUserToBecomeSeller[F]].applyUser(Email(email), Sellers),
+                  implicitly[ApplyUserToBecomeSeller[F]].applyUser(Email(email), Sellers, address),
                   (_: Unit) => SellerRequestSuccessful(),
                   (err:Throwable) => SellerRequestFailed(err.getMessage())
                 )
                   .process
               }
+              case _ => Applicative[F].pure(UnknownError("Token is valid but without email").asJson)
             }
-          }
-          .left.map(noValidJwt => Ok(noValidJwt.asJson.toString()))
+          }.left.map(noValidJwt => Ok(noValidJwt.asJson.toString()))
           .map(_.flatMap(js => Ok(js.toString())))
           .fold(a => a, b => b)
-        )
       }
       case req @ GET -> Root / "user" / "info" => {
         addJsonHeaders(

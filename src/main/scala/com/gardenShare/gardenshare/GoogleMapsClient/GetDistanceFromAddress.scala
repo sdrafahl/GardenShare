@@ -11,6 +11,8 @@ import java.time._
 import com.google.maps.model.DistanceMatrix
 import java.time.Duration
 import cats.instances.float
+import cats.Show
+import cats.implicits._
 
 case class Distance(seconds: Float)
 
@@ -34,14 +36,14 @@ abstract class GetDistance[F[_]] {
 
 object GetDistance {
   def apply[F[_]: GetDistance: GetGoogleMapsApiKey]() = implicitly[GetDistance[F]]
-  implicit object IOGetDistance extends GetDistance[IO] {
+  implicit def IOGetDistance(implicit s: Show[Address]) = new GetDistance[IO] {
     implicit val default = GetGoogleMapsApiKey[IO]()
     def getDistanceFromAddress(from: Address, to: Address)(implicit getKey: GetGoogleMapsApiKey[IO]): IO[Distance] = {
       val getContPgm = for {
         key <- getKey.get
         cont = new GeoApiContext.Builder().apiKey(key.key).build()
         now = Instant.now()
-        dir = DirectionsApi.newRequest(cont).departureTimeNow().origin(from.underlying).destination(to.underlying).await()
+        dir = DirectionsApi.newRequest(cont).departureTimeNow().origin(from.show).destination(to.show).await()
         maybeFirstRoute = dir.routes.headOption
         distance = maybeFirstRoute.map {r =>
           r.legs.foldLeft(Duration.ZERO) {
