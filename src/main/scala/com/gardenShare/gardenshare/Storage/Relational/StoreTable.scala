@@ -75,7 +75,7 @@ object GetStoreByID {
   implicit def getStoreByIDIO(implicit e: Decoder[State]) = new GetStoreByID[IO] {
     def getStore(id: Int): IO[Option[Store]] = {
       val query = for {
-        stores <- StoreTable.stores if stores.storeId equals id
+        stores <- StoreTable.stores if stores.storeId === id
       } yield (stores.storeId, stores.street, stores.city, stores.zipcode, stores.state, stores.sellerEmail)
       IO.fromFuture(IO(Setup.db.run(query.result)))
         .map(_.toList)
@@ -139,7 +139,7 @@ object DeleteStore {
   implicit object IODeleteStore extends DeleteStore[IO] {
     def delete(e: Email): IO[Unit] = {
       val query = (for {
-        stores <- StoreTable.stores if stores.sellerEmail equals e.underlying
+        stores <- StoreTable.stores if stores.sellerEmail === e.underlying
       } yield stores).delete
       IO.fromFuture(IO(Setup.db.run(query))).map(_ => ())
     }
