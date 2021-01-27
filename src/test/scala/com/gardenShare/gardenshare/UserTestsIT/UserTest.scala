@@ -18,6 +18,10 @@ import com.gardenShare.gardenshare.domain.User.UserInfo
 import com.gardenShare.gardenshare.UserEntities.Sellers
 import com.gardenShare.gardenshare.Encoders.Encoders._
 import com.gardenShare.gardenshare.Shows._
+import com.gardenShare.gardenshare.Storage.Relational.DeleteStore
+import com.gardenShare.gardenshare.Storage.Relational.GetStore
+import com.gardenShare.gardenshare.domain.Store.Address
+import com.gardenShare.gardenshare.domain.Store.IA
 
 object UserTestSpec extends TestSuite {
   val tests = Tests {
@@ -57,15 +61,19 @@ object UserTestSpec extends TestSuite {
       test("/user/apply-to-become-seller") {
         test("Should create application to become a seller"){
           UserTestsHelper.deleteUserAdmin(testEmail)
-          UserTestsHelper.adminCreateUser(testEmail, testPassword)
+          UserTestsHelper.deletestore(Email(testEmail))
+          UserTestsHelper.adminCreateUser(testEmail, testPassword)          
           val r = UserTestsHelper.authUser(testEmail, testPassword)
           val jwtToken = r.auth.get.jwt
-          val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken)
+          val address = Address("500 hickman Rd", "Waukee", 50263, IA)
+          val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken, address)
           val expectedSellerResponse = SellerRequestSuccessful()
           assert(responseForApplication equals expectedSellerResponse)
           val info = UserTestsHelper.getUserInfo(jwtToken)
           val expectedInfo = UserInfo(Email(testEmail), Sellers)
           assert(info equals expectedInfo)
+          val store = UserTestsHelper.getStore(Email(testEmail))
+          assert(store.address equals address)
         }
       }
     }
@@ -167,23 +175,25 @@ object UserTestsHelper {
       .head
   }
 
-  def applyUserToBecomeSeller(jwt: String): SellerResponse = {
+  def applyUserToBecomeSeller(jwt: String, a: Address): SellerResponse = {
     val uriArg = Uri.fromString("/user/apply-to-become-seller").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
-    val applicationRequest = Request[IO](Method.POST, uriArg, headers = headers)
+
+    val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a.asJson.toString())
 
     UserRoutes
-      .userRoutes[IO]
-      .orNotFound(applicationRequest)
-      .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, SellerResponse])
-      .compile
-      .toList
-      .unsafeRunSync()
-      .head
+        .userRoutes[IO]
+        .orNotFound(request)
+        .unsafeRunSync()
+        .body
+        .through(text.utf8Decode)
+        .through(stringArrayParser)
+        .through(decoder[IO, SellerResponse])
+        .compile
+        .toList
+        .unsafeRunSync()
+        .head
+    
   }
 
   def getUserInfo(jwt: String): UserInfo = {
@@ -203,6 +213,14 @@ object UserTestsHelper {
       .toList
       .unsafeRunSync()
       .head
+  }
+
+  def deletestore(email: Email)(implicit d:DeleteStore[IO]) = {
+    d.delete(email).unsafeRunSync()
+  }
+
+  def getStore(email: Email)(implicit d:GetStore[IO]) = {
+    d.getStoresByUserEmail(email).unsafeRunSync().head
   }
 
 }

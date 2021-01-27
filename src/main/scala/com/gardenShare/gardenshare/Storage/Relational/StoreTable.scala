@@ -101,7 +101,7 @@ object GetStore {
   implicit def iOGetStore(implicit e: Decoder[State]) = new GetStore[IO]{
     def getStoresByUserEmail(email: Email): IO[List[Store]] = {
       val query = for {
-        stores <- StoreTable.stores if stores.sellerEmail equals email.underlying
+        stores <- StoreTable.stores if stores.sellerEmail === email.underlying
       } yield (stores.storeId, stores.street, stores.city, stores.zipcode, stores.state, stores.sellerEmail)
       val resp = IO.fromFuture(IO(Setup.db.run(query.result))).map(_.toList)
       parseResponseForStores(resp)
@@ -128,6 +128,21 @@ object InsertStore {
 
   implicit class CreateStoreRequestOps(underlying: List[CreateStoreRequest]) {
     def insertStore[F[_]: InsertStore](implicit inserter: InsertStore[F]) = inserter.add(underlying)
+  }
+}
+
+abstract class DeleteStore[F[_]] {
+  def delete(e: Email): F[Unit]
+}
+
+object DeleteStore {
+  implicit object IODeleteStore extends DeleteStore[IO] {
+    def delete(e: Email): IO[Unit] = {
+      val query = (for {
+        stores <- StoreTable.stores if stores.sellerEmail equals e.underlying
+      } yield stores).delete
+      IO.fromFuture(IO(Setup.db.run(query))).map(_ => ())
+    }
   }
 }
 

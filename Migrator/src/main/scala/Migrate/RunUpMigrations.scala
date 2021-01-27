@@ -15,7 +15,6 @@ import slick.jdbc.JdbcBackend.DatabaseDef
 import scala.concurrent.ExecutionContext
 import com.gardenShare.gardenshare.Migrator._
 import com.gardenShare.gardenshare.Storage.Relational.ProductTable._
-
 abstract class RunMigrations[F[_]] {
   def runUp(l: List[MigrateDB[F]]): F[Unit]
   def runDown(l: List[MigrateDB[F]]): F[Unit]
