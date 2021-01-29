@@ -10,12 +10,12 @@ import io.circe.fs2._
 import io.circe.generic.auto._
 
 abstract class ParseDescriptionStream[F[_]] {
-  def parseStream(a: LazyStream[F, Byte]): LazyStream[F, ProductDescription]
+  def parseStream(a: LazyStream[F, Byte])(implicit d: Decoder[PriceUnit]): LazyStream[F, ProductDescription]
 }
 
 object ParseDescriptionStream {
   implicit object IOParseDescriptionStream extends ParseDescriptionStream[IO] {
-    def parseStream(a: LazyStream[IO, Byte]): LazyStream[IO, ProductDescription] = {
+    def parseStream(a: LazyStream[IO, Byte])(implicit d: Decoder[PriceUnit]): LazyStream[IO, ProductDescription] = {
       LazyStream(a
         .s
         .map(_.through(byteStreamParser))
@@ -23,6 +23,6 @@ object ParseDescriptionStream {
     }
   }
   implicit class ParseDescriptionStreamOp[F[_]: ParseDescriptionStream](underlying: LazyStream[F, Byte]) {
-    def parse(implicit parser: ParseDescriptionStream[F]) = parser.parseStream(underlying)
+    def parse(implicit parser: ParseDescriptionStream[F], d: Decoder[PriceUnit]) = parser.parseStream(underlying)
   }
 }

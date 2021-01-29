@@ -48,7 +48,7 @@ import com.gardenShare.gardenshare.GetProductDescription.GetproductDescription._
 
 import com.gardenShare.gardenshare.Concurrency.Concurrency._
 
-object ProductDescription {
+object ProductDescriptionRoutes {
   def productDescriptionRoutes[F[_]: Async: com.gardenShare.gardenshare.SignupUser.SignupUser: AuthUser: AuthJWT: InsertStore: GetNearestStores: GetDistance: GetStoresStream: com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames: InsertProduct: ParseDescriptionStream: GetproductDescription: ContextShift]()
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}

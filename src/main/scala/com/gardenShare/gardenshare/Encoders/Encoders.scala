@@ -18,10 +18,22 @@ import cats.syntax.functor._
 import io.circe.{ Decoder, Encoder }, io.circe.generic.auto._
 import io.circe.syntax._
 import com.gardenShare.gardenshare.domain.Store._
+import scala.tools.nsc.backend.jvm.BackendReporting.Invalid
+import com.gardenShare.gardenshare.domain.Products.Units
+import com.gardenShare.gardenshare.domain.Products.Pound
+import com.gardenShare.gardenshare.domain.Products.PriceUnit
 
 object Encoders {
   implicit val orderEncoder: Encoder[OrderState] = new Encoder[OrderState] {
     final def apply(a: OrderState): Json = Json.fromString(orderToString(a))
+  }
+
+  implicit val priceEncoder: Encoder[PriceUnit] = new Encoder[PriceUnit] {
+    final def apply(a: PriceUnit): Json = a match {
+      case Pound => "Pound".asJson
+      case Units => "Units".asJson
+      case _ => "Invalid".asJson
+    }
   }
 
   implicit val stateEncoder: Encoder[State] = new Encoder[State] {
@@ -116,7 +128,7 @@ object Encoders {
     case _ => Right(InvalidType)
   }
 
-  implicit val stateDecoder: Decoder[State] = Decoder.decodeString.emap{(s: String) => s.map(_.toUpper) match {
+  implicit val stateDecoder: Decoder[State] = Decoder.decodeString.emap { (s: String) => s.map(_.toUpper) match {
     case "AL" => Right(AL)
     case "AK" => Right(AK)
     case "AZ" => Right(AZ)
@@ -169,8 +181,12 @@ object Encoders {
     case "WI" => Right(WI)
     case "WY" => Right(WY)
     case _ => Left("invalid state provided")
-  }
+  }}
 
-
-  }
+    implicit val priceUnitDecoder: Decoder[PriceUnit] = Decoder.decodeString.emap{(s: String) => s.map(_.toUpper) match {
+      case "POUND" => Right(Pound)
+      case "UNITS" => Right(Units)
+      case _ => Left("Invalid price unit")
+    }}
 }
+

@@ -16,6 +16,8 @@ import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
 import cats.FlatMap
 import cats.implicits._
 import cats.effect.Async
+import io.circe.Decoder
+import com.gardenShare.gardenshare.domain.Products.PriceUnit
 
 abstract class GetproductDescription[F[_]] {
   def getProdDesc(c: GetproductDescriptionCommand)(implicit parser: ParseDescriptionStream[F], cs: ContextShift[F], blocker: Blocker): F[List[ProductDescription]]
@@ -24,7 +26,7 @@ abstract class GetproductDescription[F[_]] {
 object GetproductDescription {
   def apply[F[_]: GetproductDescription]() = implicitly[GetproductDescription[F]]
 
-  implicit def getproductDescription[F[_]: FlatMap: Async](implicit getStream:GetS3Stream[F], getDesBuck: GetDescriptionBucketName[F], getTypeSafeConfig: GetTypeSafeConfig[F]) = new GetproductDescription[F] {
+  implicit def getproductDescription[F[_]: FlatMap: Async](implicit getStream:GetS3Stream[F], getDesBuck: GetDescriptionBucketName[F], getTypeSafeConfig: GetTypeSafeConfig[F], d: Decoder[PriceUnit]) = new GetproductDescription[F] {
     def getProdDesc(c: GetproductDescriptionCommand)(implicit parser: ParseDescriptionStream[F], cs: ContextShift[F], blocker: Blocker): F[List[ProductDescription]] = {
       for {
         desBucket <- getDesBuck.get
