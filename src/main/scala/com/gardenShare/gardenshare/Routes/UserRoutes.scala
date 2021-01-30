@@ -50,7 +50,7 @@ import com.gardenShare.gardenshare.UserEntities.AddressNotProvided
 import com.gardenShare.gardenshare.UserEntities.UnknownError
 
 object UserRoutes {
-  def userRoutes[F[_]: Async: GetTypeSafeConfig:GetUserInfo: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller]()
+  def userRoutes[F[_]: Async: GetTypeSafeConfig:GetUserInfo: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller: ContextShift]()
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._

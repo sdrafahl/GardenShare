@@ -119,7 +119,7 @@ object InsertStore {
   implicit def iOInsertStore(implicit e: Encoder[State], d:Decoder[State]) = new InsertStore[IO] {
     def add(data: List[CreateStoreRequest]): IO[List[Store]] = {
       val query = StoreTable.stores
-      val qu = StoreTable.stores.returning(query)
+      val qu = StoreTable.stores.returning(query)      
       val res = qu ++= data.map(da => (0, da.address.street, da.address.city, da.address.zipcode, e(da.address.state).toString(), da.sellerEmail.underlying))
       val responses = IO.fromFuture(IO(Setup.db.run(res))).map(_.toList).map(_.toList)
       parseResponseForStores(responses)        
@@ -130,6 +130,7 @@ object InsertStore {
     def insertStore[F[_]: InsertStore](implicit inserter: InsertStore[F]) = inserter.add(underlying)
   }
 }
+
 
 abstract class DeleteStore[F[_]] {
   def delete(e: Email): F[Unit]

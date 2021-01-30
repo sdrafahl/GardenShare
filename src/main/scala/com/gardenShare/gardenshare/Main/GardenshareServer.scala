@@ -27,10 +27,6 @@ import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream
 import com.gardenShare.gardenshare.Storage.S3.GetKeys
 import com.gardenShare.gardenshare.Config.GetDescriptionBucketName
 import com.gardenShare.gardenshare.Storage.Relational.InsertProduct
-import com.gardenShare.gardenshare.Storage.Relational.GetProductsByStore
-import com.gardenShare.gardenshare.Orders.CreateOrder
-import com.gardenShare.gardenshare.Storage.Relational.AddOrderIdToProduct
-import com.gardenShare.gardenshare.Storage.Relational.GetProductByID
 import com.gardenShare.gardenshare.Storage.Relational.GetStore._
 import com.gardenShare.gardenshare.Storage.Relational.GetStore
 import com.gardenShare.gardenshare.Storage.Relational.GetStoreByID
@@ -57,10 +53,6 @@ object GardenshareServer {
       GetKeys:
       GetDescriptionBucketName:
       InsertProduct:
-      GetProductsByStore:
-      CreateOrder:
-      AddOrderIdToProduct:
-      GetProductByID:
       GetStore:
       GetStoreByID:
       GetEnvironment:

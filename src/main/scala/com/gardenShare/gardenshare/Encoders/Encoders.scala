@@ -19,9 +19,12 @@ import io.circe.{ Decoder, Encoder }, io.circe.generic.auto._
 import io.circe.syntax._
 import com.gardenShare.gardenshare.domain.Store._
 import scala.tools.nsc.backend.jvm.BackendReporting.Invalid
-import com.gardenShare.gardenshare.domain.Products.Units
-import com.gardenShare.gardenshare.domain.Products.Pound
-import com.gardenShare.gardenshare.domain.Products.PriceUnit
+import com.gardenShare.gardenshare.Units
+import com.gardenShare.gardenshare.Pound
+import com.gardenShare.gardenshare.PriceUnit
+import com.gardenShare.gardenshare.EncodeProduce
+import com.gardenShare.gardenshare.Produce
+import com.gardenShare.gardenshare.ParseProduce
 
 object Encoders {
   implicit val orderEncoder: Encoder[OrderState] = new Encoder[OrderState] {
@@ -34,6 +37,10 @@ object Encoders {
       case Units => "Units".asJson
       case _ => "Invalid".asJson
     }
+  }
+
+  implicit def producerEncoder(implicit d: EncodeProduce[String]) = new Encoder[Produce] {
+    final def apply(a: Produce) = d.to(a).asJson
   }
 
   implicit val stateEncoder: Encoder[State] = new Encoder[State] {
@@ -183,10 +190,14 @@ object Encoders {
     case _ => Left("invalid state provided")
   }}
 
-    implicit val priceUnitDecoder: Decoder[PriceUnit] = Decoder.decodeString.emap{(s: String) => s.map(_.toUpper) match {
-      case "POUND" => Right(Pound)
-      case "UNITS" => Right(Units)
-      case _ => Left("Invalid price unit")
-    }}
+  implicit val priceUnitDecoder: Decoder[PriceUnit] = Decoder.decodeString.emap{(s: String) => s.map(_.toUpper) match {
+    case "POUND" => Right(Pound)
+    case "UNITS" => Right(Units)
+    case _ => Left("Invalid price unit")
+  }}
+
+  implicit def produceDecoder(implicit p:ParseProduce[String]): Decoder[Produce] = Decoder.decodeString.emap{(s: String) =>
+    p.parse(s)
+  }
 }
 

@@ -22,6 +22,8 @@ import com.gardenShare.gardenshare.Storage.Relational.DeleteStore
 import com.gardenShare.gardenshare.Storage.Relational.GetStore
 import com.gardenShare.gardenshare.domain.Store.Address
 import com.gardenShare.gardenshare.domain.Store.IA
+import com.gardenShare.gardenshare.Concurrency.Concurrency._
+import com.gardenShare.gardenshare.domain.Store._
 
 object UserTestSpec extends TestSuite {
   val tests = Tests {
@@ -70,7 +72,7 @@ object UserTestSpec extends TestSuite {
           val expectedSellerResponse = SellerRequestSuccessful()
           assert(responseForApplication equals expectedSellerResponse)
           val info = UserTestsHelper.getUserInfo(jwtToken)
-          val expectedInfo = UserInfo(Email(testEmail), Sellers)
+          val expectedInfo = UserInfo(Email(testEmail), Sellers, Some(Store(info.store.get.id, address, Email(testEmail))))
           assert(info equals expectedInfo)
           val store = UserTestsHelper.getStore(Email(testEmail))
           assert(store.address equals address)

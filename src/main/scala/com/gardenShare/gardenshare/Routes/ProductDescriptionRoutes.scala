@@ -38,40 +38,23 @@ import com.gardenShare.gardenshare._
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore
 import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream
 import com.gardenShare.gardenshare.Storage.Relational.InsertProduct
-import com.gardenShare.gardenshare.ParseDescription.ParseDescriptionStream
 import eu.timepit.refined.types.string.NonEmptyString
-import com.gardenShare.gardenshare.domain.Entities.GetproductDescriptionCommand
-import com.gardenShare.gardenshare.domain.Entities.GetproductDescriptionCommand._
 import cats.Applicative
-import com.gardenShare.gardenshare.GetProductDescription.GetproductDescription
-import com.gardenShare.gardenshare.GetProductDescription.GetproductDescription._
-
-import com.gardenShare.gardenshare.Concurrency.Concurrency._
+import com.gardenShare.gardenshare.GetproductDescription
+import com.gardenShare.gardenshare.GetproductDescription._
+import com.gardenShare.gardenshare.ParseProduce.ParseProduceOps
 
 object ProductDescriptionRoutes {
-  def productDescriptionRoutes[F[_]: Async: com.gardenShare.gardenshare.SignupUser.SignupUser: AuthUser: AuthJWT: InsertStore: GetNearestStores: GetDistance: GetStoresStream: com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames: InsertProduct: ParseDescriptionStream: GetproductDescription: ContextShift]()
+  def productDescriptionRoutes[F[_]: Async](implicit c: GetproductDescription[Produce], p: ParseProduce[String])
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
       case GET -> Root / "productDescription" / descKey => {
-        NonEmptyString
-          .from(descKey)
-          .map(GetproductDescriptionCommand)
-          .map(_.getDesc[F])
-          .fold(
-            errMsg =>
-              Applicative[F].pure(ResponseBody(errMsg).asJson.toString()),
-            ab => ab.map(_.asJson.toString())
-          )
-          .attempt
-          .map(
-            _.fold(
-              errMsg => ResponseBody(errMsg.getMessage()).asJson.toString(),
-              a => a
-            )
-          )
-          .flatMap(Ok(_))
+        descKey
+          .parseProduce
+          .map(a => a.getProductDescription)
+          .fold(a => Ok(ResponseBody("Invalid product description key was provided.", false).asJson.toString), b => Ok(b.asJson.toString))
       }
     }
   }

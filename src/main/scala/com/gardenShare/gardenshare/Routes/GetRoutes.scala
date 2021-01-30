@@ -10,6 +10,7 @@ import com.gardenShare.gardenshare.Storage.Relational.GetStore
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore
 import io.circe.Decoder
 import com.gardenShare.gardenshare.domain.Store.State
+import cats.effect.ContextShift
 
 abstract class GetRoutes[F[_], T <: RoutesTypes] {
   def getRoutes: HttpRoutes[F]
@@ -18,14 +19,14 @@ abstract class GetRoutes[F[_], T <: RoutesTypes] {
 object GetRoutes {
   def apply[F[_], T <: RoutesTypes]()(implicit x:GetRoutes[F, T]) = x
 
-  implicit def ioTestingRoutes(implicit e: ApplyUserToBecomeSeller[IO]) = new GetRoutes[IO, TestingAndProductionRoutes]{
+  implicit def ioTestingRoutes(implicit e: ApplyUserToBecomeSeller[IO], g: GetUserInfo[IO], cs: ContextShift[IO]) = new GetRoutes[IO, TestingAndProductionRoutes]{
     def getRoutes: HttpRoutes[IO] = (
       UserRoutes.userRoutes[IO]() <+>
       TestUserRoutes.userRoutes[IO]()
     )
   }
 
-  implicit def ioProductionRoutes(implicit e: ApplyUserToBecomeSeller[IO]) = new GetRoutes[IO, OnlyProductionRoutes] {
+  implicit def ioProductionRoutes(implicit e: ApplyUserToBecomeSeller[IO], g: GetUserInfo[IO], cs: ContextShift[IO]) = new GetRoutes[IO, OnlyProductionRoutes] {
     def getRoutes: HttpRoutes[IO] = UserRoutes.userRoutes[IO]()
   }
 }
