@@ -99,7 +99,7 @@ object GetStore {
   def apply[F[_]: GetStore]() = implicitly[GetStore[F]]
 
   implicit def iOGetStore(implicit e: Decoder[State]) = new GetStore[IO]{
-    def getStoresByUserEmail(email: Email): IO[List[Store]] = {
+    def getStoresByUserEmail(email: Email): IO[List[Store]] = {      
       val query = for {
         stores <- StoreTable.stores if stores.sellerEmail === email.underlying
       } yield (stores.storeId, stores.street, stores.city, stores.zipcode, stores.state, stores.sellerEmail)

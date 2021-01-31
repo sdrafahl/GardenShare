@@ -39,9 +39,13 @@ import cats.FlatMap
 import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
 import cats.Monad
 import cats.implicits._
+import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
+import com.gardenShare.gardenshare.Storage.Relational.GetStore
+import com.gardenShare.gardenshare.Storage.Relational.GetProductsByStore
+import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 
 object ProductRoutes {
-  def productRoutes[F[_]: Async: AuthUser: AuthJWT: GetDistance: InsertProduct: AddProductToStoreForSeller:GetUserInfo:AddProductToStore:ContextShift: Monad](implicit pp: ParseProduce[String], ae: ApplicativeError[F, Throwable])
+  def productRoutes[F[_]: Async: AuthUser: AuthJWT: GetDistance: InsertProduct: AddProductToStoreForSeller:GetUserInfo:AddProductToStore:ContextShift: Monad: GetProductsSoldFromSeller:GetStore:GetProductsByStore](implicit pp: ParseProduce[String], ae: ApplicativeError[F, Throwable], e:EncodeProduce[String])
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -63,6 +67,26 @@ object ProductRoutes {
             }
           }.leftMap(no => no.asJson)
         .fold(a => Ok(a.toString), b => b.flatMap(js => Ok(js.toString())))
+      }
+      case req @ GET -> Root / "product" => {
+        parseJWTokenFromRequest(req)
+          .map{(a: JWTValidationTokens) =>
+            a.auth.flatMap{
+              case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
+              case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+              case ValidToken(Some(email)) => {
+                ProcessData(
+                  implicitly[GetProductsSoldFromSeller[F]].get(Email(email)),
+                  (a:List[Produce]) => ListOfProduce(a.map(b => e.to(b))).asJson,
+                  (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false))
+                
+                  .process
+              }
+            }
+          }
+          .leftMap(a => Applicative[F].pure(a.asJson))
+          .fold(a => a, b => b)
+          .flatMap(a => Ok(a.toString()))
       }
     }
   }

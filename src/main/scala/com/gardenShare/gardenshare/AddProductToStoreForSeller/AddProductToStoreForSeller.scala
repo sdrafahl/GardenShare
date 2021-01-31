@@ -15,7 +15,9 @@ object AddProductToStoreForSeller {
     def add(s: Email, produce: Produce)(implicit g: GetUserInfo[IO],a:AddProductToStore[IO], cs: ContextShift[IO]): IO[Unit] = {
       g.getInfo(s).flatMap{(ui: UserInfo) =>
         ui.store match {
-          case Some(store) => a.add(store, produce)
+          case Some(store) => {
+            a.add(store, produce)
+          }
           case None => IO.raiseError(new Throwable("User is not a seller or does not have a store associated."))
         }        
       }      

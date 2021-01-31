@@ -4,6 +4,7 @@ import com.gardenShare.gardenshare.UserEntities.AuthenticatedUser
 import com.gardenShare.gardenshare.domain.Store.Store
 
 case class ResponseBody(msg: String, success: Boolean)
+case class ListOfProduce(listOfProduce: List[String])
 case class UserCreationRespose(msg: String, userCreated: Boolean)
 case class AuthUserResponse(
   msg: String,

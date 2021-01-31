@@ -45,26 +45,27 @@ object ProductTable {
 //   }
 // }
 
-// abstract class GetProductsByStore[F[_]: Async] {
-//   def getProductsByStore(storeid: Int): F[List[Product]]
-// }
+abstract class GetProductsByStore[F[_]: Async] {
+  def getProductsByStore(storeid: Int): F[List[Product]]
+}
 
-// object GetProductsByStore {
-//   def apply[F[_]: GetProductsByStore]() = implicitly[GetProductsByStore[F]]
+object GetProductsByStore {
+  def apply[F[_]: GetProductsByStore]() = implicitly[GetProductsByStore[F]]
 
-//   implicit object IOGetProductsByStore extends GetProductsByStore[IO]{
-//     def getProductsByStore(storeid: Int): IO[List[Product]] = {
-//       val query = for {
-//         products <- ProductTable.products if products.storeId equals storeid
-//       } yield (products.productId, products.storeId, products.productName)
-//       IO.fromFuture(IO(Setup.db.run(query.result)))
-//         .map(_.toList)
-//         .map(lst => lst.map(
-//           f => Product(f._1, f._2, f._3, DescriptionAddress(f._4))
-//         ))
-//     }
-//   }
-// }
+  implicit object IOGetProductsByStore extends GetProductsByStore[IO]{
+    def getProductsByStore(storeid: Int): IO[List[Product]] = {
+      val query = for {
+        products <- ProductTable.products if products.storeId === storeid
+      } yield (products.productId, products.storeId, products.productName)
+      IO.fromFuture(IO(Setup.db.run(query.result)))
+        .map(_.toList)
+        .map(lst => lst.map(
+          f => Product(f._1, f._2, f._3)
+        ))
+    }
+  }
+}
+
 
 abstract class InsertProduct[F[_]] {
   def add(l: List[CreateProductRequest]): F[Unit]
@@ -85,4 +86,3 @@ object InsertProduct {
     def addProduct[F[_]: InsertProduct] = implicitly[InsertProduct[F]].add(underlying)
   }
 }
-// case class CreateProductRequest(storeId: Int, productDescriptionKey: Product)
