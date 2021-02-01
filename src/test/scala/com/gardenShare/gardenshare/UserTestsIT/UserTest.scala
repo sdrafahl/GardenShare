@@ -25,64 +25,64 @@ import com.gardenShare.gardenshare.domain.Store.IA
 import com.gardenShare.gardenshare.Concurrency.Concurrency._
 import com.gardenShare.gardenshare.domain.Store._
 
-//object UserTestSpec extends TestSuite {
+object UserTestSpec extends TestSuite {
 
 
-  // val tests = Tests {
-  //   test("User Routes") {
-  //     val testEmail = "shanedrafahl@gmail.com"
-  //     val testPassword = "teST12$5jljasdf"
-  //     test("/user/signup/shanedrafahl@gmail.com/teST12$5jljasdf") {
-  //       test("Should register a user") {
-  //         UserTestsHelper.deleteUserAdmin(testEmail)                          
-  //         val responseFromCreatingUser = UserTestsHelper.createUser(testEmail, testPassword)
-  //         val expectedUserCreatedResponse = UserCreationRespose(
-  //           "User Request Made: CodeDeliveryDetailsType(Destination=s***@g***.com, DeliveryMedium=EMAIL, AttributeName=email)",
-  //           true
-  //         )
-  //         assert(responseFromCreatingUser equals expectedUserCreatedResponse)
-  //       }
-  //     }
-  //     test("/user/auth/shanedrafahl@gmail.com/teST12$5jljasdf") {
-  //       test("Should authenticate a valid user") {
-  //         UserTestsHelper.deleteUserAdmin(testEmail)
-  //         UserTestsHelper.adminCreateUser(testEmail, testPassword)
-  //         val r = UserTestsHelper.authUser(testEmail, testPassword)
-  //         assert(r.auth.isDefined)
-  //         assert(r.msg equals "jwt token is valid")
-  //       }
-  //     }
-  //     test("/user/jwt/") {
-  //       test("Should authenticate a value JWT token") {
-  //         UserTestsHelper.deleteUserAdmin(testEmail)
-  //         UserTestsHelper.adminCreateUser(testEmail, testPassword)
-  //         val r = UserTestsHelper.authUser(testEmail, testPassword)
-  //         val jwtToken = r.auth.get.jwt
-  //         val authResponse = UserTestsHelper.authToken(jwtToken)
-  //         assert(authResponse.msg equals "Token is valid")
-  //       }
-  //     }
-  //     test("/user/apply-to-become-seller") {
-  //       test("Should create application to become a seller"){
-  //         UserTestsHelper.deleteUserAdmin(testEmail)
-  //         UserTestsHelper.deletestore(Email(testEmail))
-  //         UserTestsHelper.adminCreateUser(testEmail, testPassword)          
-  //         val r = UserTestsHelper.authUser(testEmail, testPassword)
-  //         val jwtToken = r.auth.get.jwt
-  //         val address = Address("500 hickman Rd", "Waukee", 50263, IA)
-  //         val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken, address)
-  //         val expectedSellerResponse = SellerRequestSuccessful()
-  //         assert(responseForApplication equals expectedSellerResponse)
-  //         val info = UserTestsHelper.getUserInfo(jwtToken)
-  //         val expectedInfo = UserInfo(Email(testEmail), Sellers, Some(Store(info.store.get.id, address, Email(testEmail))))
-  //         assert(info equals expectedInfo)
-  //         val store = UserTestsHelper.getStore(Email(testEmail))
-  //         assert(store.address equals address)
-  //       }
-  //     }
-  //   }
-  //}
-//}
+  val tests = Tests {
+    test("User Routes") {
+      val testEmail = "shanedrafahl@gmail.com"
+      val testPassword = "teST12$5jljasdf"
+      test("/user/signup/shanedrafahl@gmail.com/teST12$5jljasdf") {
+        test("Should register a user") {
+          UserTestsHelper.deleteUserAdmin(testEmail)                          
+          val responseFromCreatingUser = UserTestsHelper.createUser(testEmail, testPassword)
+          val expectedUserCreatedResponse = UserCreationRespose(
+            "User Request Made: CodeDeliveryDetailsType(Destination=s***@g***.com, DeliveryMedium=EMAIL, AttributeName=email)",
+            true
+          )
+          assert(responseFromCreatingUser equals expectedUserCreatedResponse)
+        }
+      }
+      test("/user/auth/shanedrafahl@gmail.com/teST12$5jljasdf") {
+        test("Should authenticate a valid user") {
+          UserTestsHelper.deleteUserAdmin(testEmail)
+          UserTestsHelper.adminCreateUser(testEmail, testPassword)
+          val r = UserTestsHelper.authUser(testEmail, testPassword)
+          assert(r.auth.isDefined)
+          assert(r.msg equals "jwt token is valid")
+        }
+      }
+      test("/user/jwt/") {
+        test("Should authenticate a value JWT token") {
+          UserTestsHelper.deleteUserAdmin(testEmail)
+          UserTestsHelper.adminCreateUser(testEmail, testPassword)
+          val r = UserTestsHelper.authUser(testEmail, testPassword)
+          val jwtToken = r.auth.get.jwt
+          val authResponse = UserTestsHelper.authToken(jwtToken)
+          assert(authResponse.msg equals "Token is valid")
+        }
+      }
+      test("/user/apply-to-become-seller") {
+        test("Should create application to become a seller"){
+          UserTestsHelper.deleteUserAdmin(testEmail)
+          UserTestsHelper.deletestore(Email(testEmail))
+          UserTestsHelper.adminCreateUser(testEmail, testPassword)          
+          val r = UserTestsHelper.authUser(testEmail, testPassword)
+          val jwtToken = r.auth.get.jwt
+          val address = Address("500 hickman Rd", "Waukee", 50263, IA)
+          val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken, address)
+          val expectedSellerResponse = SellerRequestSuccessful()
+          assert(responseForApplication equals expectedSellerResponse)
+          val info = UserTestsHelper.getUserInfo(jwtToken)
+          val expectedInfo = UserInfo(Email(testEmail), Sellers, Some(Store(info.store.get.id, address, Email(testEmail))))
+          assert(info equals expectedInfo)
+          val store = UserTestsHelper.getStore(Email(testEmail))
+          assert(store.address equals address)
+        }
+      }
+    }
+  }
+}
 
 object UserTestsHelper {
 
