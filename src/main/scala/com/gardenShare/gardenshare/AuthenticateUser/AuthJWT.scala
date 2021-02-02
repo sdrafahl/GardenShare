@@ -25,10 +25,8 @@ import scala.util.Success
 import software.amazon.awssdk.services.ecs.model.Failure
 import com.gardenShare.gardenshare.Config.GetUserPoolId
 import com.gardenShare.gardenshare.Config.GetUserPoolId._
-import cats.syntax.flatMap._
-import cats.syntax.functor._
-import cats.FlatMap
-import cats.Functor
+import cats.MonadError
+import cats.implicits._
 
 abstract class AuthJWT[F[_]] {
   def authJWT(jwt:JWTValidationTokens): F[JWTValidationResult]
@@ -37,17 +35,22 @@ abstract class AuthJWT[F[_]] {
 object AuthJWT {
   implicit def apply[F[_]: AuthJWT]() = implicitly[AuthJWT[F]]
 
-  implicit def createAuthJWT[F[_]: FlatMap: Functor](implicit getUserPoolId: GetUserPoolId[F], builder: HttpsJwksBuilder[F], getRegion: GetRegion[F],joseProcessJwt:JoseProcessJwt, getUserPoolName: GetUserPoolName[F], get: GetTypeSafeConfig[F]) = new AuthJWT[F] {
+  implicit def createAuthJWT[F[_]](implicit getUserPoolId: GetUserPoolId[F], builder: HttpsJwksBuilder[F], getRegion: GetRegion[F],joseProcessJwt:JoseProcessJwt, getUserPoolName: GetUserPoolName[F], get: GetTypeSafeConfig[F], ae: MonadError[F, Throwable]) = new AuthJWT[F] {
     def authJWT(jwt:JWTValidationTokens): F[JWTValidationResult] = {
-      for {
+      (for {
         id <- getUserPoolId.exec()
         region <- getRegion.exec
         userPoolName <- getUserPoolName.exec()
         st = StringReps[USEastOne]()
         url = s"https://cognito-idp.${region.stringRep}.amazonaws.com/${id.id}/.well-known/jwks.json"
         consumer <- builder.build(url, userPoolName)
-        result = consumer.process(jwt.idToken)        
-      } yield joseProcessJwt.processJwt(consumer, jwt)
+        result = consumer.process(jwt.idToken)
+      } yield joseProcessJwt.processJwt(consumer, jwt))
+        .attempt
+        .map{
+          case Left(err) => InvalidToken(err.getMessage())
+          case Right(res) => res
+        }
     }
   }
 

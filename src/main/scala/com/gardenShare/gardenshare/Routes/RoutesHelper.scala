@@ -6,13 +6,11 @@ import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
 import com.gardenShare.gardenshare._
 import org.http4s._
 import cats.Functor
-import cats.syntax.functor._
 import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
 import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT.AuthJwtOps
 import com.gardenShare.gardenshare.UserEntities.ValidToken
 import cats.Functor
-import cats.syntax.functor
 import io.circe.fs2._
 import io.circe.generic.auto._, io.circe.syntax._
 import fs2.text
@@ -21,6 +19,13 @@ import cats.effect.IO
 import cats.effect.Sync
 import com.gardenShare.gardenshare.Encoders.Encoders._
 import io.circe.Decoder
+import cats.MonadError
+import cats.implicits._
+import org.http4s.dsl.Http4sDsl
+import cats.Applicative
+import org.http4s.dsl.Http4sDsl
+import org.http4s.HttpRoutes
+import org.http4s.Header
 
 object Helpers {
   def parseJWTokenFromRequest[F[_]: Functor](req: Request[F]) = {
@@ -49,6 +54,15 @@ object Helpers {
       .compile
       .toList
       .map(_.headOption)
+  }
+
+  implicit class ResponseHelper[F[_]](resp: F[Response[F]]) {
+    def catchError(implicit ae: MonadError[F, Throwable], h: Http4sDsl[F]) = {
+      import h._
+      resp
+        .attempt
+        .flatMap(_.fold(err => Ok(ResponseBody(err.getMessage(), false).asJson.toString()),b => Applicative[F].pure(b)))
+    }
   }
 }
 

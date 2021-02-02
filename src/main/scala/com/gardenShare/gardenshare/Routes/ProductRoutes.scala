@@ -43,11 +43,12 @@ import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
 import com.gardenShare.gardenshare.Storage.Relational.GetStore
 import com.gardenShare.gardenshare.Storage.Relational.GetProductsByStore
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
+import com.gardenShare.gardenshare.Helpers.ResponseHelper
 
 object ProductRoutes {
   def productRoutes[F[_]: Async: AuthUser: AuthJWT: GetDistance: InsertProduct: AddProductToStoreForSeller:GetUserInfo:AddProductToStore:ContextShift: Monad: GetProductsSoldFromSeller:GetStore:GetProductsByStore](implicit pp: ParseProduce[String], ae: ApplicativeError[F, Throwable], e:EncodeProduce[String])
       : HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F] {}
+    implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
       case req @ POST -> Root / "product" / "add" / produce => {
@@ -66,7 +67,7 @@ object ProductRoutes {
                 }
             }
           }.leftMap(no => no.asJson)
-        .fold(a => Ok(a.toString), b => b.flatMap(js => Ok(js.toString())))
+        .fold(a => Ok(a.toString), b => b.flatMap(js => Ok(js.toString()))).catchError
       }
       case req @ GET -> Root / "product" => {
         parseJWTokenFromRequest(req)
@@ -86,7 +87,7 @@ object ProductRoutes {
           }
           .leftMap(a => Applicative[F].pure(a.asJson))
           .fold(a => a, b => b)
-          .flatMap(a => Ok(a.toString()))
+          .flatMap(a => Ok(a.toString())).catchError
       }
     }
   }

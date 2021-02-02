@@ -34,17 +34,16 @@ import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
 import com.gardenShare.gardenshare.domain.Store.Store
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
+import com.gardenShare.gardenshare.Helpers.ResponseHelper
 
 object StoreRoutes {
   def storeRoutes[F[_]: Async: com.gardenShare.gardenshare.SignupUser.SignupUser: AuthUser: AuthJWT: InsertStore: GetNearestStores: GetDistance: GetStoresStream](implicit d: Decoder[Address], e: Encoder[Address])
       : HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F] {}
+    implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {      
       case req @ GET -> Root / "store" / address / limit / rangeInSeconds => {
-
         
-
         val maybeLimit = Try(limit.toInt).toEither.left
           .map(a => InvalidLimitProvided(a.getMessage()))
 
@@ -71,7 +70,7 @@ object StoreRoutes {
               }.foldIntoJson
           }.foldIntoJson
         }.foldIntoJson
-        .flatMap(js => Ok(js.toString())))
+        .flatMap(js => Ok(js.toString()))).catchError
       }
     }
   }
