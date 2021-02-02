@@ -47,7 +47,6 @@ import com.gardenShare.gardenshare.GetUserInfo.GetUserInfoOps
 import com.gardenShare.gardenshare.domain.User.UserInfo
 import com.gardenShare.gardenshare.domain.Store.Address
 import com.gardenShare.gardenshare.UserEntities.AddressNotProvided
-import com.gardenShare.gardenshare.UserEntities.UnknownError
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 
 object UserRoutes {
@@ -115,18 +114,18 @@ object UserRoutes {
             .map(a => a.flatMap(ab => parseBodyFromRequest[Address, F](req).map(ac => (ab, ac))))
             .map{a =>
               a.flatMap{
-                case (InvalidToken(msg), _) => Applicative[F].pure(InvalidToken(msg).asJson)
-                case (ValidToken(None), _) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-                case (_, None) => Applicative[F].pure(AddressNotProvided().asJson)
+                case (InvalidToken(msg), _) => Applicative[F].pure(ResponseBody(msg, false).asJson)
+                case (ValidToken(None), _) => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
+                case (_, None) => Applicative[F].pure(ResponseBody("Address not provided", false).asJson)
                 case (ValidToken(Some(email)), Some(address)) => {
                   ProcessData(
                     implicitly[ApplyUserToBecomeSeller[F]].applyUser(Email(email), Sellers, address),
-                    (_: Unit) => SellerRequestSuccessful(),
-                    (err:Throwable) => SellerRequestFailed(err.getMessage())
+                    (_: Unit) => ResponseBody("User is now a seller", true),
+                    (err:Throwable) => ResponseBody(err.getMessage(), false)
                   )
                     .process
                 }
-                case _ => Applicative[F].pure(UnknownError("Token is valid but without email").asJson)
+                case _ => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
               }
             }.left.map(noValidJwt => Ok(noValidJwt.asJson.toString()))
             .map(_.flatMap(js => Ok(js.toString())))

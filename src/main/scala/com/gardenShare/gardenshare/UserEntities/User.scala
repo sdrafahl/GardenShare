@@ -11,7 +11,6 @@ abstract class JWTValidationResult
 case class InvalidToken(msg: String) extends JWTValidationResult
 case class AddressNotProvided(msg: String = "Please Provide an Address")
 case class ValidToken(email: Option[String]) extends JWTValidationResult
-case class UnknownError(msg: String = "Encountered unknown error while trying to create seller")
 
 case class JWTValidationTokens(idToken: String)
 

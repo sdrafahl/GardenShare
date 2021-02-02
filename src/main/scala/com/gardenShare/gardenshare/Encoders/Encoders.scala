@@ -112,18 +112,6 @@ object Encoders {
     }
   }
 
-  implicit object SellerResponseEncoder extends Encoder[SellerResponse] {
-    override def apply(sr: SellerResponse) = sr match {
-      case SellerRequestSuccessful() => SellerRequestSuccessful().asJson
-      case SellerRequestFailed(msg) => SellerRequestFailed(msg).asJson
-    }
-  }
-
-  implicit val sellerResponseDecoder = List[Decoder[SellerResponse]](
-    Decoder[SellerRequestSuccessful].widen,
-    Decoder[SellerRequestFailed].widen
-  ).reduceLeft(_ or _)
-
   implicit val CreateWorkerResponseDecoder = List[Decoder[CreateWorkerResponse]](
     Decoder[WorkerCreatedSuccessfully].widen,
     Decoder[WorkerFailedToCreate].widen

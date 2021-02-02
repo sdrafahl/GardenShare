@@ -12,8 +12,6 @@ import io.circe.generic.auto._, io.circe.syntax._
 import utest.TestSuite
 import utest.test
 import utest.Tests
-import com.gardenShare.gardenshare.domain.SellerResponse
-import com.gardenShare.gardenshare.domain.SellerRequestSuccessful
 import com.gardenShare.gardenshare.domain.User.UserInfo
 import com.gardenShare.gardenshare.UserEntities.Sellers
 import com.gardenShare.gardenshare.Encoders.Encoders._
@@ -71,7 +69,7 @@ object UserTestSpec extends TestSuite {
           val jwtToken = r.auth.get.jwt
           val address = Address("500 hickman Rd", "Waukee", 50263, IA)
           val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken, address)
-          val expectedSellerResponse = SellerRequestSuccessful()
+          val expectedSellerResponse = ResponseBody("User is now a seller", true)
           assert(responseForApplication equals expectedSellerResponse)
           val info = UserTestsHelper.getUserInfo(jwtToken)
           val expectedInfo = UserInfo(Email(testEmail), Sellers, Some(Store(info.store.get.id, address, Email(testEmail))))
@@ -178,7 +176,7 @@ object UserTestsHelper {
       .head
   }
 
-  def applyUserToBecomeSeller(jwt: String, a: Address): SellerResponse = {
+  def applyUserToBecomeSeller(jwt: String, a: Address): ResponseBody = {
     val uriArg = Uri.fromString("/user/apply-to-become-seller").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
 
@@ -191,7 +189,7 @@ object UserTestsHelper {
         .body
         .through(text.utf8Decode)
         .through(stringArrayParser)
-        .through(decoder[IO, SellerResponse])
+        .through(decoder[IO, ResponseBody])
         .compile
         .toList
         .unsafeRunSync()
