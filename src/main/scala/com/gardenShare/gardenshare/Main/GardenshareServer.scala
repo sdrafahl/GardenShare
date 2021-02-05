@@ -69,7 +69,7 @@ object GardenshareServer {
         // in the underlying routes.
       
         httpApp = (
-          GetRoutesForEnv().getRoutesGivenEnv(sysEnv) <+> GetRoutesForEnv().getRoutesGivenEnv(sysEnv)
+          GetRoutesForEnv().getRoutesGivenEnv(sysEnv)
         ).orNotFound
 
         // With Middlewares in place

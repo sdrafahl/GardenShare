@@ -1,3 +1,4 @@
+
 package com.gardenShare.gardenshare
 
 import org.http4s.Request
@@ -44,6 +45,7 @@ object Helpers {
       )
     ))
   }
+
 
   def parseBodyFromRequest[T, F[_]: Sync](req: Request[F])(implicit d: Decoder[T]): F[Option[T]] = {
     req

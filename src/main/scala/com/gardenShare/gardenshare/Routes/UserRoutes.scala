@@ -48,6 +48,7 @@ import com.gardenShare.gardenshare.domain.User.UserInfo
 import com.gardenShare.gardenshare.domain.Store.Address
 import com.gardenShare.gardenshare.UserEntities.AddressNotProvided
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
+import _root_.fs2.text
 
 object UserRoutes {
   def userRoutes[F[_]: Async: GetTypeSafeConfig:GetUserInfo: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller: ContextShift]()
@@ -138,8 +139,8 @@ object UserRoutes {
           .map(_.auth)
           .map{a =>
             a.flatMap {
-              case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-              case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+              case InvalidToken(msg) => Applicative[F].pure(ResponseBody(msg, false).asJson)
+              case ValidToken(None) => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
               case ValidToken(Some(email)) => {
                 ProcessData(
                   Email(email).getUserInfo,

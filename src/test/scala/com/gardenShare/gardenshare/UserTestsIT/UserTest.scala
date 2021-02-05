@@ -67,7 +67,7 @@ object UserTestSpec extends TestSuite {
           UserTestsHelper.adminCreateUser(testEmail, testPassword)          
           val r = UserTestsHelper.authUser(testEmail, testPassword)
           val jwtToken = r.auth.get.jwt
-          val address = Address("500 hickman Rd", "Waukee", 50263, IA)
+          val address = Address("500 hickman Rd", "Waukee", "50263", IA)
           val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken, address)
           val expectedSellerResponse = ResponseBody("User is now a seller", true)
           assert(responseForApplication equals expectedSellerResponse)
@@ -181,6 +181,7 @@ object UserTestsHelper {
     val headers = Headers.of(Header("authentication", jwt))
 
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a.asJson.toString())
+
 
     UserRoutes
         .userRoutes[IO]

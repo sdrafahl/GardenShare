@@ -39,11 +39,11 @@ import _root_.io.circe.Encoder
 import _root_.io.circe._, _root_.io.circe.generic.auto._, _root_.io.circe.parser._, _root_.io.circe.syntax._
 
 object StoreTable {
-  class StoreTable(tag: Tag) extends Table[(Int, String, String, Int, String, String)](tag, "stores") {
+  class StoreTable(tag: Tag) extends Table[(Int, String, String, String, String, String)](tag, "stores") {
     def storeId = column[Int]("storeId", O.PrimaryKey, O.AutoInc)
     def street = column[String]("street")
     def city = column[String]("city")
-    def zipcode = column[Int]("zip")
+    def zipcode = column[String]("zip")
     def state = column[String]("state")
     def sellerEmail = column[String]("sellerEmail")    
     def * = (storeId, street, city, zipcode, state, sellerEmail)    
@@ -59,7 +59,7 @@ object Helpers {
             .collect{
               case (aa, bb, cc, dd, Right(ee), ff) => (aa, bb, cc, dd, ee, ff)
             }
-            .map{(l: (Int, String, String, Int, State, String)) =>
+            .map{(l: (Int, String, String, String, State, String)) =>
               Store(l._1, Address(l._2, l._3, l._4, l._5), Email(l._6))
             }
         }
@@ -120,7 +120,7 @@ object InsertStore {
     def add(data: List[CreateStoreRequest]): IO[List[Store]] = {
       val query = StoreTable.stores
       val qu = StoreTable.stores.returning(query)      
-      val res = qu ++= data.map(da => (0, da.address.street, da.address.city, da.address.zipcode, e(da.address.state).toString(), da.sellerEmail.underlying))
+      val res = qu ++= data.map(da => (0, da.address.street, da.address.city, da.address.zip, e(da.address.state).toString(), da.sellerEmail.underlying))
       val responses = IO.fromFuture(IO(Setup.db.run(res))).map(_.toList).map(_.toList)
       parseResponseForStores(responses)        
     }
@@ -164,7 +164,7 @@ object GetStoresStream {
       }.collect{
         case (aa, bb, cc, dd, Right(ee), ff) => (aa, bb, cc, dd, ee, ff)
       }
-        .map{(l: (Int, String, String, Int, State, String)) =>
+        .map{(l: (Int, String, String, String, State, String)) =>
           Store(l._1, Address(l._2, l._3, l._4, l._5), Email(l._6))
         }
 

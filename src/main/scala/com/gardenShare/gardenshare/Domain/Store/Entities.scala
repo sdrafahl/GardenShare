@@ -56,6 +56,6 @@ case object WI extends State
 case object WY extends State
 
 
-case class Address(street: String, city: String, zipcode: Int, state: State)
+case class Address(street: String, city: String, zip: String, state: State)
 case class Store(id: Int, address: Address, sellerEmail: Email)
 case class CreateStoreRequest(address: Address, sellerEmail: Email)

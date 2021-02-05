@@ -48,7 +48,11 @@ object AuthJWT {
       } yield joseProcessJwt.processJwt(consumer, jwt))
         .attempt
         .map{
-          case Left(err) => InvalidToken(err.getMessage())
+          case Left(err) => {
+            println("there was an auth error")
+            println(jwt)
+            InvalidToken(err.getMessage())
+          }
           case Right(res) => res
         }
     }

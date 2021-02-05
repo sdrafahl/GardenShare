@@ -55,8 +55,8 @@ object ProductRoutes {
         parseJWTokenFromRequest(req)
           .map{(a: JWTValidationTokens) =>
             a.auth.flatMap {
-                case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-                case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
+                case InvalidToken(msg) => Applicative[F].pure(ResponseBody(msg, false).asJson)
+                case ValidToken(None) => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
                 case ValidToken(Some(email)) => {
                   pp.parse(produce) match {
                     case Right(pd) => {

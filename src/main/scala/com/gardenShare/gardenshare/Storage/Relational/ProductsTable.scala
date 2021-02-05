@@ -26,25 +26,6 @@ object ProductTable {
   val products = TableQuery[ProductTable]
 }
 
-// abstract class GetProductByID[F[_]] {
-//   def getProduct(id: Int): F[Option[Product]]
-// }
-
-// object GetProductByID {
-//   def apply[F[_]: GetProductByID]() = implicitly[GetProductByID[F]]
-//   implicit object IOGetProductByID extends GetProductByID[IO] {
-//     def getProduct(id: Int): IO[Option[Product]] = {
-//       val query = for {
-//         products <- ProductTable.products if products.productId === id
-//       } yield (products.productId, products.storeId, products.productName)
-//       IO.fromFuture(IO(Setup.db.run(query.result)))
-//         .map(_.toList)
-//         .map(_.map(ac => Product(ac._1, ac._2, ac._3, DescriptionAddress(ac._4))))
-//         .map(_.headOption)
-//     }
-//   }
-// }
-
 abstract class GetProductsByStore[F[_]: Async] {
   def getProductsByStore(storeid: Int): F[List[Product]]
 }

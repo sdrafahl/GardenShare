@@ -37,7 +37,7 @@ object ProductDescriptionTest extends TestSuite {
       UserTestsHelper.adminCreateUser(testEmail, testPassword)
       val r = UserTestsHelper.authUser(testEmail, testPassword)
       val jwtToken = r.auth.get.jwt
-      val address = Address("500 hickman Rd", "Waukee", 50263, IA)
+      val address = Address("500 hickman Rd", "Waukee", "50263", IA)
       UserTestsHelper.applyUserToBecomeSeller(jwtToken, address)     
       val response = addProductToStore("BrownOysterMushrooms", jwtToken)
       val productsInStore = getProductsFromStore(jwtToken)

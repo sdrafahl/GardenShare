@@ -5,3 +5,4 @@ import com.gardenShare.gardenshare.UserEntities.UserType
 import com.gardenShare.gardenshare.domain.Store._
 
 case class UserInfo(email: Email, userType: UserType, store: Option[Store])
+
