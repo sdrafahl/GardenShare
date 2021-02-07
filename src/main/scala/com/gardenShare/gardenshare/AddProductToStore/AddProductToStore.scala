@@ -7,19 +7,19 @@ import cats.effect.IO
 import com.gardenShare.gardenshare.Storage.Relational.GetProductsByStore
 
 abstract class AddProductToStore[F[_]] {
-  def add(s: Store, pd: Produce): F[Unit]
+  def add(s: Store, pd: Produce, am: Amount): F[Unit]
 }
 
 object AddProductToStore {
   implicit def createIOAddProductToStore(implicit i: InsertProduct[IO], g:GetProductsByStore[IO], parser: ParseProduce[String]): AddProductToStore[IO] = new AddProductToStore[IO]{
-    def add(s: Store, pd: Produce): IO[Unit] = {
+    def add(s: Store, pd: Produce, am: Amount): IO[Unit] = {
       for {
         products <- g.getProductsByStore(s.id)
         produceList = products.map(p => parser.parse(p.productName)).collect{
           case Right(p) => p
         }
         x <- if(!produceList.contains(pd)) {
-          i.add(List(CreateProductRequest(s.id, pd)))
+          i.add(List(CreateProductRequest(s.id, pd, am)))
         } else {
           IO.unit
         }

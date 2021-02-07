@@ -17,6 +17,7 @@ import scala.util.Try
 import com.gardenShare.gardenshare.domain.Store.Address
 import com.gardenShare.gardenshare.UserEntities.Email
 import com.gardenShare.gardenshare.domain.Store.IA
+import com.gardenShare.gardenshare._
 
 object ProductDescriptionTest extends TestSuite {
 
@@ -39,7 +40,7 @@ object ProductDescriptionTest extends TestSuite {
       val jwtToken = r.auth.get.jwt
       val address = Address("500 hickman Rd", "Waukee", "50263", IA)
       UserTestsHelper.applyUserToBecomeSeller(jwtToken, address)     
-      val response = addProductToStore("BrownOysterMushrooms", jwtToken)
+      val response = addProductToStore("BrownOysterMushrooms", jwtToken, Amount(100, USD))
       val productsInStore = getProductsFromStore(jwtToken)
       assert(productsInStore equals ListOfProduce(List(BrownOysterMushrooms.toString())))
     }
@@ -64,8 +65,11 @@ object ProductDescriptionTest extends TestSuite {
       .head
   }
 
-  def addProductToStore(produce: String, jwt: String) = {
-    val uri = Uri.fromString(s"product/add/${produce}").toOption.get
+  def addProductToStore(produce: String, jwt: String, am: Amount) = {
+
+    val currencyEncoder = implicitly[EncodeToString[Currency]]
+
+    val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${currencyEncoder.encode(am.currencyType)}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
 

@@ -20,4 +20,3 @@ object ParseProduce {
     def parseProduce(implicit p:ParseProduce[T]) = p.parse(underlying)
   }
 }
-

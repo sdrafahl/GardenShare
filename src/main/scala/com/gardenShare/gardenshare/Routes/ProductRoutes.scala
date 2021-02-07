@@ -46,26 +46,32 @@ import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponse
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 
 object ProductRoutes {
-  def productRoutes[F[_]: Async: AuthUser: AuthJWT: GetDistance: InsertProduct: AddProductToStoreForSeller:GetUserInfo:AddProductToStore:ContextShift: Monad: GetProductsSoldFromSeller:GetStore:GetProductsByStore](implicit pp: ParseProduce[String], ae: ApplicativeError[F, Throwable], e:EncodeProduce[String])
+  def productRoutes[F[_]: Async: AuthUser: AuthJWT: GetDistance: InsertProduct: AddProductToStoreForSeller:GetUserInfo:AddProductToStore:ContextShift: Monad: GetProductsSoldFromSeller:GetStore:GetProductsByStore](implicit pp: ParseProduce[String], ae: ApplicativeError[F, Throwable], e:EncodeProduce[String], currencyParser: com.gardenShare.gardenshare.Parser[Currency])
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
-      case req @ POST -> Root / "product" / "add" / produce => {
+      case req @ POST -> Root / "product" / "add" / produce / price / priceUnit => {
         parseJWTokenFromRequest(req)
-          .map{(a: JWTValidationTokens) =>
-            a.auth.flatMap {
-                case InvalidToken(msg) => Applicative[F].pure(ResponseBody(msg, false).asJson)
-                case ValidToken(None) => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
-                case ValidToken(Some(email)) => {
-                  pp.parse(produce) match {
-                    case Right(pd) => {
-                      implicitly[AddProductToStoreForSeller[F]].add(Email(email), pd).map(_ => ResponseBody("Product was added to the store", true).asJson)
+          .map{(a: JWTValidationTokens) =>            
+            (price.toIntOption,currencyParser.parse(priceUnit)) match {
+              case (None, _) => Applicative[F].pure(ResponseBody("Price is not a number", false).asJson)
+              case (_, Left(x)) => Applicative[F].pure(ResponseBody(s"Price unit is not valid", false).asJson)
+              case (Some(x), Right(priceUnit)) => {
+                a.auth.flatMap {
+                  case InvalidToken(msg) => Applicative[F].pure(ResponseBody(msg, false).asJson)
+                  case ValidToken(None) => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
+                  case ValidToken(Some(email)) => {
+                    pp.parse(produce) match {
+                      case Right(pd) => {
+                        implicitly[AddProductToStoreForSeller[F]].add(Email(email), pd, Amount(x, priceUnit)).map(_ => ResponseBody("Product was added to the store", true).asJson)
+                      }
+                      case Left(err) => Applicative[F].pure(ResponseBody("Invalid produce", false).asJson)
                     }
-                    case Left(err) => Applicative[F].pure(ResponseBody("Invalid produce", false).asJson)
                   }
                 }
-            }
+              }
+            }            
           }.leftMap(no => no.asJson)
         .fold(a => Ok(a.toString), b => b.flatMap(js => Ok(js.toString()))).catchError
       }

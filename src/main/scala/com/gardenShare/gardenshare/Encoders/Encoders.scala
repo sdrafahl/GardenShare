@@ -25,6 +25,10 @@ import com.gardenShare.gardenshare.PriceUnit
 import com.gardenShare.gardenshare.EncodeProduce
 import com.gardenShare.gardenshare.Produce
 import com.gardenShare.gardenshare.ParseProduce
+import com.gardenShare.gardenshare.Currency
+import com.gardenShare.gardenshare.USD
+import com.gardenShare.gardenshare.Parser
+import com.gardenShare.gardenshare.EncodeToString
 
 object Encoders {
   implicit val orderEncoder: Encoder[OrderState] = new Encoder[OrderState] {
@@ -105,6 +109,8 @@ object Encoders {
     case InvalidType => "InvalidType".asJson
   }
 
+  implicit def CurrencyEncoder(implicit e: EncodeToString[Currency]): Encoder[Currency] = Encoder.instance {x => e.encode(x).asJson}
+
   implicit object CreateWorkerResponseEncoder extends Encoder[CreateWorkerResponse] {
     override def apply(ut: CreateWorkerResponse) = ut match {
       case WorkerCreatedSuccessfully() => WorkerCreatedSuccessfully().asJson
@@ -178,14 +184,15 @@ object Encoders {
     case _ => Left("invalid state provided")
   }}
 
-  implicit val priceUnitDecoder: Decoder[PriceUnit] = Decoder.decodeString.emap{(s: String) => s.map(_.toUpper) match {
+  implicit val priceUnitDecoder: Decoder[PriceUnit] = Decoder.decodeString.emap{(s: String) => s.toUpperCase() match {
     case "POUND" => Right(Pound)
     case "UNITS" => Right(Units)
     case _ => Left("Invalid price unit")
   }}
 
+  implicit def CurrencyDecoder(implicit c:Parser[Currency]): Decoder[Currency] = Decoder.decodeString.emap{(s:String) => c.parse(s)}
+
   implicit def produceDecoder(implicit p:ParseProduce[String]): Decoder[Produce] = Decoder.decodeString.emap{(s: String) =>
     p.parse(s)
   }
 }
-
