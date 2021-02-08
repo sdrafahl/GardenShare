@@ -7,6 +7,7 @@ import com.gardenShare.gardenshare.GetRoutesForEnv._
 import com.gardenShare.gardenshare.GetRoutes._
 import com.gardenShare.gardenshare.Shows._
 import com.gardenShare.gardenshare.Encoders.Encoders._
+import io.circe.generic.auto._, io.circe.syntax._
 
 object Main extends IOApp {
   def run(args: List[String]) = for {

@@ -42,8 +42,7 @@ object StoreRoutes {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {      
-      case req @ GET -> Root / "store" / address / limit / rangeInSeconds => {
-        
+      case req @ GET -> Root / "store" / limit / rangeInSeconds => {
         val maybeLimit = Try(limit.toInt).toEither.left
           .map(a => InvalidLimitProvided(a.getMessage()))
 
@@ -59,18 +58,23 @@ object StoreRoutes {
                   case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
                   case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
                   case ValidToken(Some(email)) => {
-                    val address = parseBodyFromRequest[Address, F](req)
-                    ProcessData(
-                      GetNearestStore(Distance(range), limit, ???).nearest,
-                      (lst: List[Store]) => StoresAdded(lst),
-                      (err:Throwable) => FailedToFindStore(err.getMessage())
-                    ).process
+                    parseBodyFromRequest[Address, F](req).flatMap{
+                      case None => Applicative[F].pure(ResponseBody("Invalid address provided", false).asJson)
+                      case Some(address) => {
+                        ProcessData(
+                          GetNearestStore(Distance(range), limit, address).nearest,
+                          (lst: List[Store]) => NearestStores(lst),
+                          (err:Throwable) => ResponseBody("Error finding stores", false)
+                        ).process
+                      }
+                    }                    
                   }
                 }
               }.foldIntoJson
           }.foldIntoJson
         }.foldIntoJson
-        .flatMap(js => Ok(js.toString()))).catchError
+          .flatMap(js => Ok(js.toString())))
+          .catchError
       }
     }
   }

@@ -22,6 +22,7 @@ import com.gardenShare.gardenshare.domain.Store.Address
 import com.gardenShare.gardenshare.domain.Store.IA
 import com.gardenShare.gardenshare.Concurrency.Concurrency._
 import com.gardenShare.gardenshare.domain.Store._
+import com.gardenShare.gardenshare.Storage.Relational.InsertStore
 
 object UserTestSpec extends TestSuite {
 
@@ -80,7 +81,7 @@ object UserTestSpec extends TestSuite {
       }
     }
   }
-}
+ }
 
 object UserTestsHelper {
 
@@ -217,12 +218,37 @@ object UserTestsHelper {
       .head
   }
 
-  def deletestore(email: Email)(implicit d:DeleteStore[IO]) = {
-    d.delete(email).unsafeRunSync()
-  }
+  def deletestore(email: Email)(implicit d:DeleteStore[IO]) = d.delete(email).unsafeRunSync()
+  def addStore(s: CreateStoreRequest)(implicit i:InsertStore[IO]) = i.add(List(s))
+  def getStore(email: Email)(implicit d:GetStore[IO]) = d.getStoresByUserEmail(email).unsafeRunSync().head
 
-  def getStore(email: Email)(implicit d:GetStore[IO]) = {
-    d.getStoresByUserEmail(email).unsafeRunSync().head
-  }
+  def getStores(limit: Int, rangeInSeconds: Int, jwt: String, address: Address) = {
+    val uriArg = Uri.fromString(s"/store/${limit}/${rangeInSeconds}").toOption.get
+    val headers = Headers.of(Header("authentication", jwt))
+    val storeRequest = Request[IO](Method.GET, uriArg, headers = headers).withEntity(address.asJson.toString())
 
+    val bcb = StoreRoutes
+      .storeRoutes[IO]
+      .orNotFound(storeRequest)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+
+    StoreRoutes
+      .storeRoutes[IO]
+      .orNotFound(storeRequest)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, NearestStores])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head     
+  }
 }

@@ -55,6 +55,12 @@ import com.gardenShare.gardenshare.UserEntities.InvalidType
 import software.amazon.awssdk.services.iam.model.ListGroupsForUserRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserRequest
+import software.amazon.awssdk.services.lightsail.model.CreateRelationalDatabaseRequest
+import software.amazon.awssdk.services.lightsail.LightsailAsyncClient
+
+import scala.jdk.FutureConverters._
+import cats.effect.ContextShift
+import software.amazon.awssdk.services.lightsail.model.CreateRelationalDatabaseResponse
 
 abstract class CogitoClient[F[_]: GetUserPoolName: Async: FlatMap] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]

@@ -37,40 +37,35 @@ object GetNearestStores {
   }
   implicit object IOGetNearestStore extends GetNearestStores[IO] {
     def getNearest(n: Distance, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[IO], getStores: GetStoresStream[IO]): IO[List[Store]] = {
-      val stores = getStores.getLazyStores()     
+      val stores = getStores.getLazyStores()
+
       for {
         queue <- InspectableQueue.bounded[IO, Store](limit)
-        populateQueue = for {
-          approximateDepth <- queue.getSize
-          processQueue = stores.parEvalMap(com.gardenShare.gardenshare.Concurrency.Concurrency.threadCount) {
-            store =>
-            if(approximateDepth < limit) { 
-                isWithinRange[IO](n, fromLocation, store.address, getDist).map {
-                  case true => queue.enqueue1(store)
-                  case false => IO.unit                
-                }.flatMap(a => a)
-              } else { IO.unit }
-            }.compile.drain
-        } yield processQueue
-        checkQueueProgram = {
-          def checkQueue: IO[Unit] = {
-            (for {
-              aproxDepth <- queue.getSize
-            } yield aproxDepth match {
-              case d if d < limit => {
-                Thread.sleep(1000)
-                checkQueue
-              }
-              case _ => IO.unit
-            }).flatMap(a => a)
+        populateQueue <- for {
+          processQueue <- stores.parEvalMap(com.gardenShare.gardenshare.Concurrency.Concurrency.threadCount) {
+            store => {
+                isWithinRange[IO](n, fromLocation, store.address, getDist).flatMap {
+                  case true => {
+                    queue.getSize.flatMap{ depth =>
+                      if(depth < limit) {
+                        queue.enqueue1(store)
+                      } else {
+                        IO.raiseError(new Throwable("Done adding to queue"))
+                      }
+                    }
+                    
+                  }
+                  case false => IO.unit
+                }
+             }
           }
-          checkQueue
-        }
-        _ <- IO.race(populateQueue, IO.race(checkQueueProgram, IO.sleep(1 minute)))
-        listOfStores <- queue.dequeueChunk(limit).mapAsync(com.gardenShare.gardenshare.Concurrency.Concurrency.threadCount) { a =>IO(List(a)) }
-        .compile
-        .fold(List[Store]()) { (a,b) => a ++ b }        
-      } yield listOfStores
+          .compile
+          .toList
+          .timeout(15 seconds)
+          .attempt
+        } yield processQueue        
+        listOfStores <- queue.dequeue.take(limit).compile.toList
+       } yield listOfStores
     }
   }
   implicit class GetNearestOps(underlying: GetNearestStore) {

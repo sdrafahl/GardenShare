@@ -160,7 +160,9 @@ object GetStoresStream {
       } yield (stores.storeId, stores.street, stores.city, stores.zipcode, stores.state, stores.sellerEmail)
       val reactiveStream = Setup.db.stream(query.result)
       fromPublisher(reactiveStream).map {
-        case (id, street, city, zipcode, state, email) => (id, street, city, zipcode, decode[State](state), email)
+        case (id, street, city, zipcode, state, email) => {
+          (id, street, city, zipcode, decode[State](state), email)
+        }
       }.collect{
         case (aa, bb, cc, dd, Right(ee), ff) => (aa, bb, cc, dd, ee, ff)
       }

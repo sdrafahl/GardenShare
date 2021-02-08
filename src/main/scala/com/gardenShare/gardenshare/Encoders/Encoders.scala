@@ -126,7 +126,7 @@ object Encoders {
   implicit val userTypeDecoder: Decoder[UserType] = Decoder.decodeString.emap{
     case "Requester" => Right(Requester)
     case "Sellers" => Right(Sellers)
-    case _ => Right(InvalidType)
+    case _ => Left("Invalid UserType")
   }
 
   implicit val stateDecoder: Decoder[State] = Decoder.decodeString.emap { (s: String) => s.map(_.toUpper) match {
