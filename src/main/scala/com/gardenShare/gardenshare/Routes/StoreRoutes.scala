@@ -24,7 +24,7 @@ import com.gardenShare.gardenshare.domain.Store.CreateStoreRequest
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore.CreateStoreRequestOps
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore
 import scala.util.Try
-import com.gardenShare.gardenshare.GoogleMapsClient.Distance
+import com.gardenShare.gardenshare.GoogleMapsClient.DistanceInMiles
 import com.gardenShare.gardenshare.GetNearestStores.GetNearestOps
 import com.gardenShare.gardenshare.Helpers._
 import cats.Applicative
@@ -42,11 +42,11 @@ object StoreRoutes {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {      
-      case req @ GET -> Root / "store" / limit / rangeInSeconds => {
+      case req @ GET -> Root / "store" / limit / rangeInMiles => {
         val maybeLimit = Try(limit.toInt).toEither.left
           .map(a => InvalidLimitProvided(a.getMessage()))
 
-        val maybeRange = Try(rangeInSeconds.toFloat).toEither.left
+        val maybeRange = Try(rangeInMiles.toFloat).toEither.left
           .map(a => InvalidRangeProvided(a.getMessage()))
 
         addJsonHeaders(maybeLimit.map{limit =>
@@ -62,7 +62,7 @@ object StoreRoutes {
                       case None => Applicative[F].pure(ResponseBody("Invalid address provided", false).asJson)
                       case Some(address) => {
                         ProcessData(
-                          GetNearestStore(Distance(range), limit, address).nearest,
+                          GetNearestStore(DistanceInMiles(range), limit, address).nearest,
                           (lst: List[Store]) => NearestStores(lst),
                           (err:Throwable) => ResponseBody("Error finding stores", false)
                         ).process

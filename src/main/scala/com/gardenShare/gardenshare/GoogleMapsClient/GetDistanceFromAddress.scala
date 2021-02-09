@@ -13,52 +13,48 @@ import java.time.Duration
 import cats.instances.float
 import cats.Show
 import cats.implicits._
+import com.google.maps.model.Distance
 
-case class Distance(seconds: Float)
+case class DistanceInMiles(distance: Double)
 
 abstract class IsWithinRange {
-  def isInRange(range: Distance, dist: Distance): Boolean
+  def isInRange(range: DistanceInMiles, dist: DistanceInMiles): Boolean
 }
 
 object IsWithinRange {
   def apply() = default
   implicit object default extends IsWithinRange {
-    def isInRange(range: Distance, dist: Distance): Boolean = dist.seconds < range.seconds
+    def isInRange(range: DistanceInMiles, dist: DistanceInMiles): Boolean = dist.distance < range.distance
   }
-  implicit class Ops(underlying: Distance) {
-    def inRange(range: Distance)(implicit isWith: IsWithinRange) = isWith.isInRange(range, underlying)
+  implicit class Ops(underlying: DistanceInMiles) {
+    def inRange(range: DistanceInMiles)(implicit isWith: IsWithinRange) = isWith.isInRange(range, underlying)
   }
 }
 
 abstract class GetDistance[F[_]] {
-  def getDistanceFromAddress(from: Address, to: Address)(implicit getKey: GetGoogleMapsApiKey[F]): F[Distance]
+  def getDistanceFromAddress(from: Address, to: Address)(implicit getKey: GetGoogleMapsApiKey[F]): F[DistanceInMiles]
 }
 
 object GetDistance {
   def apply[F[_]: GetDistance: GetGoogleMapsApiKey]() = implicitly[GetDistance[F]]
   implicit def IOGetDistance(implicit s: Show[Address]) = new GetDistance[IO] {
     implicit val default = GetGoogleMapsApiKey[IO]()
-    def getDistanceFromAddress(from: Address, to: Address)(implicit getKey: GetGoogleMapsApiKey[IO]): IO[Distance] = {
-      val getContPgm = for {
+    def getDistanceFromAddress(from: Address, to: Address)(implicit getKey: GetGoogleMapsApiKey[IO]): IO[DistanceInMiles] = {
+      val maybeDistancepgm = for {
         key <- getKey.get
         cont = new GeoApiContext.Builder().apiKey(key.key).build()
-        now = Instant.now()
         dir = DirectionsApi.newRequest(cont).departureTimeNow().origin(from.show).destination(to.show).await()
         maybeFirstRoute = dir.routes.headOption
-        distance = maybeFirstRoute.map {r =>
-          r.legs.foldLeft(Duration.ZERO) {
-            case (acc, leg) => {
-              val secs = leg.duration.inSeconds
-              val accsecs = acc.getSeconds()
-              val totalTime = secs + accsecs
-              Duration.ofSeconds(totalTime)
-            }
+        distance = maybeFirstRoute.map {r =>          
+          r.legs.foldLeft(0.0) {
+            case (acc, leg) => acc + leg.distance.inMeters
           }
         }
-      } yield distance
-      getContPgm.flatMap {
-        case Some(dur) => IO(Distance(dur.getSeconds()))
-        case None => IO.raiseError(new Throwable("No direction information was returned"))
+       distanceInMiles = distance.map(x => DistanceInMiles(x/1609.34))
+      } yield distanceInMiles
+      maybeDistancepgm.flatMap{
+        case None => IO.raiseError(new Throwable("No Route found."))
+        case Some(a) => IO(a)
       }
     }
   }

@@ -22,7 +22,7 @@ import com.gardenShare.gardenshare.domain.Store.CreateStoreRequest
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore.CreateStoreRequestOps
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore
 import scala.util.Try
-import com.gardenShare.gardenshare.GoogleMapsClient.Distance
+import com.gardenShare.gardenshare.GoogleMapsClient.DistanceInMiles
 import com.gardenShare.gardenshare.SignupUser._
 import com.gardenShare.gardenshare.SignupUser.SignupUser._
 import com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames
