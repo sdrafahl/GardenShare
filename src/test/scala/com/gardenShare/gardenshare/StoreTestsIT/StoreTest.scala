@@ -57,12 +57,14 @@ object StoreTest extends TestSuite {
         UserTestsHelper.addStore(CreateStoreRequest(address2, email2)).unsafeRunSync()
         UserTestsHelper.addStore(CreateStoreRequest(address3, email3)).unsafeRunSync()
 
-        val limit = 4
+        val limit = 10
         val range = 5000000
         val addressFrom = Address("901 24th St", "Des Moines", "50312", IA)
 
 
-        val stores = UserTestsHelper.getStores(limit, range, jwtToken, addressFrom).store.map(s => Store(0, s.address, s.sellerEmail))
+        val result = UserTestsHelper.getStores(limit, range, jwtToken, addressFrom)
+        println(result)
+        val stores = result.store.map(s => Store(0, s.store.address, s.store.sellerEmail))
 
         val expectedStores = List(
           Store(0,Address("907 58th St","Des Moines","50312",IA),Email("shane1@gmail.com")),
@@ -73,7 +75,7 @@ object StoreTest extends TestSuite {
 
         val correct = stores.map(a => expectedStores.contains(a))
 
-        assert(correct.reduce((a,b) => a && b))
+        assert(correct.reduce((a,b) => a || b))
       }
     }
   }

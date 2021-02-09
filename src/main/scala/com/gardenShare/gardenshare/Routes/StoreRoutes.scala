@@ -63,7 +63,7 @@ object StoreRoutes {
                       case Some(address) => {
                         ProcessData(
                           GetNearestStore(DistanceInMiles(range), limit, address).nearest,
-                          (lst: List[Store]) => NearestStores(lst),
+                          (lst: List[RelativeDistanceAndStore]) => NearestStores(lst),
                           (err:Throwable) => ResponseBody("Error finding stores", false)
                         ).process
                       }

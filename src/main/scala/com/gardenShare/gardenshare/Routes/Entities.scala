@@ -14,7 +14,7 @@ case class AuthUserResponse(
 case class IsJwtValidResponse(msg: String, valid: Boolean)  
 
 case class NoJWTTokenProvided()
-case class NearestStores(store: List[Store])
+case class NearestStores(store: List[RelativeDistanceAndStore])
 case class FailedToAddStore(msg: String)
 case class FailedToFindStore(msg: String)
 case class InvalidLimitProvided(msg: String)

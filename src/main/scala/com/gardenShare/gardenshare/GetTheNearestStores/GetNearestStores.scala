@@ -22,49 +22,51 @@ import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance._
 import com.gardenShare.gardenshare.GoogleMapsClient.DistanceInMiles
 
 abstract class GetNearestStores[F[_]] {
-  def getNearest(n: DistanceInMiles, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[F], getStores: GetStoresStream[F]): F[List[Store]]
+  def getNearest(n: DistanceInMiles, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[F], getStores: GetStoresStream[F]): F[List[RelativeDistanceAndStore]]
 }
 
 case class GetNearestStore(n: DistanceInMiles, limit: Int, fromLocation: Address)
+case class RelativeDistanceAndStore(store: Store, distance: DistanceInMiles)
 
 object GetNearestStores {
   def apply[F[_]: GetNearestStores]() = implicitly[GetNearestStores[F]]
 
-  private def isWithinRange[F[_]: GetDistance:GetGoogleMapsApiKey:Monad](range: DistanceInMiles, from: Address, to: Address, getDist: GetDistance[F]): F[Boolean] = {
+  private def isWithinRange[F[_]: GetDistance:GetGoogleMapsApiKey:Monad](range: DistanceInMiles, from: Address, to: Address, getDist: GetDistance[F]): F[(Boolean, DistanceInMiles)] = {
     for {
       dist <- getDist.getDistanceFromAddress(from, to)
-    } yield dist.inRange(range)
+    } yield (dist.inRange(range), dist)
   }
   implicit object IOGetNearestStore extends GetNearestStores[IO] {
-    def getNearest(n: DistanceInMiles, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[IO], getStores: GetStoresStream[IO]): IO[List[Store]] = {
+    def getNearest(n: DistanceInMiles, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[IO], getStores: GetStoresStream[IO]): IO[List[RelativeDistanceAndStore]] = {
       val stores = getStores.getLazyStores()
 
       for {
-        queue <- InspectableQueue.bounded[IO, Store](limit)
+        queue <- InspectableQueue.bounded[IO, RelativeDistanceAndStore](limit)
         populateQueue <- for {
           processQueue <- stores.parEvalMap(com.gardenShare.gardenshare.Concurrency.Concurrency.threadCount) {
             store => {
                 isWithinRange[IO](n, fromLocation, store.address, getDist).flatMap {
-                  case true => {
+                  case (true, dist) => {
                     queue.getSize.flatMap{ depth =>
                       if(depth < limit) {
-                        queue.enqueue1(store)
+                        queue.enqueue1(RelativeDistanceAndStore(store, dist))
                       } else {
                         IO.raiseError(new Throwable("Done adding to queue"))
                       }
                     }
                     
                   }
-                  case false => IO.unit
+                  case (false, _) => IO.unit
                 }
              }
           }
           .compile
           .toList
-          .timeout(15 seconds)
+          .timeout(5 seconds)
           .attempt
-        } yield processQueue        
-        listOfStores <- queue.dequeue.take(limit).compile.toList
+        } yield processQueue
+        dep <- queue.getSize
+        listOfStores <- queue.dequeue.take(dep).compile.toList
        } yield listOfStores
     }
   }
