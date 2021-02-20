@@ -40,9 +40,9 @@ object StoreRoutes {
   def storeRoutes[F[_]: Async: com.gardenShare.gardenshare.SignupUser.SignupUser: AuthUser: AuthJWT: InsertStore: GetNearestStores: GetDistance: GetStoresStream](implicit d: Decoder[Address], e: Encoder[Address])
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
-    import dsl._
-    HttpRoutes.of[F] {      
-      case req @ GET -> Root / "store" / limit / rangeInMiles => {
+    import dsl._      
+    HttpRoutes.of[F] {
+      case req @ POST -> Root / "store" / limit / rangeInMiles => {
         val maybeLimit = Try(limit.toInt).toEither.left
           .map(a => InvalidLimitProvided(a.getMessage()))
 

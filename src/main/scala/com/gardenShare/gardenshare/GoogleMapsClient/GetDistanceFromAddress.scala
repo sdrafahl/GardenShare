@@ -15,6 +15,19 @@ import cats.Show
 import cats.implicits._
 import com.google.maps.model.Distance
 
+import software.amazon.awssdk.services.lightsail.model.GetRelationalDatabaseRequest
+import software.amazon.awssdk.services.lightsail.model.DeleteRelationalDatabaseRequest
+import software.amazon.awssdk.services.lightsail.model.GetRelationalDatabaseResponse
+import software.amazon.awssdk.services.lightsail.model.DeleteRelationalDatabaseResponse
+import software.amazon.awssdk.services.lightsail.LightsailAsyncClient
+import cats.effect.IO
+import software.amazon.awssdk.services.lightsail.model.CreateRelationalDatabaseRequest
+import cats.effect.ContextShift
+import software.amazon.awssdk.services.lightsail.model.CreateRelationalDatabaseResponse
+import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+
+
 case class DistanceInMiles(distance: Double)
 
 abstract class IsWithinRange {
@@ -58,4 +71,29 @@ object GetDistance {
       }
     }
   }
+}
+
+object Stuff {
+        val request = GetRelationalDatabaseRequest
+          .builder()
+          .relationalDatabaseName("dbname")
+          .build()
+  val gg: AwsCredentials = ???
+  val ff: AwsCredentialsProvider = ???
+  //ff.
+  //gg.
+  //ff.
+//  gg.
+
+  val cl: LightsailAsyncClient = ???
+  //cl.createREl
+  
+  val r: GetRelationalDatabaseResponse = ???
+  //val dbName = r.relationalDatabase().masterDatabaseName().
+
+  val req: CreateRelationalDatabaseRequest = ???
+  //req.toBuilder().relationalDatabaseBlueprintId($0)
+//  val ccc :DefaultCredentialsProvider = ???
+  //r.rel
+
 }

@@ -10,7 +10,5 @@ import com.gardenShare.gardenshare.Encoders.Encoders._
 import io.circe.generic.auto._, io.circe.syntax._
 
 object Main extends IOApp {
-  def run(args: List[String]) = for {
-    exitCode <- GardenshareServer.stream[IO].as(ExitCode.Success)
-  } yield exitCode
+  def run(args: List[String]) = GardenshareServer.stream[IO].as(ExitCode.Success)
 }

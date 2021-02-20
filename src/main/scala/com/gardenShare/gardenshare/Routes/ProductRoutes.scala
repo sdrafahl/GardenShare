@@ -95,6 +95,16 @@ object ProductRoutes {
           .fold(a => a, b => b)
           .flatMap(a => Ok(a.toString())).catchError
       }
+      case GET -> Root / "product" / email => {
+        ProcessData(
+          implicitly[GetProductsSoldFromSeller[F]].get(Email(email)),
+          (a:List[Produce]) => ListOfProduce(a.map(b => e.to(b))).asJson,
+          (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false)
+        )
+          .process
+          .flatMap(a => Ok(a.toString()))
+          .catchError
+      }
     }
   }
 }

@@ -1,6 +1,7 @@
 provider "aws" {
   region = "us-east-1"
   profile = "default"
+  shared_credentials_file = "~/.aws/credentials"
   max_retries = 3
 }
 
@@ -32,6 +33,13 @@ resource "aws_cognito_user_group" "main" {
   description  = "Managed by Terraform"
 }
 
+resource "aws_cognito_user_pool_domain" "main" {
+  domain       = "gardenshare"
+  user_pool_id = aws_cognito_user_pool.pool.id
+}
+
 output "ClientID" {
   value = aws_cognito_user_pool_client.client.id
 }
+
+

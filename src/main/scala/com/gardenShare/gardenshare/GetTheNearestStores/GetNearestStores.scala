@@ -20,6 +20,8 @@ import cats.effect.concurrent.Ref
 import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
 import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance._
 import com.gardenShare.gardenshare.GoogleMapsClient.DistanceInMiles
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 
 abstract class GetNearestStores[F[_]] {
   def getNearest(n: DistanceInMiles, limit: Int, fromLocation: Address)(implicit getDist: GetDistance[F], getStores: GetStoresStream[F]): F[List[RelativeDistanceAndStore]]
@@ -73,5 +75,8 @@ object GetNearestStores {
   implicit class GetNearestOps(underlying: GetNearestStore) {
     def nearest[F[_]: GetNearestStores:GetDistance:GetStoresStream](implicit getNearest: GetNearestStores[F]) = getNearest.getNearest(underlying.n, underlying.limit, underlying.fromLocation)
   }
+}
 
+object Temp {
+  val pp = DefaultCredentialsProvider.create()
 }

@@ -29,6 +29,7 @@ object UserTestSpec extends TestSuite {
 
   val tests = Tests {
     test("User Routes") {
+
       val testEmail = "shanedrafahl@gmail.com"
       val testPassword = "teST12$5jljasdf"
       test("/user/signup/shanedrafahl@gmail.com/teST12$5jljasdf") {
@@ -48,7 +49,7 @@ object UserTestSpec extends TestSuite {
           UserTestsHelper.adminCreateUser(testEmail, testPassword)
           val r = UserTestsHelper.authUser(testEmail, testPassword)
           assert(r.auth.isDefined)
-          assert(r.msg equals "jwt token is valid")
+          assert(r.msg equals "jwt toke is valid")
         }
       }
       test("/user/jwt/") {
@@ -225,18 +226,7 @@ object UserTestsHelper {
   def getStores(limit: Int, rangeInSeconds: Int, jwt: String, address: Address) = {
     val uriArg = Uri.fromString(s"/store/${limit}/${rangeInSeconds}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
-    val storeRequest = Request[IO](Method.GET, uriArg, headers = headers).withEntity(address.asJson.toString())
-
-    val bcb = StoreRoutes
-      .storeRoutes[IO]
-      .orNotFound(storeRequest)
-      .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .compile
-      .toList
-      .unsafeRunSync()
-      .head
+    val storeRequest = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address.asJson.toString())
 
     StoreRoutes
       .storeRoutes[IO]
