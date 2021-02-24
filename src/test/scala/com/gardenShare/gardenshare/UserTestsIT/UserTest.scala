@@ -49,7 +49,7 @@ object UserTestSpec extends TestSuite {
           UserTestsHelper.adminCreateUser(testEmail, testPassword)
           val r = UserTestsHelper.authUser(testEmail, testPassword)
           assert(r.auth.isDefined)
-          assert(r.msg equals "jwt toke is valid")
+          assert(r.msg equals "jwt token is valid")
         }
       }
       test("/user/jwt/") {
@@ -226,6 +226,7 @@ object UserTestsHelper {
   def getStores(limit: Int, rangeInSeconds: Int, jwt: String, address: Address) = {
     val uriArg = Uri.fromString(s"/store/${limit}/${rangeInSeconds}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
+    
     val storeRequest = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address.asJson.toString())
 
     StoreRoutes
