@@ -7,7 +7,7 @@ import java.util.concurrent.Executors
 import cats.effect._
 import slick.lifted.AbstractTable
 import scala.concurrent.ExecutionContext
-import com.gardenShare.gardenshare.Migrator.RunMigrations
+import com.gardenShare.gardenshare.Migrator.RunMigration
 import com.gardenShare.gardenshare.Migrator.Migrator1
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -16,7 +16,7 @@ object Main extends IOApp {
   def run(args: List[String]) = {
     implicit lazy val executor = Executors.newFixedThreadPool(4)
     implicit lazy val ec = ExecutionContext.fromExecutor(executor)
-    val migrator = RunMigrations[IO]()
+    val migrator = RunMigration[IO]()
 
     args.headOption match {      
       case Some("up") => {
