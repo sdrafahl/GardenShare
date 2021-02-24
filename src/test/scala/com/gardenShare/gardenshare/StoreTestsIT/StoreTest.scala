@@ -62,7 +62,7 @@ object StoreTest extends TestSuite {
         val addressFrom = Address("901 24th St", "Des Moines", "50312", IA)
 
 
-        val result = UserTestsHelper.getstores(limit, range, jwtToken, addressFrom)
+        val result = UserTestsHelper.getStores(limit, range, jwtToken, addressFrom)
         println(result)
         val stores = result.store.map(s => Store(0, s.store.address, s.store.sellerEmail))
 
