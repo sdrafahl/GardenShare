@@ -9,7 +9,7 @@ import slick.lifted.AbstractTable
 import com.gardenShare.gardenshare.Concurrency.Concurrency._
 
 object Setup {
-  val db = Database.forConfig("postgres")
+  val db = Database.forConfig("postgres") // move this into the main
 
   val cleanupProducts: DBIO[Int] = sqlu"DROP TABLE IF EXISTS products;"
   val cleanupStores: DBIO[Int] = sqlu"DROP TABLE IF EXISTS products;"
