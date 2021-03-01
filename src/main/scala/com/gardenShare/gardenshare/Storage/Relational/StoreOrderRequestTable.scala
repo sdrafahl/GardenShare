@@ -13,6 +13,7 @@ import com.gardenShare.gardenshare.StoreOrderRequestWithId
 import java.time.ZonedDateTime
 import scala.util.Try
 import com.gardenShare.gardenshare.ParseZoneDateTime
+import com.gardenShare.gardenshare.ProductAndQuantity
 
 object StoreOrderRequestTable {
   class StoreOrderRequestTable(tag: Tag) extends Table[(Int, String, String, String)](tag, "storeorderrequest") {
@@ -26,11 +27,11 @@ object StoreOrderRequestTable {
 }
 
 object ProductReferenceTable {
-  class ProductReferenceTable(tag: Tag) extends Table[(Int, Int)](tag, "productreferencetable") {
-    def productReferenceTableId = column[Int]("productreferencetableid")
-    // todo: need to add quantity
+  class ProductReferenceTable(tag: Tag) extends Table[(Int, Int, Int)](tag, "productreferencetable") {
+    def productReferenceTableId = column[Int]("productreferencetableid")    
     def productId = column[Int]("productid")
-    def * = (productReferenceTableId, productId)
+    def productQuantity = column[Int]("quantity")
+    def * = (productReferenceTableId, productId, productQuantity)
   }
   val productReferenceTable = TableQuery[ProductReferenceTable]
 }
@@ -58,7 +59,7 @@ object DeleteStoreOrderRequestsForSeller {
       for {
         orders <- getter.getWithEmail(e)
         _ <- orders.map{order =>
-          val pgmToDeleteProductReferences = order.storeOrderRequest.products.map(prod => (IO.fromFuture(IO(Setup.db.run(createQueryFoProductReferences(prod.id).delete))))).parSequence
+          val pgmToDeleteProductReferences = order.storeOrderRequest.products.map(prod => (IO.fromFuture(IO(Setup.db.run(createQueryFoProductReferences(prod.product.id).delete))))).parSequence
           val pgmToDeleteOrderRequests =  IO.fromFuture(IO(Setup.db.run(createDeleteOrdersByIdQuery(order.id).delete)))
           pgmToDeleteProductReferences &> pgmToDeleteOrderRequests
         }.parSequence
@@ -81,7 +82,7 @@ object InsertStoreOrderRequest {
         val prodRefTable = ProductReferenceTable.productReferenceTable
         val prodRefRequest = ProductReferenceTable.productReferenceTable.returning(prodRefTable)
         val productReferencesToAdd = req.products.map{f =>
-          (0, f.id)
+          (0, f.product.id, f.quantity)
         }
         val prodRefRequestData = prodRefRequest ++= productReferencesToAdd
         IO.fromFuture(IO(Setup.db.run(prodRefRequestData))).map{_ =>
@@ -104,14 +105,14 @@ object GetStoreOrderRequestHelper {
         } yield pre
         IO.fromFuture(IO(Setup.db.run(productReferenceQuery.result))).flatMap{abb =>
           abb.map{a =>
-            g.get(a._2)
+            g.get(a._2).map(lk => (lk, a._3))
           }
             .parSequence
             .map(_.collect{
-              case Some(a) => a
+              case (Some(a), b) => (a, b)
             }).map{pd =>
               par.parseZoneDateTime(f._4).map{zdt =>
-                StoreOrderRequestWithId(f._1, StoreOrderRequest(Email(f._2), Email(f._3), pd.toList, zdt))
+                StoreOrderRequestWithId(f._1, StoreOrderRequest(Email(f._2), Email(f._3), pd.map(ac => ProductAndQuantity(ac._1, ac._2)).toList, zdt))
               }
             }
         }

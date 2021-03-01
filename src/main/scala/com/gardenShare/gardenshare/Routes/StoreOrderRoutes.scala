@@ -31,7 +31,7 @@ import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
 
-case class StoreOrderRequestBody(body: List[ProductWithId])
+case class StoreOrderRequestBody(body: List[ProductAndQuantity])
 case class StoreOrderRequestsBelongingToSellerBody(body: List[StoreOrderRequestWithId])
 
 object StoreOrderRoutes {

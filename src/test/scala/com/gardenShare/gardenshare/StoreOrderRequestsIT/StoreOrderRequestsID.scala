@@ -47,12 +47,13 @@ object StoreOrderRequestsTest extends TestSuite {
         UserTestsHelper.addProductToStore("BrownOysterMushrooms", jwtTokenOfTheSeller, Amount(100, USD))
 
         val products = UserTestsHelper.getProductsFromStore(jwtTokenOfTheSeller)
+        val productsWithQuantity = products.listOfProduce.map(prd => ProductAndQuantity(prd, 1))
 
-        val storeOrderRequestBody = StoreOrderRequestBody(products.listOfProduce)
+        val storeOrderRequestBody = StoreOrderRequestBody(productsWithQuantity)
 
         val responseFromCreatingArequest = UserTestsHelper.createStoreOrderRequest(jwtTokenOfTheBuyer, testSellerEmail, storeOrderRequestBody)
 
-
+        
         assert(responseFromCreatingArequest.storeOrderRequest.seller.equals(Email(testSellerEmail)))
         assert(responseFromCreatingArequest.storeOrderRequest.buyer.equals(Email(testBuyerEmail)))
       }
