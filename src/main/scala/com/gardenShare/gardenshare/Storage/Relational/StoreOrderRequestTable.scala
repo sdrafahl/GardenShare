@@ -14,6 +14,7 @@ import java.time.ZonedDateTime
 import scala.util.Try
 import com.gardenShare.gardenshare.ParseZoneDateTime
 import com.gardenShare.gardenshare.ProductAndQuantity
+import com.gardenShare.gardenshare.ParseDate
 
 object StoreOrderRequestTable {
   class StoreOrderRequestTable(tag: Tag) extends Table[(Int, String, String, String)](tag, "storeorderrequest") {
@@ -82,7 +83,7 @@ object InsertStoreOrderRequest {
         val prodRefTable = ProductReferenceTable.productReferenceTable
         val prodRefRequest = ProductReferenceTable.productReferenceTable.returning(prodRefTable)
         val productReferencesToAdd = req.products.map{f =>
-          (0, f.product.id, f.quantity)
+          (a._1, f.product.id, f.quantity)
         }
         val prodRefRequestData = prodRefRequest ++= productReferencesToAdd
         IO.fromFuture(IO(Setup.db.run(prodRefRequestData))).map{_ =>
@@ -95,14 +96,16 @@ object InsertStoreOrderRequest {
 
 object GetStoreOrderRequestHelper {
   
-  def getStoreOrderWithEmail(e: Email, ge:com.gardenShare.gardenshare.Storage.Relational.StoreOrderRequestTable.StoreOrderRequestTable => Rep[String])(implicit cs: ContextShift[IO], g: GetProductById[IO], par: ParseZoneDateTime): IO[List[StoreOrderRequestWithId]] = {
+  def getStoreOrderWithEmail(e: Email, ge:com.gardenShare.gardenshare.Storage.Relational.StoreOrderRequestTable.StoreOrderRequestTable => Rep[String])(implicit cs: ContextShift[IO], g: GetProductById[IO], par: ParseDate): IO[List[StoreOrderRequestWithId]] = {
       val query = for {
         re <- StoreOrderRequestTable.storeOrderRequests if ge(re) === e.underlying
       } yield re
+
       IO.fromFuture(IO(Setup.db.run(query.result))).map(_.map{f =>
         val productReferenceQuery = for {
           pre <- ProductReferenceTable.productReferenceTable if pre.productReferenceTableId === f._1
         } yield pre
+
         IO.fromFuture(IO(Setup.db.run(productReferenceQuery.result))).flatMap{abb =>
           abb.map{a =>
             g.get(a._2).map(lk => (lk, a._3))
@@ -111,7 +114,7 @@ object GetStoreOrderRequestHelper {
             .map(_.collect{
               case (Some(a), b) => (a, b)
             }).map{pd =>
-              par.parseZoneDateTime(f._4).map{zdt =>
+              par.parseDate(f._4).map{zdt =>
                 StoreOrderRequestWithId(f._1, StoreOrderRequest(Email(f._2), Email(f._3), pd.map(ac => ProductAndQuantity(ac._1, ac._2)).toList, zdt))
               }
             }
@@ -143,7 +146,9 @@ abstract class GetStoreOrderRequestsWithBuyerEmail[F[_]] {
 
 object GetStoreOrderRequestsWithBuyerEmail {
   implicit def createGetStoreOrderRequestsWithBuyerEmailIO = new GetStoreOrderRequestsWithBuyerEmail[IO] {
-    def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = getStoreOrderWithEmail(e, (x: StoreOrderRequestTable.StoreOrderRequestTable) => x.buyerEmail)
+    def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = {
+      getStoreOrderWithEmail(e, (x: StoreOrderRequestTable.StoreOrderRequestTable) => x.buyerEmail)
+    }
   }
 }
 

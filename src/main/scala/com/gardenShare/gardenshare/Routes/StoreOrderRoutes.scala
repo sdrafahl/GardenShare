@@ -36,7 +36,7 @@ case class StoreOrderRequestsBelongingToSellerBody(body: List[StoreOrderRequestW
 
 object StoreOrderRoutes {
   def storeOrderRoutes[F[_]: Async: ContextShift:CreateStoreOrderRequest:AuthUser: AuthJWT:GetCurrentDate:GetStoreOrderRequestsWithinTimeRangeOfSeller]
-    (implicit ae: ApplicativeError[F, Throwable], pp: ProcessAndJsonResponse, en: Encoder[Produce], produceDecoder: Decoder[Produce], currencyEncoder: Encoder[Currency], currencyDecoder: Decoder[Currency]): HttpRoutes[F] = {
+    (implicit ae: ApplicativeError[F, Throwable], pp: ProcessAndJsonResponse, en: Encoder[Produce], produceDecoder: Decoder[Produce], currencyEncoder: Encoder[Currency], currencyDecoder: Decoder[Currency], zoneDateparser: ParseZoneDateTime): HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of {
@@ -66,10 +66,10 @@ object StoreOrderRoutes {
           .catchError
       }
       case req @ GET -> Root / "storeOrderRequest" / "seller" / from / to => {
-        ((Try(ZonedDateTime.parse(from)), Try(ZonedDateTime.parse(to))) match {
-          case (Failure(a), _) => Applicative[F].pure(ResponseBody("From date is not valid zone date format", false).asJson)
-          case (_, Failure(a)) => Applicative[F].pure(ResponseBody("To date is not valid zone date format", false).asJson)
-          case (Success(fromDateZone), Success(toDateZone)) => {
+        ((zoneDateparser.parseZoneDateTime(from), zoneDateparser.parseZoneDateTime(to)) match {
+          case (Left(a), _) => Applicative[F].pure(ResponseBody("From date is not valid zone date format", false).asJson)
+          case (_, Left(a)) => Applicative[F].pure(ResponseBody("To date is not valid zone date format", false).asJson)
+          case (Right(fromDateZone), Right(toDateZone)) => {
              parseJWTokenFromRequest(req)
               .map(_.auth)
               .map{resultOfValidation =>

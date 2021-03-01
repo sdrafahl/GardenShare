@@ -27,6 +27,7 @@ import com.gardenShare.gardenshare.Storage.Relational.DeleteStoreOrderRequestsFo
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Encoders.Encoders._
 import scala.util.Try
+import java.time.ZonedDateTime
 
 object UserTestSpec extends TestSuite {
 
@@ -288,7 +289,7 @@ object UserTestsHelper {
   }
 
   def getProductsFromStore(jwt: String) = {
-    val uri = Uri.fromString(s"/product").toOption.get
+    val uri = Uri.fromString(s"product").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
 
     val request = Request[IO](Method.GET, uri, headers = headers)
@@ -321,6 +322,29 @@ object UserTestsHelper {
       .through(text.utf8Decode)
       .through(stringArrayParser)
       .through(decoder[IO, StoreOrderRequestWithId])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def getListOfOrdersFromSellers(jwtOfSeller: String, from: ZonedDateTime, to: ZonedDateTime) = {
+    val fromForURL = Base64EncoderDecoder().encode(from.toString()).get
+      
+    val toForURL = Base64EncoderDecoder().encode(to.toString()).get
+
+    val uri = Uri.fromString(s"storeOrderRequest/seller/${fromForURL}/${toForURL}").toOption.get
+    val headers = Headers.of(Header("authentication", jwtOfSeller))
+    val request = Request[IO](Method.GET, uri, headers = headers)
+
+    StoreOrderRoutes
+      .storeOrderRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, StoreOrderRequestsBelongingToSellerBody])
       .compile
       .toList
       .unsafeRunSync()

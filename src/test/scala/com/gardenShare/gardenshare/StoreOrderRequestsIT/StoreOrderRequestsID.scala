@@ -53,10 +53,15 @@ object StoreOrderRequestsTest extends TestSuite {
 
         val responseFromCreatingArequest = UserTestsHelper.createStoreOrderRequest(jwtTokenOfTheBuyer, testSellerEmail, storeOrderRequestBody)
 
-        
+        val now = GetCurrentDate[IO]().get.unsafeRunSync()
+        val yesterday = now.minusDays(1)
+
+        val orders = UserTestsHelper.getListOfOrdersFromSellers(jwtTokenOfTheSeller, yesterday, now)
+
+        assert(orders.body.head.storeOrderRequest.buyer.underlying.equals(testBuyerEmail))
         assert(responseFromCreatingArequest.storeOrderRequest.seller.equals(Email(testSellerEmail)))
         assert(responseFromCreatingArequest.storeOrderRequest.buyer.equals(Email(testBuyerEmail)))
       }
-    }
+    }    
   }
 }
