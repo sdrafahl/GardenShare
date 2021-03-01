@@ -28,15 +28,38 @@ object ProductTable {
   val products = TableQuery[ProductTable]
 }
 
+abstract class GetProductById[F[_]] {
+  def get(id: Int): F[Option[ProductWithId]]
+}
+
+object GetProductById {
+  implicit def createIOGetProductById(implicit e:Parser[Currency], pp: ParseProduce[String]) = new GetProductById[IO] {
+    def get(id: Int): IO[Option[ProductWithId]] = {
+      val query = for {
+        re <- ProductTable.products if re.productId === id
+      } yield re
+      IO.fromFuture(IO(Setup.db.run(query.result)))
+        .map(_.headOption)
+        .map(_.flatMap{f =>
+          pp.parse(f._3).flatMap{produce =>
+            e.parse(f._5).map{currencyType =>
+              ProductWithId(f._1, Product(f._2, produce, Amount(f._4, currencyType)))
+            }            
+          }.toOption          
+        })
+    }
+  }
+}
+
 abstract class GetProductsByStore[F[_]: Async] {
-  def getProductsByStore(storeid: Int): F[List[Product]]
+  def getProductsByStore(storeid: Int): F[List[ProductWithId]]
 }
 
 object GetProductsByStore {
   def apply[F[_]: GetProductsByStore]() = implicitly[GetProductsByStore[F]]
 
-  implicit def IOGetProductsByStore(implicit e:Parser[Currency]) = new GetProductsByStore[IO]{
-    def getProductsByStore(storeid: Int): IO[List[Product]] = {
+  implicit def IOGetProductsByStore(implicit e:Parser[Currency], pp: ParseProduce[String]) = new GetProductsByStore[IO]{
+    def getProductsByStore(storeid: Int): IO[List[ProductWithId]] = {
       val query = for {
         products <- ProductTable.products if products.storeId === storeid
       } yield (products.productId, products.storeId, products.productName, products.productPrice, products.productPriceType)
@@ -48,10 +71,14 @@ object GetProductsByStore {
             case (a, b, c, d, Right(e)) => (a, b, c, d, e)
           }.map(
             f => {
-              Product(f._1, f._2, f._3, Amount(f._4, f._5))
+              pp.parse(f._3).map{prd =>
+                ProductWithId(f._1, Product(f._2, prd, Amount(f._4, f._5)))
+              }              
             }
           )
-        ))
+        )).map(f => f.collect{
+          case Right(a) => a
+        })
     }
   }
 }

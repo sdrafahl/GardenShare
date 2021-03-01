@@ -46,7 +46,8 @@ import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponse
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 
 object ProductRoutes {
-  def productRoutes[F[_]: Async: AuthUser: AuthJWT: GetDistance: InsertProduct: AddProductToStoreForSeller:GetUserInfo:AddProductToStore:ContextShift: Monad: GetProductsSoldFromSeller:GetStore:GetProductsByStore](implicit pp: ParseProduce[String], ae: ApplicativeError[F, Throwable], e:EncodeProduce[String], currencyParser: com.gardenShare.gardenshare.Parser[Currency])
+  def productRoutes[F[_]: Async: AuthUser: AuthJWT: GetDistance: InsertProduct: AddProductToStoreForSeller:GetUserInfo:AddProductToStore:ContextShift: Monad: GetProductsSoldFromSeller:GetStore:GetProductsByStore]
+    (implicit pp: ParseProduce[String], ae: ApplicativeError[F, Throwable], currencyParser: com.gardenShare.gardenshare.Parser[Currency], en: Encoder[Produce], currencyEncoder: Encoder[Currency], dep: Decoder[Produce], dee: Decoder[Currency])
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -84,7 +85,7 @@ object ProductRoutes {
               case ValidToken(Some(email)) => {
                 ProcessData(
                   implicitly[GetProductsSoldFromSeller[F]].get(Email(email)),
-                  (a:List[Produce]) => ListOfProduce(a.map(b => e.to(b))).asJson,
+                  (a:List[ProductWithId]) => ListOfProduce(a).asJson,
                   (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false))
                 
                   .process
@@ -98,7 +99,7 @@ object ProductRoutes {
       case GET -> Root / "product" / email => {
         ProcessData(
           implicitly[GetProductsSoldFromSeller[F]].get(Email(email)),
-          (a:List[Produce]) => ListOfProduce(a.map(b => e.to(b))).asJson,
+          (a:List[ProductWithId]) => ListOfProduce(a).asJson,
           (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false)
         )
           .process

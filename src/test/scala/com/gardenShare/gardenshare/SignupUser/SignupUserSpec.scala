@@ -4,8 +4,6 @@ import utest._
 import cats.effect.IO
 import com.gardenShare.gardenshare.Storage.Relational.InsertGarden
 import com.gardenShare.gardenshare.Storage.Relational.Gardens._
-import com.gardenShare.gardenshare.Storage.Relational.Plants._
-import com.gardenShare.gardenshare.Storage.Relational.InsertPlant
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
 import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient

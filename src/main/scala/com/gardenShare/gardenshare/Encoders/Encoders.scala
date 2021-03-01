@@ -3,9 +3,6 @@ package com.gardenShare.gardenshare.Encoders
 import io.circe.Encoder, io.circe.syntax._
 import io.circe.{ Decoder, Encoder, HCursor, Json }
 import io.circe.KeyEncoder
-import com.gardenShare.gardenshare.Storage.Relational.Order
-import com.gardenShare.gardenshare.Storage.Relational.CreateOrderInDB._
-import com.gardenShare.gardenshare.Storage.Relational.OrderState
 import com.gardenShare.gardenshare.UserEntities._
 import io.circe.generic.auto._, io.circe.syntax._
 import io.circe.generic.JsonCodec, io.circe.syntax._
@@ -30,11 +27,7 @@ import com.gardenShare.gardenshare.USD
 import com.gardenShare.gardenshare.Parser
 import com.gardenShare.gardenshare.EncodeToString
 
-object Encoders {
-  implicit val orderEncoder: Encoder[OrderState] = new Encoder[OrderState] {
-    final def apply(a: OrderState): Json = Json.fromString(orderToString(a))
-  }
-
+object Encoders {  
   implicit val priceEncoder: Encoder[PriceUnit] = new Encoder[PriceUnit] {
     final def apply(a: PriceUnit): Json = a match {
       case Pound => "Pound".asJson

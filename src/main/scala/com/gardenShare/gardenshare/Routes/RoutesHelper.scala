@@ -49,6 +49,7 @@ object Helpers {
 
 
   def parseBodyFromRequest[T, F[_]: Sync](req: Request[F])(implicit d: Decoder[T]): F[Option[T]] = {
+
     req
       .body
       .through(text.utf8Decode)

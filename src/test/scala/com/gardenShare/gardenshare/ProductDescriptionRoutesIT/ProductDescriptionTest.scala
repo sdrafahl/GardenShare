@@ -27,7 +27,7 @@ object ProductDescriptionTest extends TestSuite {
   val tests = Tests {
     test("Product Description Routes") {
       test("productDescription/BrownOysterMushrooms") {
-        val descriptionOfMushrooms = makeRequestToGetProductDescription("BrownOysterMushrooms")
+        val descriptionOfMushrooms = UserTestsHelper.makeRequestToGetProductDescription("BrownOysterMushrooms")
         val expectedProductDescription = ProductDescription("Brown-Oyster-Mushrooms",Pound,BrownOysterMushrooms)
         assert(descriptionOfMushrooms equals expectedProductDescription)
       }
@@ -40,69 +40,9 @@ object ProductDescriptionTest extends TestSuite {
       val jwtToken = r.auth.get.jwt
       val address = Address("500 hickman Rd", "Waukee", "50263", IA)
       UserTestsHelper.applyUserToBecomeSeller(jwtToken, address)     
-      val response = addProductToStore("BrownOysterMushrooms", jwtToken, Amount(100, USD))
-      val productsInStore = getProductsFromStore(jwtToken)
-      assert(productsInStore equals ListOfProduce(List(BrownOysterMushrooms.toString())))
+      val response = UserTestsHelper.addProductToStore("BrownOysterMushrooms", jwtToken, Amount(100, USD))
+      val productsInStore = UserTestsHelper.getProductsFromStore(jwtToken).listOfProduce.map(f => f.product.productName)
+      assert(productsInStore equals List(BrownOysterMushrooms))
     }
-  }
-
-  def makeRequestToGetProductDescription(key: String) = {
-    val uri = Uri.fromString(s"productDescription/${key}").toOption.get
-
-    val request = Request[IO](Method.GET, uri)
-
-    ProductDescriptionRoutes
-      .productDescriptionRoutes[IO]
-      .orNotFound(request)
-      .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, ProductDescription])
-      .compile
-      .toList
-      .unsafeRunSync()
-      .head
-  }
-
-  def addProductToStore(produce: String, jwt: String, am: Amount) = {
-
-    val currencyEncoder = implicitly[EncodeToString[Currency]]
-
-    val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${currencyEncoder.encode(am.currencyType)}").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
-    val request = Request[IO](Method.POST, uri, headers = headers)
-
-    ProductRoutes
-      .productRoutes[IO]
-      .orNotFound(request)
-      .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .compile
-      .toList
-      .unsafeRunSync()
-      .head
-
-  }
-
-  def getProductsFromStore(jwt: String) = {
-    val uri = Uri.fromString(s"/product").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
-
-    val request = Request[IO](Method.GET, uri, headers = headers)
-
-    ProductRoutes
-      .productRoutes[IO]
-      .orNotFound(request)
-      .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, ListOfProduce])
-      .compile
-      .toList
-      .unsafeRunSync()
-      .head
   }
 }

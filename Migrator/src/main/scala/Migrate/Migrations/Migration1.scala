@@ -21,21 +21,25 @@ object Migrator1 {
   implicit def createMigrator1IO(implicit cs: ContextShift[IO], db: Database): MigrateDB[IO] = {
     val dropProducts: DBIO[Int] = sqlu"DROP TABLE IF EXISTS products;"
     val dropStores: DBIO[Int] = sqlu"DROP TABLE IF EXISTS stores;"
-    val dropOrders: DBIO[Int] = sqlu"DROP TABLE IF EXISTS orders;"
+    val dropProductReferences: DBIO[Int] = sqlu"DROP TABLE IF EXISTS productreferencetable;"
+    val dropOrderRequests: DBIO[Int] = sqlu"DROP TABLE IF EXISTS storeorderrequest;"
     val dropCommands: DBIOAction[Unit, NoStream, Nothing] = DBIO.seq(
       dropProducts,
       dropStores,
-      dropOrders
+      dropOrderRequests,
+      dropProductReferences
     )
 
     val createProductTable = com.gardenShare.gardenshare.Storage.Relational.ProductTable.products.schema.create
     val createStoresTable = com.gardenShare.gardenshare.Storage.Relational.StoreTable.stores.schema.create
-    val createOrdersTable = com.gardenShare.gardenshare.Storage.Relational.OrderTable.orders.schema.create
+    val createOrderRequestTable = com.gardenShare.gardenshare.Storage.Relational.StoreOrderRequestTable.storeOrderRequests.schema.create
+    val productReferenceTable = com.gardenShare.gardenshare.Storage.Relational.ProductReferenceTable.productReferenceTable.schema.create
 
     val createTables: DBIOAction[Unit, NoStream, Nothing] =  DBIO.seq(
       createProductTable,
       createStoresTable,
-      createOrdersTable
+      createOrderRequestTable,
+      productReferenceTable
     )
 
     MigrateDB.createIOMigrator(CreateMigrator[IO](

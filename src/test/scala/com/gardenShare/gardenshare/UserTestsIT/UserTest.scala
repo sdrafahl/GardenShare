@@ -23,6 +23,10 @@ import com.gardenShare.gardenshare.domain.Store.IA
 import com.gardenShare.gardenshare.Concurrency.Concurrency._
 import com.gardenShare.gardenshare.domain.Store._
 import com.gardenShare.gardenshare.Storage.Relational.InsertStore
+import com.gardenShare.gardenshare.Storage.Relational.DeleteStoreOrderRequestsForSeller
+import cats.effect.ContextShift
+import com.gardenShare.gardenshare.Encoders.Encoders._
+import scala.util.Try
 
 object UserTestSpec extends TestSuite {
 
@@ -242,4 +246,86 @@ object UserTestsHelper {
       .unsafeRunSync()
       .head     
   }
+
+  def makeRequestToGetProductDescription(key: String) = {
+    val uri = Uri.fromString(s"productDescription/${key}").toOption.get
+
+    val request = Request[IO](Method.GET, uri)
+
+    ProductDescriptionRoutes
+      .productDescriptionRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, ProductDescription])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def addProductToStore(produce: String, jwt: String, am: Amount) = {
+
+    val currencyEncoder = implicitly[EncodeToString[Currency]]
+
+    val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${currencyEncoder.encode(am.currencyType)}").toOption.get
+    val headers = Headers.of(Header("authentication", jwt))
+    val request = Request[IO](Method.POST, uri, headers = headers)
+
+    ProductRoutes
+      .productRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+
+  }
+
+  def getProductsFromStore(jwt: String) = {
+    val uri = Uri.fromString(s"/product").toOption.get
+    val headers = Headers.of(Header("authentication", jwt))
+
+    val request = Request[IO](Method.GET, uri, headers = headers)
+
+    ProductRoutes
+      .productRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, ListOfProduce])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def createStoreOrderRequest(jwtOfTheBuyer: String ,emailOfTheSeller: String, s: StoreOrderRequestBody) = {
+    val uri = Uri.fromString(s"storeOrderRequest/${emailOfTheSeller}").toOption.get
+    val headers = Headers.of(Header("authentication", jwtOfTheBuyer))
+
+    val request = Request[IO](Method.POST, uri, headers = headers).withEntity(s.asJson.toString())
+
+    StoreOrderRoutes
+      .storeOrderRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, StoreOrderRequestWithId])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def deleteAllStoreOrdersForSeller[F[_]: DeleteStoreOrderRequestsForSeller: ContextShift](e: String) = implicitly[DeleteStoreOrderRequestsForSeller[IO]].delete(Email(e))
 }

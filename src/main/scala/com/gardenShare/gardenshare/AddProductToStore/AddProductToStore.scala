@@ -14,10 +14,7 @@ object AddProductToStore {
   implicit def createIOAddProductToStore(implicit i: InsertProduct[IO], g:GetProductsByStore[IO], parser: ParseProduce[String]): AddProductToStore[IO] = new AddProductToStore[IO]{
     def add(s: Store, pd: Produce, am: Amount): IO[Unit] = {
       for {
-        products <- g.getProductsByStore(s.id)
-        produceList = products.map(p => parser.parse(p.productName)).collect{
-          case Right(p) => p
-        }
+        produceList <- g.getProductsByStore(s.id)
         x <- if(!produceList.contains(pd)) {
           i.add(List(CreateProductRequest(s.id, pd, am)))
         } else {

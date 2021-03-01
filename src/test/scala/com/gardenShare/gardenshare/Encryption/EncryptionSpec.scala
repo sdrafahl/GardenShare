@@ -2,17 +2,12 @@ package com.gardenShare.gardenshare.GetGarden
 
 import utest._
 import cats.effect.IO
-import com.gardenShare.gardenshare.CreateGarden.CreateGarden
 import com.gardenShare.gardenshare.Storage.Relational.InsertGarden
 import com.gardenShare.gardenshare.Storage.Relational.Gardens._
-import com.gardenShare.gardenshare.Storage.Relational.Plants._
-import com.gardenShare.gardenshare.Storage.Relational.InsertPlant
 import com.gardenShare.gardenshare.GardenData.Garden
 import com.gardenShare.gardenshare.GardenData.Plant
-import com.gardenShare.gardenshare.CreateGarden.CreateGarden._
 import org.mockito.internal.handler.MockHandlerFactory
 import com.gardenShare.gardenshare.Storage.Relational.GetGardenFromDatabase
-import com.gardenShare.gardenshare.Storage.Relational.GetPlant
 import com.gardenShare.gardenshare.Encryption.Encryption
 import com.gardenShare.gardenshare.Config.PubKey
 import java.security.spec.X509EncodedKeySpec
