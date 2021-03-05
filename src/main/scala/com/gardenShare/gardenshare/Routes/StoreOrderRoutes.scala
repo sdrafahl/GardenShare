@@ -33,61 +33,51 @@ import scala.util.Success
 
 case class StoreOrderRequestBody(body: List[ProductAndQuantity])
 case class StoreOrderRequestsBelongingToSellerBody(body: List[StoreOrderRequestWithId])
+case class StoreOrderRequestStatusBody(response: StoreOrderRequestStatus)
 
 object StoreOrderRoutes {
-  def storeOrderRoutes[F[_]: Async: ContextShift:CreateStoreOrderRequest:AuthUser: AuthJWT:GetCurrentDate:GetStoreOrderRequestsWithinTimeRangeOfSeller]
+  def storeOrderRoutes[F[_]: Async: ContextShift:CreateStoreOrderRequest:AuthUser: AuthJWT:GetCurrentDate:GetStoreOrderRequestsWithinTimeRangeOfSeller: StatusOfStoreOrderRequest]
     (implicit ae: ApplicativeError[F, Throwable], pp: ProcessAndJsonResponse, en: Encoder[Produce], produceDecoder: Decoder[Produce], currencyEncoder: Encoder[Currency], currencyDecoder: Decoder[Currency], zoneDateparser: ParseZoneDateTime): HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of {
       case req @ POST -> Root / "storeOrderRequest" / sellerEmail => {
-        parseJWTokenFromRequest(req)
-          .map(_.auth)
-          .map{resultOfValidation =>
-            resultOfValidation.flatMap{
-              case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-              case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-              case ValidToken(Some(email)) => {
-                parseBodyFromRequest[StoreOrderRequestBody, F](req).flatMap{
-                  case None => Applicative[F].pure(ResponseBody("Cant parse product with ids", false).asJson)
-                  case Some(products) => {
-                    ProcessData(
-                      implicitly[CreateStoreOrderRequest[F]].createOrder(Email(sellerEmail), Email(email), products.body),
-                      (l: StoreOrderRequestWithId) => l,
-                      (err: Throwable) => ResponseBody(s"Error creating store order request: ${err.getMessage()}", false)
-                    ).process
-                  }
-                }
-              }
-            }
-          }
-          .foldIntoJson
-          .flatMap(a => Ok(a.toString()))
-          .catchError
+        parseREquestAndValidateUserAndParseBodyResponse[StoreOrderRequestBody, F](req, {(email, products) =>
+          ProcessData(
+            implicitly[CreateStoreOrderRequest[F]].createOrder(Email(sellerEmail), email, products.body),
+            (l: StoreOrderRequestWithId) => l,
+            (err: Throwable) => ResponseBody(s"Error creating store order request: ${err.getMessage()}", false)
+          ).process
+        })
       }
       case req @ GET -> Root / "storeOrderRequest" / "seller" / from / to => {
-        ((zoneDateparser.parseZoneDateTime(from), zoneDateparser.parseZoneDateTime(to)) match {
-          case (Left(a), _) => Applicative[F].pure(ResponseBody("From date is not valid zone date format", false).asJson)
-          case (_, Left(a)) => Applicative[F].pure(ResponseBody("To date is not valid zone date format", false).asJson)
+        (zoneDateparser.parseZoneDateTime(from), zoneDateparser.parseZoneDateTime(to)) match {
+          case (Left(a), _) => Ok(ResponseBody("From date is not valid zone date format", false).asJson.toString())
+          case (_, Left(a)) => Ok(ResponseBody("To date is not valid zone date format", false).asJson.toString())
           case (Right(fromDateZone), Right(toDateZone)) => {
-             parseJWTokenFromRequest(req)
-              .map(_.auth)
-              .map{resultOfValidation =>
-                resultOfValidation.flatMap{
-                  case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-                  case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-                  case ValidToken(Some(email)) => {
-                    ProcessData(
-                      implicitly[GetStoreOrderRequestsWithinTimeRangeOfSeller[F]].getStoreOrdersWithin(fromDateZone, toDateZone, Email(email)),
-                      (l: List[StoreOrderRequestWithId]) => StoreOrderRequestsBelongingToSellerBody(l),
-                      (err: Throwable) => ResponseBody(s"Error getting list of store order requests: ${err.getMessage()}", false)
-                    ).process
-                  }
-                }
-              }.foldIntoJson
+            parseRequestAndValidateUserResponse[F](req, {email =>
+              ProcessData(
+                implicitly[GetStoreOrderRequestsWithinTimeRangeOfSeller[F]].getStoreOrdersWithin(fromDateZone, toDateZone, email),
+                (l: List[StoreOrderRequestWithId]) => StoreOrderRequestsBelongingToSellerBody(l),
+                (err: Throwable) => ResponseBody(s"Error getting list of store order requests: ${err.getMessage()}", false)
+              ).process
+            })
           }
-        }).flatMap(a => Ok(a.toString()))
-          .catchError
+        }      
+      }
+      case GET -> Root / "storeOrderRequest" / "status" / orderId => {
+        orderId.toIntOption match {
+          case None => Ok(ResponseBody("Order Id is not a integer", false).asJson.toString())
+          case Some(id) => {            
+            ProcessData(
+                implicitly[StatusOfStoreOrderRequest[F]].get(id),
+                (s => StoreOrderRequestStatusBody(s)),
+                (err: Throwable) => ResponseBody(s"Error getting status of request ${err.getMessage()}", false)
+            )
+              .process
+              .flatMap(a => Ok(a.toString()))
+          }
+        }
       }
     }
   }

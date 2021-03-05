@@ -32,7 +32,7 @@ object GetTypeSafeConfig {
   def apply[F[_]:GetTypeSafeConfig]() = implicitly[GetTypeSafeConfig[F]]
 
   implicit object IOGetTypeSafeConfig extends GetTypeSafeConfig[IO] {
-    private lazy implicit val conf: Config = ConfigFactory.load();
+    private lazy implicit val conf: Config = ConfigFactory.load(); // todo: change where this loads
     def get(key: String) =  IO(conf.getString(key))
   }
 }

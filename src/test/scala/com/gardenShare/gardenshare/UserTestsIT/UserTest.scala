@@ -28,6 +28,11 @@ import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Encoders.Encoders._
 import scala.util.Try
 import java.time.ZonedDateTime
+import com.gardenShare.gardenshare.Storage.Relational.SearchStoreOrderRequestTable
+import com.gardenShare.gardenshare.Storage.Relational.SearchAcceptedStoreOrderRequestTableByID._
+import com.gardenShare.gardenshare.Storage.Relational.SearchDeniedStoreOrderRequestTable._
+import com.gardenShare.gardenshare.Storage.Relational.SearchDeniedStoreOrderRequestTable
+
 
 object UserTestSpec extends TestSuite {
 

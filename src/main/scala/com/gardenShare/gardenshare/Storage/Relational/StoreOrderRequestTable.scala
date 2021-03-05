@@ -16,8 +16,14 @@ import com.gardenShare.gardenshare.ParseZoneDateTime
 import com.gardenShare.gardenshare.ProductAndQuantity
 import com.gardenShare.gardenshare.ParseDate
 
+object StoreOrderRequestTableSchemas {
+  type StoreOrderRequestTableSchema = (Int, String, String, String)
+  type ProductReferenceTableSchema = (Int, Int, Int)
+}
+import StoreOrderRequestTableSchemas._
+
 object StoreOrderRequestTable {
-  class StoreOrderRequestTable(tag: Tag) extends Table[(Int, String, String, String)](tag, "storeorderrequest") {
+  class StoreOrderRequestTable(tag: Tag) extends Table[StoreOrderRequestTableSchema](tag, "storeorderrequest") {
     def storeRequestId = column[Int]("storeorderrequestid", O.PrimaryKey, O.AutoInc)
     def sellerEmail = column[String]("selleremail")
     def buyerEmail = column[String]("buyeremail")
@@ -28,13 +34,38 @@ object StoreOrderRequestTable {
 }
 
 object ProductReferenceTable {
-  class ProductReferenceTable(tag: Tag) extends Table[(Int, Int, Int)](tag, "productreferencetable") {
+  class ProductReferenceTable(tag: Tag) extends Table[ProductReferenceTableSchema](tag, "productreferencetable") {
     def productReferenceTableId = column[Int]("productreferencetableid")    
     def productId = column[Int]("productid")
     def productQuantity = column[Int]("quantity")
     def * = (productReferenceTableId, productId, productQuantity)
   }
   val productReferenceTable = TableQuery[ProductReferenceTable]
+}
+
+abstract class SearchProductReferences[F[_]] {
+  def search(productReferenceTableId: Int)(implicit cs: ContextShift[F]): F[List[ProductReferenceTableSchema]]
+}
+
+object SearchProductReferences {
+  implicit def createIOInsertProductReferences = new SearchProductReferences[IO] {
+    def search(productReferenceTableId: Int)(implicit cs: ContextShift[IO]): IO[List[ProductReferenceTableSchema]] = {
+      val query = for {
+        res <- ProductReferenceTable.productReferenceTable if res.productReferenceTableId === productReferenceTableId
+      } yield res
+      IO.fromFuture(IO(Setup.db.run(query.result))).map(_.toList)
+    }
+  }
+}
+
+abstract class SearchStoreOrderRequestTable[F[_]] {
+  def search(id: Int)(implicit cs: ContextShift[F], parseDate: ParseDate): F[Option[StoreOrderRequestWithId]]
+}
+
+object SearchStoreOrderRequestTable {
+  implicit def createIOSearchStoreOrderRequestTable(implicit searchProductRefs: SearchProductReferences[IO], gpid: GetProductById[IO]) = new SearchStoreOrderRequestTable[IO] {
+    def search(id: Int)(implicit cs: ContextShift[IO], parseDate: ParseDate): IO[Option[StoreOrderRequestWithId]] = GetStoreOrderRequestHelper.getStoreOrderWithId(id)
+  }
 }
 
 abstract class DeleteStoreOrderRequestsForSeller[F[_]] {
@@ -95,38 +126,49 @@ object InsertStoreOrderRequest {
 }
 
 object GetStoreOrderRequestHelper {
+
+  def getStoreOrdersWithOrderRequestQuery(query: Query[com.gardenShare.gardenshare.Storage.Relational.StoreOrderRequestTable.StoreOrderRequestTable, StoreOrderRequestTableSchema, Seq])(implicit cs: ContextShift[IO], g: GetProductById[IO], par: ParseDate) = {
+    IO.fromFuture(IO(Setup.db.run(query.result))).map(_.map{f =>
+      val productReferenceQuery = for {
+        pre <- ProductReferenceTable.productReferenceTable if pre.productReferenceTableId === f._1
+      } yield pre
+
+      IO.fromFuture(IO(Setup.db.run(productReferenceQuery.result))).flatMap{abb =>
+        abb.map{a =>
+          g.get(a._2).map(lk => (lk, a._3))
+        }
+          .parSequence
+          .map(_.collect{
+            case (Some(a), b) => (a, b)
+          }).map{pd =>
+            par.parseDate(f._4).map{zdt =>
+              StoreOrderRequestWithId(f._1, StoreOrderRequest(Email(f._2), Email(f._3), pd.map(ac => ProductAndQuantity(ac._1, ac._2)).toList, zdt))
+            }
+          }
+      }
+    })
+      .map(_.parSequence)
+      .flatten
+      .map(_.toList)
+      .map(_.collect{
+        case Right(a) => a
+      })
+  }
   
   def getStoreOrderWithEmail(e: Email, ge:com.gardenShare.gardenshare.Storage.Relational.StoreOrderRequestTable.StoreOrderRequestTable => Rep[String])(implicit cs: ContextShift[IO], g: GetProductById[IO], par: ParseDate): IO[List[StoreOrderRequestWithId]] = {
-      val query = for {
+    val query = for {
         re <- StoreOrderRequestTable.storeOrderRequests if ge(re) === e.underlying
       } yield re
+    getStoreOrdersWithOrderRequestQuery(query)      
+  }
 
-      IO.fromFuture(IO(Setup.db.run(query.result))).map(_.map{f =>
-        val productReferenceQuery = for {
-          pre <- ProductReferenceTable.productReferenceTable if pre.productReferenceTableId === f._1
-        } yield pre
+  def getStoreOrderWithId(id: Int)(implicit cs: ContextShift[IO], g: GetProductById[IO], par: ParseDate) = {
+    val query = for {
+      re <- StoreOrderRequestTable.storeOrderRequests if re.storeRequestId === id
+    } yield re
+    getStoreOrdersWithOrderRequestQuery(query).map(_.headOption)
+  }
 
-        IO.fromFuture(IO(Setup.db.run(productReferenceQuery.result))).flatMap{abb =>
-          abb.map{a =>
-            g.get(a._2).map(lk => (lk, a._3))
-          }
-            .parSequence
-            .map(_.collect{
-              case (Some(a), b) => (a, b)
-            }).map{pd =>
-              par.parseDate(f._4).map{zdt =>
-                StoreOrderRequestWithId(f._1, StoreOrderRequest(Email(f._2), Email(f._3), pd.map(ac => ProductAndQuantity(ac._1, ac._2)).toList, zdt))
-              }
-            }
-        }
-      })
-        .map(_.parSequence)
-        .flatten
-        .map(_.toList)
-        .map(_.collect{
-          case Right(a) => a
-        })
-    }
 }
 import GetStoreOrderRequestHelper._
 
