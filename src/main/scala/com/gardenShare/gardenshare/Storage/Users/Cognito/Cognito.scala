@@ -1,4 +1,4 @@
-package com.gardenShare.gardenshare.Storage.Users.Cognito
+package com.gardenShare.gardenshare
 
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient
@@ -19,14 +19,14 @@ import cats.effect.Async
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
-import com.gardenShare.gardenshare.Config.GetUserPoolName
+import com.gardenShare.gardenshare.GetUserPoolName
 import software.amazon.awssdk.services.appsync.model.GetTypeRequest
-import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
+import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.syntax.functor._
 import cats.effect.IO
-import com.gardenShare.gardenshare.Config.UserPoolSecret
-import com.gardenShare.gardenshare.Config.UserPoolName
-import com.gardenShare.gardenshare.UserEntities.User
+import com.gardenShare.gardenshare.UserPoolSecret
+import com.gardenShare.gardenshare.UserPoolName
+import com.gardenShare.gardenshare.User
 import software.amazon.awssdk.services.cognitoidentityprovider.model.InitiateAuthRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AuthFlowType._
@@ -40,18 +40,18 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.SchemaAttri
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeDataType
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse
-import com.gardenShare.gardenshare.UserEntities.Email
+import com.gardenShare.gardenshare.Email
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
-import com.gardenShare.gardenshare.Config.UserPoolID
-import com.gardenShare.gardenshare.UserEntities.Password
+import com.gardenShare.gardenshare.UserPoolID
+import com.gardenShare.gardenshare.Password
 import cats.implicits._
 import cats.FlatMap
 import com.amazonaws.auth.AnonymousAWSCredentials
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse
-import com.gardenShare.gardenshare.UserEntities.UserType
-import com.gardenShare.gardenshare.UserEntities.InvalidType
+import com.gardenShare.gardenshare.UserType
+import com.gardenShare.gardenshare.InvalidType
 import software.amazon.awssdk.services.iam.model.ListGroupsForUserRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserRequest
@@ -101,10 +101,9 @@ abstract class CogitoClient[F[_]: GetUserPoolName: Async: FlatMap] {
 }
 
 object CogitoClient {
-  implicit lazy val cognitoIdentityClient =
-    CognitoIdentityProviderClient.builder().build()
-  def apply[F[_]: GetUserPoolName: GetTypeSafeConfig: Async: FlatMap]()(
-      implicit client: CognitoIdentityProviderClient
+
+  implicit def apply[F[_]: GetUserPoolName: GetTypeSafeConfig: Async: FlatMap](
+      implicit client: CognitoIdentityProviderClient = CognitoIdentityProviderClient.builder().build()
   ): CogitoClient[F] = new CogitoClient[F] {
     def createUserPool(userPoolName: String) = {
       Async[F].async {
@@ -282,5 +281,4 @@ object CogitoClient {
       }
     }
   }
-  implicit lazy val defaultCognitoClient: CogitoClient[IO] = CogitoClient[IO]()
 }

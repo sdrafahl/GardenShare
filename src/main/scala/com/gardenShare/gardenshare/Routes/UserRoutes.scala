@@ -6,52 +6,52 @@ import cats.effect.ContextShift
 import org.http4s.Request
 import com.gardenShare.gardenshare.Helpers._
 import cats.ApplicativeError
-import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient
-import com.gardenShare.gardenshare.Config.GetUserPoolName
-import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
-import com.gardenShare.gardenshare.Config.GetUserPoolSecret
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
-import com.gardenShare.gardenshare.Config.GetUserPoolId
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
-import com.gardenShare.gardenshare.Config.GetRegion
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.HttpsJwksBuilder
-import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
+import com.gardenShare.gardenshare.CogitoClient
+import com.gardenShare.gardenshare.GetUserPoolName
+import com.gardenShare.gardenshare.GetTypeSafeConfig
+import com.gardenShare.gardenshare.GetUserPoolSecret
+import com.gardenShare.gardenshare.AuthUser
+import com.gardenShare.gardenshare.GetUserPoolId
+import com.gardenShare.gardenshare.AuthJWT
+import com.gardenShare.gardenshare.GetRegion
+import com.gardenShare.gardenshare.HttpsJwksBuilder
+import com.gardenShare.gardenshare.GetDistance
 import org.http4s.dsl.Http4sDsl
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.UserEntities.Password
-import com.gardenShare.gardenshare.UserEntities.User
-import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.Password
+import com.gardenShare.gardenshare.User
+import com.gardenShare.gardenshare.JWTValidationTokens
 import org.http4s.HttpRoutes
-import com.gardenShare.gardenshare.SignupUser.SignupUser._
+import com.gardenShare.gardenshare.SignupUser._
 import cats.implicits._
 import io.circe.generic.auto._, io.circe.syntax._
 import org.http4s.Header
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT.AuthJwtOps
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser.AuthUserOps
-import com.gardenShare.gardenshare.UserEntities.AuthenticatedUser
-import com.gardenShare.gardenshare.UserEntities.FailedToAuthenticate
-import com.gardenShare.gardenshare.UserEntities.ValidToken
-import com.gardenShare.gardenshare.Encoders.Encoders._
-import com.gardenShare.gardenshare.UserEntities.InvalidToken
+import com.gardenShare.gardenshare.AuthJWT.AuthJwtOps
+import com.gardenShare.gardenshare.AuthUser
+import com.gardenShare.gardenshare.AuthUser.AuthUserOps
+import com.gardenShare.gardenshare.AuthenticatedUser
+import com.gardenShare.gardenshare.FailedToAuthenticate
+import com.gardenShare.gardenshare.ValidToken
+import com.gardenShare.gardenshare.Encoders._
+import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.ProcessAndJsonResponse
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
-import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
-import com.gardenShare.gardenshare.UserEntities.UserResponse
-import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
+import com.gardenShare.gardenshare.ProcessData
+import com.gardenShare.gardenshare.UserResponse
+import com.gardenShare.gardenshare.JWTValidationResult
 import cats.Applicative
-import com.gardenShare.gardenshare.UserEntities.Sellers
+import com.gardenShare.gardenshare.Sellers
 import com.gardenShare.gardenshare.domain._
 import com.gardenShare.gardenshare.GetUserInfo.GetUserInfoOps
-import com.gardenShare.gardenshare.domain.User.UserInfo
-import com.gardenShare.gardenshare.domain.Store.Address
-import com.gardenShare.gardenshare.UserEntities.AddressNotProvided
+import com.gardenShare.gardenshare.UserInfo
+import com.gardenShare.gardenshare.Address
+import com.gardenShare.gardenshare.AddressNotProvided
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 import _root_.fs2.text
 
 object UserRoutes {
-  def userRoutes[F[_]: Async: GetTypeSafeConfig:GetUserInfo: com.gardenShare.gardenshare.SignupUser.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller: ContextShift]()
+  def userRoutes[F[_]: Async: GetTypeSafeConfig:GetUserInfo: com.gardenShare.gardenshare.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller: ContextShift]()
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -110,51 +110,24 @@ object UserRoutes {
         ).catchError
       }
       case req @ POST -> Root / "user" / "apply-to-become-seller" => {
-          parseJWTokenFromRequest(req)
-            .map(_.auth)
-            .map(a => a.flatMap(ab => parseBodyFromRequest[Address, F](req).map(ac => (ab, ac))))
-            .map{a =>
-              a.flatMap{
-                case (InvalidToken(msg), _) => Applicative[F].pure(ResponseBody(msg, false).asJson)
-                case (ValidToken(None), _) => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
-                case (_, None) => Applicative[F].pure(ResponseBody("Address not provided", false).asJson)
-                case (ValidToken(Some(email)), Some(address)) => {
-                  ProcessData(
-                    implicitly[ApplyUserToBecomeSeller[F]].applyUser(Email(email), Sellers, address),
-                    (_: Unit) => ResponseBody("User is now a seller", true),
-                    (err:Throwable) => ResponseBody(err.getMessage(), false)
-                  )
-                    .process
-                }
-                case _ => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
-              }
-            }.left.map(noValidJwt => Ok(noValidJwt.asJson.toString()))
-            .map(_.flatMap(js => Ok(js.toString())))
-            .fold(a => a, b => b)
-            .catchError
+        parseREquestAndValidateUserAndParseBodyResponse[Address,F](req, {(email, address) =>
+          ProcessData(
+            implicitly[ApplyUserToBecomeSeller[F]].applyUser(email, Sellers, address),
+            (_: Unit) => ResponseBody("User is now a seller", true),
+            (err:Throwable) => ResponseBody(err.getMessage(), false)
+          )
+            .process
+        })
       }
       case req @ GET -> Root / "user" / "info" => {
-        addJsonHeaders(
-        parseJWTokenFromRequest(req)
-          .map(_.auth)
-          .map{a =>
-            a.flatMap {
-              case InvalidToken(msg) => Applicative[F].pure(ResponseBody(msg, false).asJson)
-              case ValidToken(None) => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
-              case ValidToken(Some(email)) => {
-                ProcessData(
-                  Email(email).getUserInfo,
-                  (a:UserInfo) => a.asJson,
-                  (err:Throwable) => FailedToGetUserInfo(err.getMessage())
-                )
-                  .process
-              }
-            }
-          }
-          .left.map(noValidJwt => Ok(noValidJwt.asJson.toString()))
-          .map(_.flatMap(js => Ok(js.toString())))
-          .fold(a => a, b => b)
-        ).catchError
+        parseRequestAndValidateUserResponse[F](req, {email =>
+          ProcessData(
+            email.getUserInfo,
+            (a:UserInfo) => a.asJson,
+            (err:Throwable) => FailedToGetUserInfo(err.getMessage())
+          )
+            .process
+        })
       }
     }
   }

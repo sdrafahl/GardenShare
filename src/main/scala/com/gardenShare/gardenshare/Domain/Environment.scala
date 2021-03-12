@@ -1,4 +1,4 @@
-package com.gardenShare.gardenshare.Environment
+package com.gardenShare.gardenshare
 
 abstract class SystemEnvionment
 case class Testing() extends SystemEnvionment

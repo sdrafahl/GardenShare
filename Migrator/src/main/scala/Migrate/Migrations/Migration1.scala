@@ -23,23 +23,32 @@ object Migrator1 {
     val dropStores: DBIO[Int] = sqlu"DROP TABLE IF EXISTS stores;"
     val dropProductReferences: DBIO[Int] = sqlu"DROP TABLE IF EXISTS productreferencetable;"
     val dropOrderRequests: DBIO[Int] = sqlu"DROP TABLE IF EXISTS storeorderrequest;"
+    val dropOrderAcceptedTabelRequests: DBIO[Int] = sqlu"DROP TABLE IF EXISTS acceptedstoreorderrequest;"
+    val dropOrderDeniedTabelRequests: DBIO[Int] = sqlu"DROP TABLE IF EXISTS deniedstoreorderrequest;"
+
     val dropCommands: DBIOAction[Unit, NoStream, Nothing] = DBIO.seq(
       dropProducts,
       dropStores,
       dropOrderRequests,
-      dropProductReferences
+      dropProductReferences,
+      dropOrderAcceptedTabelRequests,
+      dropOrderDeniedTabelRequests
     )
 
     val createProductTable = com.gardenShare.gardenshare.Storage.Relational.ProductTable.products.schema.create
     val createStoresTable = com.gardenShare.gardenshare.Storage.Relational.StoreTable.stores.schema.create
     val createOrderRequestTable = com.gardenShare.gardenshare.Storage.Relational.StoreOrderRequestTable.storeOrderRequests.schema.create
     val productReferenceTable = com.gardenShare.gardenshare.Storage.Relational.ProductReferenceTable.productReferenceTable.schema.create
+    val orderAcceptedStatusTable = com.gardenShare.gardenshare.Storage.Relational.AcceptedStoreOrderRequestTable.acceptedStoreOrderRequestTable.schema.create
+    val orderDeniedStatusTable = com.gardenShare.gardenshare.Storage.Relational.DeniedStoreOrderRequestTable.deniedStoreOrderRequestTable.schema.create
 
     val createTables: DBIOAction[Unit, NoStream, Nothing] =  DBIO.seq(
       createProductTable,
       createStoresTable,
       createOrderRequestTable,
-      productReferenceTable
+      productReferenceTable,
+      orderAcceptedStatusTable,
+      orderDeniedStatusTable
     )
 
     MigrateDB.createIOMigrator(CreateMigrator[IO](

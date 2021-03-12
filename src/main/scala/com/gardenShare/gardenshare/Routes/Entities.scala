@@ -1,7 +1,7 @@
 package com.gardenShare.gardenshare
 
-import com.gardenShare.gardenshare.UserEntities.AuthenticatedUser
-import com.gardenShare.gardenshare.domain.Store.Store
+import com.gardenShare.gardenshare.AuthenticatedUser
+import com.gardenShare.gardenshare.Store
 
 case class ResponseBody(msg: String, success: Boolean)
 case class ListOfProduce(listOfProduce: List[ProductWithId])

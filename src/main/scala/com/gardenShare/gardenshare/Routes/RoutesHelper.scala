@@ -3,22 +3,21 @@ package com.gardenShare.gardenshare
 
 import org.http4s.Request
 import org.http4s.util.CaseInsensitiveString
-import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
-import com.gardenShare.gardenshare._
+import com.gardenShare.gardenshare.JWTValidationTokens
 import org.http4s._
 import cats.Functor
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT.AuthJwtOps
-import com.gardenShare.gardenshare.UserEntities.ValidToken
+import com.gardenShare.gardenshare.AuthUser
+import com.gardenShare.gardenshare.AuthJWT
+import com.gardenShare.gardenshare.AuthJWT.AuthJwtOps
+import com.gardenShare.gardenshare.ValidToken
 import cats.Functor
 import io.circe.fs2._
 import io.circe.generic.auto._, io.circe.syntax._
 import fs2.text
-import com.gardenShare.gardenshare.domain.Store.Address
+import com.gardenShare.gardenshare.Address
 import cats.effect.IO
 import cats.effect.Sync
-import com.gardenShare.gardenshare.Encoders.Encoders._
+import com.gardenShare.gardenshare.Encoders._
 import io.circe.Decoder
 import cats.MonadError
 import cats.implicits._
@@ -27,10 +26,10 @@ import cats.Applicative
 import org.http4s.dsl.Http4sDsl
 import org.http4s.HttpRoutes
 import org.http4s.Header
-import com.gardenShare.gardenshare.UserEntities.Email
+import com.gardenShare.gardenshare.Email
 import io.circe.Json
 import cats.Monad
-import com.gardenShare.gardenshare.UserEntities.InvalidToken
+import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
 

@@ -8,39 +8,39 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
 import scala.concurrent.ExecutionContext.global
-import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient
-import com.gardenShare.gardenshare.SignupUser.SignupUser
-import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
-import com.gardenShare.gardenshare.Config.GetUserPoolName
-import com.gardenShare.gardenshare.Config.GetUserPoolSecret
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser._
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
-import com.gardenShare.gardenshare.Config.GetUserPoolId
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
-import com.gardenShare.gardenshare.Config.GetRegion
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.HttpsJwksBuilder
+import com.gardenShare.gardenshare.CogitoClient
+import com.gardenShare.gardenshare.SignupUser
+import com.gardenShare.gardenshare.GetTypeSafeConfig
+import com.gardenShare.gardenshare.GetUserPoolName
+import com.gardenShare.gardenshare.GetUserPoolSecret
+import com.gardenShare.gardenshare.AuthUser._
+import com.gardenShare.gardenshare.AuthUser
+import com.gardenShare.gardenshare.GetUserPoolId
+import com.gardenShare.gardenshare.AuthJWT
+import com.gardenShare.gardenshare.GetRegion
+import com.gardenShare.gardenshare.HttpsJwksBuilder
 import org.http4s.server.middleware._
 import scala.concurrent.duration._
-import com.gardenShare.gardenshare.Storage.Relational.InsertStore
-import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
-import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream
+import com.gardenShare.gardenshare.InsertStore
+import com.gardenShare.gardenshare.GetDistance
+import com.gardenShare.gardenshare.GetStoresStream
 import com.gardenShare.gardenshare.Storage.S3.GetKeys
-import com.gardenShare.gardenshare.Config.GetDescriptionBucketName
-import com.gardenShare.gardenshare.Storage.Relational.InsertProduct
-import com.gardenShare.gardenshare.Storage.Relational.GetStore._
-import com.gardenShare.gardenshare.Storage.Relational.GetStore
-import com.gardenShare.gardenshare.Storage.Relational.GetStoreByID
-import com.gardenShare.gardenshare.Config.GetEnvironment
-import com.gardenShare.gardenshare.Environment.SystemEnvionment
+import com.gardenShare.gardenshare.GetDescriptionBucketName
+import com.gardenShare.gardenshare.InsertProduct
+import com.gardenShare.gardenshare.GetStore._
+import com.gardenShare.gardenshare.GetStore
+import com.gardenShare.gardenshare.GetStoreByID
+import com.gardenShare.gardenshare.GetEnvironment
+import com.gardenShare.gardenshare.SystemEnvionment
 
 object GardenshareServer {
 
   def stream[F[_]:
       ConcurrentEffect:
       CogitoClient:
-      GetUserPoolName:
       GetTypeSafeConfig:
       SignupUser:
+      GetUserPoolName:            
       GetUserPoolSecret:
       AuthUser:
       GetUserPoolId:
@@ -58,6 +58,9 @@ object GardenshareServer {
       GetEnvironment:
       GetRoutesForEnv
   ](implicit T: Timer[F], C: ContextShift[F]): F[Unit] = {
+
+    // implicit val config = getTypeSafeConfig
+    // implicit val signupUser = SignupUser[F]()
 
     GetEnvironment().getEnv.flatMap { sysEnv =>
       (for {

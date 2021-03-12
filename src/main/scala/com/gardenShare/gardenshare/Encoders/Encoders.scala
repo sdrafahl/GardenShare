@@ -1,20 +1,19 @@
-package com.gardenShare.gardenshare.Encoders
+package com.gardenShare.gardenshare
 
 import io.circe.Encoder, io.circe.syntax._
 import io.circe.{ Decoder, Encoder, HCursor, Json }
 import io.circe.KeyEncoder
-import com.gardenShare.gardenshare.UserEntities._
 import io.circe.generic.auto._, io.circe.syntax._
 import io.circe.generic.JsonCodec, io.circe.syntax._
 import com.gardenShare.gardenshare.domain._
 import cats.syntax.functor._
 import io.circe.{ Decoder, Encoder }, io.circe.generic.auto._
 import io.circe.syntax._
-import com.gardenShare.gardenshare.UserEntities.Requester
+import com.gardenShare.gardenshare.Requester
 import cats.syntax.functor._
 import io.circe.{ Decoder, Encoder }, io.circe.generic.auto._
 import io.circe.syntax._
-import com.gardenShare.gardenshare.domain.Store._
+import com.gardenShare.gardenshare.Store._
 import scala.tools.nsc.backend.jvm.BackendReporting.Invalid
 import com.gardenShare.gardenshare.Units
 import com.gardenShare.gardenshare.Pound

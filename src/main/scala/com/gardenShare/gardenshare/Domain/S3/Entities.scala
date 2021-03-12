@@ -1,4 +1,4 @@
-package com.gardenShare.gardenshare.domain.S3
+package com.gardenShare.gardenshare
 
 import fs2.Stream
 import eu.timepit.refined._

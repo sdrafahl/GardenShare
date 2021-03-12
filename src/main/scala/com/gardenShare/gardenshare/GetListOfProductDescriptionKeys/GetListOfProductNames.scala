@@ -2,10 +2,10 @@ package com.gardenShare.gardenshare.GetListOfProductNames
 
 import com.gardenShare.gardenshare.Storage.S3.GetKeys
 import cats.effect.IO
-import com.gardenShare.gardenshare.Config.GetDescriptionBucketName
+import com.gardenShare.gardenshare.GetDescriptionBucketName
 import com.gardenShare.gardenshare.Storage.S3.GetKeys
 import com.gardenShare.gardenshare.Storage.S3.GetKeys.GetKeysOps
-import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
+import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.syntax.flatMap._
 import cats.syntax.functor._
 import cats.FlatMap

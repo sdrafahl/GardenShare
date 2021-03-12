@@ -2,20 +2,18 @@ package com.gardenShare.gardenshare.Storage.S3
 
 import cats.effect.IO
 import software.amazon.awssdk.services.s3.S3Client
-import com.gardenShare.gardenshare.Config.GetRegion
-import com.gardenShare.gardenshare.Config.Region
-import com.gardenShare.gardenshare.Config.GetAwsRegionFromMyRegion
-import com.gardenShare.gardenshare.Config.GetAwsRegionFromMyRegion._
+import com.gardenShare.gardenshare.GetRegion
+import com.gardenShare.gardenshare.Region
+import com.gardenShare.gardenshare.GetAwsRegionFromMyRegion
+import com.gardenShare.gardenshare.GetAwsRegionFromMyRegion._
 import cats.implicits._
 import cats.Functor
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import awscala._, s3._
 import fs2.{io, text, Stream}
 import cats.effect.{Blocker, ExitCode, IO, IOApp, Resource}
-import com.gardenShare.gardenshare.Concurrency.Concurrency._
 import scala.concurrent.ExecutionContext
-import com.gardenShare.gardenshare.domain.S3.BucketN
-
+import com.gardenShare.gardenshare.BucketN
 
 case class S3Key(underlying: String)
 abstract class GetKeys[F[_]] {

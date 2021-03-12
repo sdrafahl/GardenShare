@@ -1,31 +1,31 @@
-package com.gardenShare.gardenshare.SignupUser
+package com.gardenShare.gardenshare
 
 import cats.effect.Async
-import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient._
-import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient
+import com.gardenShare.gardenshare.CogitoClient._
+import com.gardenShare.gardenshare.CogitoClient
 import cats.effect.IO
-import com.gardenShare.gardenshare.UserEntities.User
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.UserEntities.Password
+import com.gardenShare.gardenshare.User
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.Password
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
-import com.gardenShare.gardenshare.Config.GetUserPoolName
-import com.gardenShare.gardenshare.Config.GetUserPoolSecret
-import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient._
-import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
+import com.gardenShare.gardenshare.GetUserPoolName
+import com.gardenShare.gardenshare.GetUserPoolSecret
+import com.gardenShare.gardenshare.CogitoClient._
+import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.syntax.flatMap._
 import cats.FlatMap
 import cats.syntax.functor._
 import cats.Functor
 
-abstract class SignupUser[F[_]: CogitoClient: GetUserPoolName] {
+abstract class SignupUser[F[_]] {
   def signupUser(email: Email, password: Password): F[SignUpResponse]
 }
 
 object SignupUser {
-  implicit def apply[F[_]: SignupUser]() = implicitly[SignupUser[F]]
+  def apply[F[_]: SignupUser]() = implicitly[SignupUser[F]]
 
-  implicit def createSignupUser[F[_]: FlatMap: Functor](implicit cognitoClient: CogitoClient[F], getUserPoolName:GetUserPoolName[F], g: GetTypeSafeConfig[F]) = new SignupUser[F] {
-    def signupUser(email: Email, password: Password): F[SignUpResponse] = {
+  implicit def createIOSignupUser(implicit cognitoClient: CogitoClient[IO], getUserPoolName:GetUserPoolName[IO], g: GetTypeSafeConfig[IO]) = new SignupUser[IO] {
+    def signupUser(email: Email, password: Password): IO[SignUpResponse] = {
       for {
         id <- getUserPoolName.exec()
         result = cognitoClient.createUser(password.underlying, email.underlying, id)

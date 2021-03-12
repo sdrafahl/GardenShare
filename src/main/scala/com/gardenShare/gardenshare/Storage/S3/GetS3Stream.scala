@@ -1,6 +1,5 @@
-package com.gardenShare.gardenshare.Storage.S3
+package com.gardenShare.gardenshare
 
-import com.gardenShare.gardenshare.domain.S3._
 import fs2.Stream
 import cats.effect._
 import software.amazon.awssdk.services.s3.S3Client

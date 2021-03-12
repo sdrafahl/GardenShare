@@ -5,7 +5,7 @@ import io.circe._, io.circe.parser._
 import cats.ApplicativeError
 import cats.implicits._
 import cats.Functor
-import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
+import com.gardenShare.gardenshare.ProcessData
 
 abstract class ProcessAndJsonResponse {
   def process[F[_]: Functor, D, E: Encoder,G: Encoder](a: F[D], op: D => E, errOp: Throwable => G)(implicit e: ApplicativeError[F, Throwable]): F[Json]

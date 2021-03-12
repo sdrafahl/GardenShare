@@ -9,10 +9,6 @@ resolvers += "Sonatype OSS Release Repository" at "https://oss.sonatype.org/cont
 resolvers += Resolver.mavenLocal
 resolvers += "Apache public" at "https://repository.apache.org/content/groups/public/"
 
-lazy val apiDependencies = Seq(
-  "com.github.jacke" %% "stripe-scala" % "0.5.2",
-)
-
 lazy val commonDependencies = Seq(
       "org.http4s"      %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s"      %% "http4s-blaze-client" % Http4sVersion,
@@ -53,7 +49,8 @@ lazy val commonDependencies = Seq(
       "com.typesafe.akka" %% "akka-http-core" % "10.2.1",
       "com.typesafe.akka" %% "akka-stream" % "2.6.8",
       "org.scalameta"   %% "munit"               % MunitVersion           % Test,
-      "org.typelevel"   %% "munit-cats-effect-2" % MunitCatsEffectVersion % Test
+      "org.typelevel"   %% "munit-cats-effect-2" % MunitCatsEffectVersion % Test,
+      "com.stripe" % "stripe-java" % "20.41.0"
     )
 
 lazy val root = (project in file("."))
@@ -64,7 +61,6 @@ lazy val root = (project in file("."))
     version := "0.0.1-SNAPSHOT",
     scalaVersion := "2.13.1",
     libraryDependencies ++= commonDependencies,
-    libraryDependencies ++= apiDependencies,
     testFrameworks += new TestFramework("utest.runner.Framework"),
     addCompilerPlugin("org.typelevel" %% "kind-projector"     % "0.10.3"),
     addCompilerPlugin("com.olegpy"    %% "better-monadic-for" % "0.3.1")

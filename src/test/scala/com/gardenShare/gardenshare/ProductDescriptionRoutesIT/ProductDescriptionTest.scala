@@ -7,19 +7,22 @@ import com.gardenShare.gardenshare.ProductDescriptionRoutes
 import org.http4s._
 import org.http4s.implicits._
 import cats.effect.IO
-import com.gardenShare.gardenshare.Encoders.Encoders._
+import com.gardenShare.gardenshare.Encoders._
 import com.gardenShare.gardenshare.Shows._
-import com.gardenShare.gardenshare.Concurrency.Concurrency._
 import fs2.text
 import io.circe.fs2._
 import io.circe.generic.auto._, io.circe.syntax._
 import scala.util.Try
-import com.gardenShare.gardenshare.domain.Store.Address
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.domain.Store.IA
-import com.gardenShare.gardenshare._
+import com.gardenShare.gardenshare.Address
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.IA
+import com.typesafe.config.ConfigFactory
 
 object ProductDescriptionTest extends TestSuite {
+  lazy implicit val config = ConfigFactory.load()
+  lazy implicit val dbClient = PostGresSetup.createPostgresClient
+  val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
+  implicit val cs = executionStuff._3
 
   val testEmail = "shane@gmail.com"
   val testPassword = "teST12$5jljasdf"

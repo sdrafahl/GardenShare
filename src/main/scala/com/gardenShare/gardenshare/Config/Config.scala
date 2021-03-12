@@ -1,4 +1,4 @@
-package com.gardenShare.gardenshare.Config
+package com.gardenShare.gardenshare
 
 import com.typesafe.config.ConfigFactory
 import cats.effect.IO
@@ -21,18 +21,17 @@ import java.io.FileReader
 import java.io.File
 import scala.io.Source
 import org.apache.commons.codec.binary.Base64
-import com.gardenShare.gardenshare.domain.S3.BucketN
+import com.gardenShare.gardenshare.BucketN
 import eu.timepit.refined.types.string.NonEmptyString
-import com.gardenShare.gardenshare.Environment._
 
-abstract class GetTypeSafeConfig[F[_]:Functor] {
+abstract class GetTypeSafeConfig[F[_]] {
   def get(key: String): F[String]
 }
+
 object GetTypeSafeConfig {
   def apply[F[_]:GetTypeSafeConfig]() = implicitly[GetTypeSafeConfig[F]]
 
-  implicit object IOGetTypeSafeConfig extends GetTypeSafeConfig[IO] {
-    private lazy implicit val conf: Config = ConfigFactory.load(); // todo: change where this loads
+  implicit def ioGetTypeSafeConfig(implicit conf: Config) = new GetTypeSafeConfig[IO] {    
     def get(key: String) =  IO(conf.getString(key))
   }
 }
@@ -44,21 +43,30 @@ abstract class GetTypeSafeConfigBoolean[F[_]:Functor] {
 object GetTypeSafeConfigBoolean {
   def apply[F[_]:GetTypeSafeConfigBoolean]() = implicitly[GetTypeSafeConfigBoolean[F]]
 
-  implicit object IOGetTypeSafeConfigBoolean extends GetTypeSafeConfigBoolean[IO] {
-    private lazy implicit val conf: Config = ConfigFactory.load();
+  implicit def createIOGetTypeSafeConfigBoolean(implicit conf: Config) = new GetTypeSafeConfigBoolean[IO] {
     def get(key: String) =  IO(conf.getBoolean(key))
   }
 }
 
+abstract class GetThreadCountForFindingNearestStores[F[_]] {
+  def get: F[Int]
+}
+
+object GetThreadCountForFindingNearestStores {
+  implicit object IOGetThreadCountForFindingNearestStores extends GetThreadCountForFindingNearestStores[IO] {
+    def get = IO.pure(4)
+  }
+}
+
 case class StripePrivateKey(n: String)
-abstract class GetStripePrivateKey[F[_]: GetTypeSafeConfig] {
-  def getKey(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[StripePrivateKey]
+abstract class GetStripePrivateKey[F[_]] {
+  def getKey: F[StripePrivateKey]
 }
 
 object GetStripePrivateKey {
   def apply[F[_]:GetStripePrivateKey]() = implicitly[GetStripePrivateKey[F]]
-  implicit object IOGetStripePrivateKey extends GetStripePrivateKey[IO] {    
-    def getKey(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[StripePrivateKey] = for {
+  implicit def createIOGetStripePrivateKey(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]) = new GetStripePrivateKey[IO] {    
+    def getKey: IO[StripePrivateKey] = for {
       conf <- getTypeSafeConfig.get("stripe.privateKey")
     } yield StripePrivateKey(conf)
   }
@@ -82,15 +90,14 @@ object GetUserPoolSecret {
 
 case class UserPoolName(name: String)
 
-abstract class GetUserPoolName[F[_]: GetTypeSafeConfig:Functor] {
+abstract class GetUserPoolName[F[_]] {
   def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[UserPoolName]
 }
 
 object GetUserPoolName {
   def apply[F[_]: GetUserPoolName]() = implicitly[GetUserPoolName[F]]
   implicit object IOGetUserPoolName extends GetUserPoolName[IO] {
-
-    def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO] = GetTypeSafeConfig[IO]): IO[UserPoolName] = {
+    def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[UserPoolName] = {
       for {
         conf <- getTypeSafeConfig.get("users.standardUserPoolName")
       } yield UserPoolName(conf)
@@ -155,14 +162,14 @@ object GetRegion {
 
 case class UserPoolID(id: String)
 
-abstract class GetUserPoolId[F[_]: GetTypeSafeConfig:Functor] {
-  def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[UserPoolID]
+abstract class GetUserPoolId[F[_]] {
+  def exec(): F[UserPoolID]
 }
 
 object GetUserPoolId {
-  implicit def apply[F[_]: GetUserPoolId]() = implicitly[GetUserPoolId[F]]
-  implicit object IOGetUserPoolId extends GetUserPoolId[IO] {
-    def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[UserPoolID] = {
+  def apply[F[_]: GetUserPoolId]() = implicitly[GetUserPoolId[F]]
+  implicit def createIOGetUserPoolId(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]) = new GetUserPoolId[IO] {
+    def exec(): IO[UserPoolID] = {
       for {
         userPoolId <- getTypeSafeConfig.get("users.id")        
       } yield UserPoolID(userPoolId)
@@ -237,13 +244,13 @@ object GetPrivateKey {
 
 case class GoogleMapsApiKey(key: String)
 abstract class GetGoogleMapsApiKey[F[_]] {
-  def get(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[GoogleMapsApiKey]
+  def get: F[GoogleMapsApiKey]
 }
 
 object GetGoogleMapsApiKey {
   def apply[F[_]:GetGoogleMapsApiKey]() = implicitly[GetGoogleMapsApiKey[F]]
-  implicit object IOGetGoogleMapsApiKey extends GetGoogleMapsApiKey[IO] {
-    def get(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[GoogleMapsApiKey] = for {
+  implicit def createIOGetGoogleMapsApiKey(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]) = new GetGoogleMapsApiKey[IO] {
+    def get: IO[GoogleMapsApiKey] = for {
       key <- getTypeSafeConfig.get("googleMapsApi.apiKey")
     } yield GoogleMapsApiKey(key)
   }

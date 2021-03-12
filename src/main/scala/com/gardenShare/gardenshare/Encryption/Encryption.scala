@@ -1,10 +1,10 @@
-package com.gardenShare.gardenshare.Encryption
+package com.gardenShare.gardenshare
 
-import com.gardenShare.gardenshare.Config.PrivateKey
+import com.gardenShare.gardenshare.PrivateKey
 import javax.crypto.Cipher
 import org.apache.commons.codec.binary.Base64
 import java.security.KeyFactory
-import com.gardenShare.gardenshare.Config.PubKey
+import com.gardenShare.gardenshare.PubKey
 import java.io.BufferedReader
 import java.io.FileReader
 import java.security.spec.X509EncodedKeySpec

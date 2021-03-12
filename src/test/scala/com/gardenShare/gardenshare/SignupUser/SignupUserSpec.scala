@@ -1,11 +1,9 @@
-package com.gardenShare.gardenshare.SignupUser
+package com.gardenShare.gardenshare
 
 import utest._
 import cats.effect.IO
-import com.gardenShare.gardenshare.Storage.Relational.InsertGarden
-import com.gardenShare.gardenshare.Storage.Relational.Gardens._
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
-import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient
+import com.gardenShare.gardenshare.CogitoClient
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CognitoIdentityProviderException
 import software.amazon.awssdk.services.cognitoidentityprovider.model.CreateUserPoolRequest
@@ -17,21 +15,22 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUserPoo
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminCreateUserRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminCreateUserResponse
-import com.gardenShare.gardenshare.UserEntities.User
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.UserEntities.Password
-import com.gardenShare.gardenshare.Config.GetUserPoolName
-import com.gardenShare.gardenshare.Config.UserPoolName
-import com.gardenShare.gardenshare.Config.GetTypeSafeConfig
+import com.gardenShare.gardenshare.User
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.Password
+import com.gardenShare.gardenshare.GetUserPoolName
+import com.gardenShare.gardenshare.UserPoolName
+import com.gardenShare.gardenshare.GetTypeSafeConfig
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthResponse
-import com.gardenShare.gardenshare.UserEntities._
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse
-import com.gardenShare.gardenshare.Config.UserPoolID
+import com.gardenShare.gardenshare.UserPoolID
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserResponse
+import com.typesafe.config.ConfigFactory
 
 object SignupUserSpec extends TestSuite {
+  lazy implicit val config = ConfigFactory.load()
   val tests = Tests {
     test("SignupUser") {
       test("For IO") {

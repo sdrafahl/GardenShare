@@ -2,10 +2,10 @@ package com.gardenShare.gardenshare
 
 import java.time.ZonedDateTime
 import cats.effect.ContextShift
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.Storage.Relational.GetStoreOrderRequestsWithSellerEmail
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.GetStoreOrderRequestsWithSellerEmail
 import cats.effect.IO
-import com.gardenShare.gardenshare.Storage.Relational.GetStoreOrderRequestsWithBuyerEmail
+import com.gardenShare.gardenshare.GetStoreOrderRequestsWithBuyerEmail
 
 abstract class GetStoreOrderRequestsWithinTimeRangeOfSeller[F[_]] {
   def getStoreOrdersWithin(from: ZonedDateTime, to: ZonedDateTime, email: Email)(implicit cs: ContextShift[F]): F[List[StoreOrderRequestWithId]]

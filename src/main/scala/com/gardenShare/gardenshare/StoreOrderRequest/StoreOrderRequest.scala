@@ -1,6 +1,6 @@
 package com.gardenShare.gardenshare
 
-import com.gardenShare.gardenshare.UserEntities.Email
+import com.gardenShare.gardenshare.Email
 import java.time.ZonedDateTime
 
 case class ProductAndQuantity(product: ProductWithId, quantity: Int)

@@ -6,7 +6,7 @@ import io.circe.KeyEncoder
 import io.circe.generic.auto._, io.circe.syntax._
 import io.circe.generic.JsonCodec, io.circe.syntax._
 
-object EncodersDecoders {
+object StoreOrderRequestStatusEncodersDecoders {
   implicit val storeOrderRequestStatusEncoder: Encoder[StoreOrderRequestStatus] = Encoder.instance {
     case AcceptedRequest => "AcceptedRequest".asJson
     case DeniedRequest => "DeniedRequest".asJson

@@ -1,4 +1,4 @@
-package com.gardenShare.gardenshare.Concurrency
+package com.gardenShare.gardenshare
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.effect.IO
@@ -9,11 +9,15 @@ import cats.effect.Blocker
 import cats.effect.Concurrent
 import cats.effect.Concurrent._
 
-object Concurrency {
-  val threadCount = 4
-  implicit lazy val executor = Executors.newWorkStealingPool(threadCount)
-  implicit lazy val ec = ExecutionContext.fromExecutor(executor)
-  implicit lazy val cs = IO.contextShift(ec)  
-  implicit lazy val blocker = Blocker.liftExecutorService(executor)
-  implicit lazy val timer = IO.timer(ec)
+object ConcurrencyHelper {
+  def createConcurrencyValues(threadCount: Int) = {
+    lazy val executor = Executors.newWorkStealingPool(threadCount)
+    lazy val ec = ExecutionContext.fromExecutor(executor)
+    lazy val cs = IO.contextShift(ec)
+    lazy val blocker = Blocker.liftExecutorService(executor)
+    lazy val timer = IO.timer(ec)
+    (executor, ec, cs, blocker, timer)
+  }  
 }
+
+

@@ -4,38 +4,41 @@ import cats.effect.IO
 import org.http4s._
 import org.http4s.implicits._
 import munit.CatsEffectSuite
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.UserEntities.Password
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.Password
 import fs2.text
 import io.circe.fs2._
 import io.circe.generic.auto._, io.circe.syntax._
 import utest.TestSuite
 import utest.test
 import utest.Tests
-import com.gardenShare.gardenshare.domain.User.UserInfo
-import com.gardenShare.gardenshare.UserEntities.Sellers
-import com.gardenShare.gardenshare.Encoders.Encoders._
+import com.gardenShare.gardenshare.UserInfo
+import com.gardenShare.gardenshare.Sellers
+import com.gardenShare.gardenshare.Encoders._
 import com.gardenShare.gardenshare.Shows._
-import com.gardenShare.gardenshare.Storage.Relational.DeleteStore
-import com.gardenShare.gardenshare.Storage.Relational.GetStore
-import com.gardenShare.gardenshare.domain.Store.Address
-import com.gardenShare.gardenshare.domain.Store.IA
-import com.gardenShare.gardenshare.Concurrency.Concurrency._
-import com.gardenShare.gardenshare.domain.Store._
-import com.gardenShare.gardenshare.Storage.Relational.InsertStore
-import com.gardenShare.gardenshare.Storage.Relational.DeleteStoreOrderRequestsForSeller
+import com.gardenShare.gardenshare.DeleteStore
+import com.gardenShare.gardenshare.GetStore
+import com.gardenShare.gardenshare.Address
+import com.gardenShare.gardenshare.IA
+import com.gardenShare.gardenshare.Store._
+import com.gardenShare.gardenshare.InsertStore
+import com.gardenShare.gardenshare.DeleteStoreOrderRequestsForSeller
 import cats.effect.ContextShift
-import com.gardenShare.gardenshare.Encoders.Encoders._
+import com.gardenShare.gardenshare.Encoders._
 import scala.util.Try
 import java.time.ZonedDateTime
-import com.gardenShare.gardenshare.Storage.Relational.SearchStoreOrderRequestTable
-import com.gardenShare.gardenshare.Storage.Relational.SearchAcceptedStoreOrderRequestTableByID._
-import com.gardenShare.gardenshare.Storage.Relational.SearchDeniedStoreOrderRequestTable._
-import com.gardenShare.gardenshare.Storage.Relational.SearchDeniedStoreOrderRequestTable
+import com.gardenShare.gardenshare.SearchStoreOrderRequestTable
+import com.gardenShare.gardenshare.SearchAcceptedStoreOrderRequestTableByID._
+import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable._
+import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable
+import com.gardenShare.gardenshare.StoreOrderRequestStatusEncodersDecoders._
+import com.typesafe.config.ConfigFactory
+import com.gardenShare.gardenshare.PostGresSetup
+import com.gardenShare.gardenshare.ConcurrencyHelper
 
+object UserTestSpec extends TestSuite {  
 
-object UserTestSpec extends TestSuite {
-
+  import UserTestsHelper._
 
   val tests = Tests {
     test("User Routes") {
@@ -95,6 +98,12 @@ object UserTestSpec extends TestSuite {
  }
 
 object UserTestsHelper {
+  lazy implicit val config = ConfigFactory.load()
+  lazy implicit val dbClient = PostGresSetup.createPostgresClient
+  val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
+  implicit val cs = executionStuff._3
+  implicit val timer = executionStuff._5
+
 
   /**
     Do Not Use in production
@@ -354,6 +363,46 @@ object UserTestsHelper {
       .toList
       .unsafeRunSync()
       .head
+  }
+
+  def getOrderStatus(orderId: Int) = {
+    val uri = Uri.fromString(s"storeOrderRequest/status/${orderId}").toOption.get
+    val request = Request[IO](Method.GET, uri)
+
+    StoreOrderRoutes
+      .storeOrderRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, StoreOrderRequestStatusBody])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def acceptOrder(orderId:Int, jwt: String) = {
+    val uri = Uri.fromString(s"storeOrderRequest/accept/${orderId}").toOption.get
+    val headers = Headers.of(Header("authentication", jwt))
+    val request = Request[IO](Method.POST, uri, headers = headers)  
+
+    StoreOrderRoutes
+      .storeOrderRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+  }
+
+  def denyOrder(orderId:Int, jwt: String) = {
+    val uri = Uri.fromString(s"storeOrderRequest/deny/${orderId}").toOption.get
+    val headers = Headers.of(Header("authentication", jwt))
+    val request = Request[IO](Method.POST, uri, headers = headers)  
+
+    StoreOrderRoutes
+      .storeOrderRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
   }
 
   def deleteAllStoreOrdersForSeller[F[_]: DeleteStoreOrderRequestsForSeller: ContextShift](e: String) = implicitly[DeleteStoreOrderRequestsForSeller[IO]].delete(Email(e))

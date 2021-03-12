@@ -1,9 +1,9 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.IO
-import com.gardenShare.gardenshare.UserEntities.Email
+import com.gardenShare.gardenshare.Email
 import cats.effect.ContextShift
-import com.gardenShare.gardenshare.Storage.Relational.InsertStoreOrderRequest
+import com.gardenShare.gardenshare.InsertStoreOrderRequest
 
 abstract class CreateStoreOrderRequest[F[_]] {
   def createOrder(seller: Email, buyer: Email, products: List[ProductAndQuantity])(implicit cs: ContextShift[F], gd: GetCurrentDate[F]): F[StoreOrderRequestWithId]

@@ -1,32 +1,31 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.Async
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
-import com.gardenShare.gardenshare.Storage.Relational.InsertStore
-import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
+import com.gardenShare.gardenshare.AuthUser
+import com.gardenShare.gardenshare.AuthJWT
+import com.gardenShare.gardenshare.InsertStore
+import com.gardenShare.gardenshare.GetDistance
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import org.http4s.util.CaseInsensitiveString
-import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser._
+import com.gardenShare.gardenshare.JWTValidationTokens
+import com.gardenShare.gardenshare.AuthUser
+import com.gardenShare.gardenshare.AuthUser._
 import io.circe._, io.circe.parser._
 import io.circe.generic.auto._, io.circe.syntax._
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT._
-import com.gardenShare.gardenshare.UserEntities.InvalidToken
-import com.gardenShare.gardenshare.UserEntities.ValidToken
-import com.gardenShare.gardenshare.domain.Store.Address
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.domain.Store.CreateStoreRequest
-import com.gardenShare.gardenshare.Storage.Relational.InsertStore.CreateStoreRequestOps
-import com.gardenShare.gardenshare.Storage.Relational.InsertStore
+import com.gardenShare.gardenshare.AuthJWT._
+import com.gardenShare.gardenshare.InvalidToken
+import com.gardenShare.gardenshare.ValidToken
+import com.gardenShare.gardenshare.Address
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.CreateStoreRequest
+import com.gardenShare.gardenshare.InsertStore.CreateStoreRequestOps
+import com.gardenShare.gardenshare.InsertStore
 import scala.util.Try
-import com.gardenShare.gardenshare.GoogleMapsClient.DistanceInMiles
+import com.gardenShare.gardenshare.DistanceInMiles
 import com.gardenShare.gardenshare.SignupUser._
-import com.gardenShare.gardenshare.SignupUser.SignupUser._
 import com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames
-import com.gardenShare.gardenshare.Storage.Relational.InsertProduct
+import com.gardenShare.gardenshare.InsertProduct
 import com.gardenShare.gardenshare.Helpers._
 import com.gardenShare.gardenshare
 import com.gardenShare.gardenshare.GetListOfProductNames.DescriptionName
@@ -36,12 +35,12 @@ import com.gardenShare.gardenshare.ParseProduce
 import cats.effect.ContextShift
 import cats.ApplicativeError
 import cats.FlatMap
-import com.gardenShare.gardenshare.UserEntities.JWTValidationResult
+import com.gardenShare.gardenshare.JWTValidationResult
 import cats.Monad
 import cats.implicits._
-import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
-import com.gardenShare.gardenshare.Storage.Relational.GetStore
-import com.gardenShare.gardenshare.Storage.Relational.GetProductsByStore
+import com.gardenShare.gardenshare.ProcessData
+import com.gardenShare.gardenshare.GetStore
+import com.gardenShare.gardenshare.GetProductsByStore
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 

@@ -1,16 +1,15 @@
 package com.gardenShare.gardenshare
 
-import com.gardenShare.gardenshare.domain.User._
-import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient
+import com.gardenShare.gardenshare.CogitoClient
 import cats.effect.IO
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.Config.GetUserPoolName
-import com.gardenShare.gardenshare.Config.GetUserPoolId
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.GetUserPoolName
+import com.gardenShare.gardenshare.GetUserPoolId
 import scala.jdk.CollectionConverters._
-import com.gardenShare.gardenshare.UserEntities.Sellers
-import com.gardenShare.gardenshare.UserEntities.Requester
+import com.gardenShare.gardenshare.Sellers
+import com.gardenShare.gardenshare.Requester
 import io.circe.generic.auto._, io.circe.syntax._
-import com.gardenShare.gardenshare.Storage.Relational.GetStore
+import com.gardenShare.gardenshare.GetStore
 import cats.effect.ContextShift
 
 abstract class GetUserInfo[F[_]] {

@@ -1,4 +1,4 @@
-package com.gardenShare.gardenshare.UserEntities
+package com.gardenShare.gardenshare
 
 case class Email(underlying: String)
 case class Password(underlying: String)
@@ -11,7 +11,7 @@ abstract class JWTValidationResult
 case class InvalidToken(msg: String) extends JWTValidationResult
 case class AddressNotProvided(msg: String = "Please Provide an Address")
 case class ValidToken(email: Option[String]) extends JWTValidationResult
-
+case class UserInfo(email: Email, userType: UserType, store: Option[Store])
 case class JWTValidationTokens(idToken: String)
 
 sealed trait UserType

@@ -1,43 +1,56 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.Async
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT
-import com.gardenShare.gardenshare.Storage.Relational.InsertStore
-import com.gardenShare.gardenshare.GoogleMapsClient.GetDistance
-import com.gardenShare.gardenshare.Storage.Relational.GetStoresStream
+import com.gardenShare.gardenshare.AuthUser
+import com.gardenShare.gardenshare.AuthJWT
+import com.gardenShare.gardenshare.InsertStore
+import com.gardenShare.gardenshare.GetDistance
+import com.gardenShare.gardenshare.GetStoresStream
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import org.http4s.util.CaseInsensitiveString
-import com.gardenShare.gardenshare.UserEntities.JWTValidationTokens
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser
-import com.gardenShare.gardenshare.authenticateUser.AuthUser.AuthUser._
+import com.gardenShare.gardenshare.JWTValidationTokens
+import com.gardenShare.gardenshare.AuthUser
+import com.gardenShare.gardenshare.AuthUser._
 import io.circe._, io.circe.parser._
 import io.circe.generic.auto._, io.circe.syntax._
-import com.gardenShare.gardenshare.authenticateUser.AuthJWT.AuthJWT._
+import com.gardenShare.gardenshare.AuthJWT._
 import cats.implicits._
-import com.gardenShare.gardenshare.UserEntities.InvalidToken
-import com.gardenShare.gardenshare.UserEntities.ValidToken
-import com.gardenShare.gardenshare.domain.Store.Address
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.domain.Store.CreateStoreRequest
-import com.gardenShare.gardenshare.Storage.Relational.InsertStore.CreateStoreRequestOps
-import com.gardenShare.gardenshare.Storage.Relational.InsertStore
+import com.gardenShare.gardenshare.InvalidToken
+import com.gardenShare.gardenshare.ValidToken
+import com.gardenShare.gardenshare.Address
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.CreateStoreRequest
+import com.gardenShare.gardenshare.InsertStore.CreateStoreRequestOps
+import com.gardenShare.gardenshare.InsertStore
 import scala.util.Try
-import com.gardenShare.gardenshare.GoogleMapsClient.DistanceInMiles
 import com.gardenShare.gardenshare.GetNearestStores.GetNearestOps
 import com.gardenShare.gardenshare.Helpers._
 import cats.Applicative
 import com.gardenShare.gardenshare.ProcessAndJsonResponse
 import com.gardenShare.gardenshare.ProcessAndJsonResponse._
-import com.gardenShare.gardenshare.domain.ProcessAndJsonResponse.ProcessData
-import com.gardenShare.gardenshare.domain.Store.Store
+import com.gardenShare.gardenshare.ProcessData
+import com.gardenShare.gardenshare.Store
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
+import cats.effect.ContextShift
+import cats.effect.Timer
 
 object StoreRoutes {
-  def storeRoutes[F[_]: Async: com.gardenShare.gardenshare.SignupUser.SignupUser: AuthUser: AuthJWT: InsertStore: GetNearestStores: GetDistance: GetStoresStream](implicit d: Decoder[Address], e: Encoder[Address])
+  def storeRoutes[F[_]:
+      Async:
+      com.gardenShare.gardenshare.SignupUser:
+      AuthUser:
+      AuthJWT:
+      InsertStore:
+      GetNearestStores:
+      GetStoresStream:
+      GetDistance:
+      ContextShift:
+      Timer:
+      GetThreadCountForFindingNearestStores
+  ](implicit d: Decoder[Address], e: Encoder[Address])
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._      

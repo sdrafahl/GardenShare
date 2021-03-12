@@ -1,7 +1,7 @@
 package com.gardenShare.gardenshare
 
 import cats.Show
-import com.gardenShare.gardenshare.domain.Store.Address
+import com.gardenShare.gardenshare.Address
 
 package object Shows {
   implicit object AddressShow extends Show[Address] {

@@ -1,4 +1,4 @@
-package com.gardenShare.gardenshare.domain.ProcessAndJsonResponse
+package com.gardenShare.gardenshare
 
 import cats.Functor
 import io.circe.Encoder

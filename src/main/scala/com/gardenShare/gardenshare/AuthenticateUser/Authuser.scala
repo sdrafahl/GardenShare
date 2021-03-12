@@ -1,23 +1,23 @@
-package com.gardenShare.gardenshare.authenticateUser.AuthUser
+package com.gardenShare.gardenshare
 
 import cats.effect.IO
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient
 import cats.effect.Async
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest
-import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient
-import com.gardenShare.gardenshare.Storage.Users.Cognito.CogitoClient._
-import com.gardenShare.gardenshare.UserEntities._
+import com.gardenShare.gardenshare.CogitoClient
+import com.gardenShare.gardenshare.CogitoClient._
 import scala.jdk.OptionConverters._
-import com.gardenShare.gardenshare.Config.GetUserPoolName
-import com.gardenShare.gardenshare.Config.GetUserPoolId
+import com.gardenShare.gardenshare.GetUserPoolName
+import com.gardenShare.gardenshare.GetUserPoolId
+import com.gardenShare.gardenshare.GetTypeSafeConfig
 
 abstract class AuthUser[F[_]] {
   def authTheUser(user: User)(implicit client: CogitoClient[F], getUserPoolName:GetUserPoolName[F], getUserPoolId: GetUserPoolId[F]): F[UserResponse]
 }
 
 object AuthUser {
-  implicit def apply[F[_]:AuthUser]() = implicitly[AuthUser[F]]
-  implicit object IOAuthUser extends AuthUser[IO] {
+  def apply[F[_]:AuthUser]() = implicitly[AuthUser[F]]
+  implicit def createIOAuthUser(implicit get: GetTypeSafeConfig[IO]) = new AuthUser[IO] {
     def authTheUser(user: User)(implicit client: CogitoClient[IO], getUserPoolName:GetUserPoolName[IO], getUserPoolId: GetUserPoolId[IO]): IO[UserResponse] = {
       for {
         clientId <- getUserPoolName.exec()

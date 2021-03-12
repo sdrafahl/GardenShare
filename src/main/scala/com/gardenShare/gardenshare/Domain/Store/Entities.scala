@@ -1,6 +1,4 @@
-package com.gardenShare.gardenshare.domain.Store
-
-import com.gardenShare.gardenshare.UserEntities._
+package com.gardenShare.gardenshare
 
 abstract class State
 case object AL extends State

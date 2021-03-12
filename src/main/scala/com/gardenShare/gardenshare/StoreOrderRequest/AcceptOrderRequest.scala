@@ -2,34 +2,60 @@ package com.gardenShare.gardenshare
 
 import java.time.ZonedDateTime
 import cats.effect.ContextShift
-import com.gardenShare.gardenshare.UserEntities.Email
-import com.gardenShare.gardenshare.Storage.Relational.GetStoreOrderRequestsWithSellerEmail
+import com.gardenShare.gardenshare.Email
+import com.gardenShare.gardenshare.GetStoreOrderRequestsWithSellerEmail
 import cats.effect.IO
-import com.gardenShare.gardenshare.Storage.Relational.GetStoreOrderRequestsWithBuyerEmail
-import com.gardenShare.gardenshare.Storage.Relational.InsertIntoAcceptedStoreOrderRequestTableByID
-import com.gardenShare.gardenshare.Storage.Relational.InsertIntoDeniedStoreOrderRequestTableByID
-import com.gardenShare.gardenshare.Storage.Relational.SearchDeniedStoreOrderRequestTable
-import com.gardenShare.gardenshare.Storage.Relational.SearchAcceptedStoreOrderRequestTableByID
+import com.gardenShare.gardenshare.GetStoreOrderRequestsWithBuyerEmail
+import com.gardenShare.gardenshare.InsertIntoAcceptedStoreOrderRequestTableByID
+import com.gardenShare.gardenshare.InsertIntoDeniedStoreOrderRequestTableByID
+import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable
+import com.gardenShare.gardenshare.SearchAcceptedStoreOrderRequestTableByID
 import cats.implicits._
-import com.gardenShare.gardenshare.Storage.Relational.SearchStoreOrderRequestTable
+import com.gardenShare.gardenshare.SearchStoreOrderRequestTable
 
 abstract class AcceptOrderRequest[F[_]] {
-  def accept(storeOrderIdToAccept: Int)(implicit cs: ContextShift[F]):F[Unit]
+  def accept(storeOrderIdToAccept: Int, sellerEmail: Email)(implicit cs: ContextShift[F]):F[Unit]
 }
 
 object AcceptOrderRequest {
-  implicit def createIOAcceptOrderRequest(implicit in:InsertIntoAcceptedStoreOrderRequestTableByID[IO]) = new AcceptOrderRequest[IO] {
-    def accept(storeOrderIdToAccept: Int)(implicit cs: ContextShift[IO]):IO[Unit] = in.insert(storeOrderIdToAccept).map(_ => ())
+  implicit def createIOAcceptOrderRequest(implicit in:InsertIntoAcceptedStoreOrderRequestTableByID[IO], searchOrders: SearchStoreOrderRequestTable[IO], pd: ParseDate) = new AcceptOrderRequest[IO] {
+    def accept(storeOrderIdToAccept: Int, sellerEmail: Email)(implicit cs: ContextShift[IO]):IO[Unit] = {
+      for {
+        order <- searchOrders.search(storeOrderIdToAccept)
+        result <- order match {
+          case None => IO.raiseError(new Throwable("Order does not exist"))
+          case Some(order) => {
+            order.storeOrderRequest.seller.equals(sellerEmail) match {
+              case false => IO.raiseError(new Throwable("Order does not belong to that seller"))
+              case true => in.insert(storeOrderIdToAccept).map(_ => ())
+            }
+          }
+        }
+      } yield result
+    }
   }
 }
 
 abstract class DeniedOrderRequests[F[_]] {
-  def deny(storeOrderToDeny: Int)(implicit cs: ContextShift[F]):F[Unit]
+  def deny(storeOrderToDeny: Int, sellerEmail: Email)(implicit cs: ContextShift[F]):F[Unit]
 }
 
 object DeniedOrderRequests {
-  implicit def createIODeniedOrderRequests(implicit in: InsertIntoDeniedStoreOrderRequestTableByID[IO]) = new DeniedOrderRequests[IO] {
-    def deny(storeOrderToDeny: Int)(implicit cs: ContextShift[IO]):IO[Unit] = in.insert(storeOrderToDeny).map(_ => ())
+  implicit def createIODeniedOrderRequests(implicit in: InsertIntoDeniedStoreOrderRequestTableByID[IO], searchOrders: SearchStoreOrderRequestTable[IO], pd: ParseDate) = new DeniedOrderRequests[IO] {
+    def deny(storeOrderToDeny: Int, sellerEmail: Email)(implicit cs: ContextShift[IO]):IO[Unit] = {
+      for {
+        order <- searchOrders.search(storeOrderToDeny)
+        result <- order match {
+          case None => IO.raiseError(new Throwable("Order does not exist"))
+          case Some(order) => {
+            order.storeOrderRequest.seller.equals(sellerEmail) match {
+              case false => IO.raiseError(new Throwable("Order does not belong to that seller"))
+              case true => in.insert(storeOrderToDeny).map(_ => ())
+            }
+          }
+        }
+      } yield result
+    }
   }
 }
 
