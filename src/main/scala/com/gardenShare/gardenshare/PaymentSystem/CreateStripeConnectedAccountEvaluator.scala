@@ -19,6 +19,7 @@ object CreateStripeConnectedAccountEvaluator {
         accountCreateParamsCommand = AccountCreateParams
           .builder()
           .setType(AccountCreateParams.Type.EXPRESS)
+          .setEmail(x.sellerEmail.underlying) 
           .build()
         responseFromCreatingAccount <- IO(Account.create(accountCreateParamsCommand))
       } yield responseFromCreatingAccount

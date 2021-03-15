@@ -44,7 +44,8 @@ object GetRoutes {
     insertProduct: InsertProduct[IO],
     addProductToStore: AddProductToStore[IO],
     getProductsByStore:GetProductsByStore[IO],
-    timer: Timer[IO]
+    timer: Timer[IO],
+    verifyUserAsSeller: VerifyUserAsSeller[IO]
   ) = new GetRoutes[IO, TestingAndProductionRoutes]{
     def getRoutes: HttpRoutes[IO] = (
       UserRoutes.userRoutes[IO]() <+>
@@ -74,7 +75,8 @@ object GetRoutes {
     insertProduct: InsertProduct[IO],
     addProductToStore: AddProductToStore[IO],
     getProductsByStore:GetProductsByStore[IO],
-    timer: Timer[IO]
+    timer: Timer[IO],
+    verifyUserAsSeller: VerifyUserAsSeller[IO]
   ) = new GetRoutes[IO, OnlyProductionRoutes] {
     def getRoutes: HttpRoutes[IO] = UserRoutes.userRoutes[IO]() <+> ProductRoutes.productRoutes[IO] <+> StoreRoutes.storeRoutes[IO]
   }

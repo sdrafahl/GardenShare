@@ -19,7 +19,8 @@ object Main extends IOApp {
     typeSafeConfig <- confPgm
     x <- {
       implicit val c = typeSafeConfig
-      val concurrencyVals = ConcurrencyHelper.createConcurrencyValues(4)
+      val executionValues = ConcurrencyHelper.createConcurrencyValues(4)
+      implicit val ec = executionValues._2
       implicit val postgresClient = PostGresSetup.createPostgresClient
       GardenshareServer.stream[IO].as(ExitCode.Success)
     }

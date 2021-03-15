@@ -7,7 +7,6 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
-import scala.concurrent.ExecutionContext.global
 import com.gardenShare.gardenshare.CogitoClient
 import com.gardenShare.gardenshare.SignupUser
 import com.gardenShare.gardenshare.GetTypeSafeConfig
@@ -32,6 +31,7 @@ import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.GetStoreByID
 import com.gardenShare.gardenshare.GetEnvironment
 import com.gardenShare.gardenshare.SystemEnvionment
+import scala.concurrent.ExecutionContext
 
 object GardenshareServer {
 
@@ -57,14 +57,14 @@ object GardenshareServer {
       GetStoreByID:
       GetEnvironment:
       GetRoutesForEnv
-  ](implicit T: Timer[F], C: ContextShift[F]): F[Unit] = {
+  ](implicit T: Timer[F], C: ContextShift[F], ec: ExecutionContext): F[Unit] = {
 
     // implicit val config = getTypeSafeConfig
     // implicit val signupUser = SignupUser[F]()
 
     GetEnvironment().getEnv.flatMap { sysEnv =>
       (for {
-        client <- BlazeClientBuilder[F](global).stream
+        client <- BlazeClientBuilder[F](ec).stream
      
         // Combine Service Routes into an HttpApp.
         // Can also be done via a Router if you

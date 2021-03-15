@@ -14,7 +14,7 @@ import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.JdbcBackend.DatabaseDef
 import scala.concurrent.ExecutionContext
 import com.gardenShare.gardenshare.Migrator._
-import com.gardenShare.gardenshare.Storage.Relational.ProductTable._
+import com.gardenShare.gardenshare.ProductTable._
 
 abstract class RunMigration[F[_]] {
   def runUp(l: List[MigrateDB[F]]): F[Unit]

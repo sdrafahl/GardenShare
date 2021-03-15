@@ -35,6 +35,9 @@ import com.gardenShare.gardenshare.StoreOrderRequestStatusEncodersDecoders._
 import com.typesafe.config.ConfigFactory
 import com.gardenShare.gardenshare.PostGresSetup
 import com.gardenShare.gardenshare.ConcurrencyHelper
+import com.gardenShare.gardenshare.ApplyUserToBecomeUserEncodersDecoders._
+import java.net.URL
+import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
 
 object UserTestSpec extends TestSuite {  
 
@@ -45,6 +48,8 @@ object UserTestSpec extends TestSuite {
 
       val testEmail = "shanedrafahl@gmail.com"
       val testPassword = "teST12$5jljasdf"
+      val testRefreshURL = new URL("http://localhost:3000/")
+      val testReturnURL = new URL("http://localhost:3000/")
       test("/user/signup/shanedrafahl@gmail.com/teST12$5jljasdf") {
         test("Should register a user") {
           UserTestsHelper.deleteUserAdmin(testEmail)                          
@@ -77,19 +82,44 @@ object UserTestSpec extends TestSuite {
       }
       test("/user/apply-to-become-seller") {
         test("Should create application to become a seller"){
+          UserTestsHelper.clearSlickAccounts(List(Email(testEmail)))
           UserTestsHelper.deleteUserAdmin(testEmail)
           UserTestsHelper.deletestore(Email(testEmail))
           UserTestsHelper.adminCreateUser(testEmail, testPassword)          
           val r = UserTestsHelper.authUser(testEmail, testPassword)
           val jwtToken = r.auth.get.jwt
           val address = Address("500 hickman Rd", "Waukee", "50263", IA)
-          val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken, address)
-          val expectedSellerResponse = ResponseBody("User is now a seller", true)
-          assert(responseForApplication equals expectedSellerResponse)
+          val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken,ApplyUserToBecomeSellerData(address,testRefreshURL, testReturnURL ))
+          val userVerified = UserTestsHelper.verifyUserAsSeller(jwtToken, address)
+          assert(!responseForApplication.head.url.toExternalForm().isEmpty())          
+        }
+      }
+      test("/user/verify-user-as-seller") {
+        test("Should create application to become a seller") {
+
+          val testEmailSlickAccount = "gardensharetest@gmail.com"
+          val testPass = "testPass12$"
+          val accountID = "acct_1IV66N2R0KHt4WIV"
+
+          UserTestsHelper.deleteUserAdmin(testEmailSlickAccount)
+          UserTestsHelper.deletestore(Email(testEmailSlickAccount))          
+          UserTestsHelper.deleteSlickEmailReference(Email(testEmailSlickAccount)).unsafeRunSync()
+
+          UserTestsHelper.adminCreateUser(testEmailSlickAccount, testPass)
+          UserTestsHelper.insertSlickEmailReference(Email(testEmailSlickAccount), accountID).unsafeRunSync()
+
+          val r = UserTestsHelper.authUser(testEmailSlickAccount, testPass)
+          val jwtToken = r.auth.get.jwt
+          val address = Address("501 hickman Rd", "Waukee", "50263", IA)
+
+          val response = UserTestsHelper.verifyUserAsSeller(jwtToken, address).head
+          val expectedResponse = ResponseBody("User is now a seller and address was set", true)
+          assert(response.equals(expectedResponse))
+
           val info = UserTestsHelper.getUserInfo(jwtToken)
-          val expectedInfo = UserInfo(Email(testEmail), Sellers, Some(Store(info.store.get.id, address, Email(testEmail))))
+          val expectedInfo = UserInfo(Email(testEmailSlickAccount), Sellers, Some(Store(info.store.get.id, address, Email(testEmailSlickAccount))))
           assert(info equals expectedInfo)
-          val store = UserTestsHelper.getStore(Email(testEmail))
+          val store = UserTestsHelper.getStore(Email(testEmailSlickAccount))
           assert(store.address equals address)
         }
       }
@@ -103,7 +133,6 @@ object UserTestsHelper {
   val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
   implicit val cs = executionStuff._3
   implicit val timer = executionStuff._5
-
 
   /**
     Do Not Use in production
@@ -197,12 +226,11 @@ object UserTestsHelper {
       .head
   }
 
-  def applyUserToBecomeSeller(jwt: String, a: Address): ResponseBody = {
-    val uriArg = Uri.fromString("/user/apply-to-become-seller").toOption.get
+  def applyUserToBecomeSeller(jwt: String, a: ApplyUserToBecomeSellerData) = {
+    val uriArg = Uri.fromString(s"/user/apply-to-become-seller").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
 
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a.asJson.toString())
-
 
     UserRoutes
         .userRoutes[IO]
@@ -211,12 +239,28 @@ object UserTestsHelper {
         .body
         .through(text.utf8Decode)
         .through(stringArrayParser)
-        .through(decoder[IO, ResponseBody])
+        .through(decoder[IO, ApplyUserToBecomeSellerResponse])
         .compile
         .toList
-        .unsafeRunSync()
-        .head
-    
+        .unsafeRunSync()    
+  }
+
+  def verifyUserAsSeller(jwt: String, address: Address) = {
+    val uriArg = Uri.fromString(s"/user/verify-user-as-seller").toOption.get
+    val headers = Headers.of(Header("authentication", jwt))
+    val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address.asJson.toString())
+
+    UserRoutes
+      .userRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, ResponseBody])
+      .compile
+      .toList
+      .unsafeRunSync()
   }
 
   def getUserInfo(jwt: String): UserInfo = {
@@ -406,4 +450,11 @@ object UserTestsHelper {
   }
 
   def deleteAllStoreOrdersForSeller[F[_]: DeleteStoreOrderRequestsForSeller: ContextShift](e: String) = implicitly[DeleteStoreOrderRequestsForSeller[IO]].delete(Email(e))
+
+  def clearSlickAccounts(emails: List[Email]) = ClearStripeAccounts(emails).evaluate[IO].unsafeRunSync()
+
+  def insertSlickEmailReference(email: Email, slickId: String) = implicitly[InsertAccountEmailReference[IO]].insert(slickId, email)
+
+  def deleteSlickEmailReference(email: Email) = implicitly[DeleteAccountEmailReferences[IO]].delete(email)
+
 }

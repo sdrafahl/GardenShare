@@ -61,6 +61,8 @@ import software.amazon.awssdk.services.lightsail.LightsailAsyncClient
 import scala.jdk.FutureConverters._
 import cats.effect.ContextShift
 import software.amazon.awssdk.services.lightsail.model.CreateRelationalDatabaseResponse
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRemoveUserFromGroupRequest
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRemoveUserFromGroupResponse
 
 abstract class CogitoClient[F[_]: GetUserPoolName: Async: FlatMap] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]
@@ -263,7 +265,20 @@ object CogitoClient {
         .username(email.underlying)
         .build()
 
-      Async[F].async { cb => cb(Try(client.adminDeleteUser(request)).toEither) }
+      val removeUserFromGroup = AdminRemoveUserFromGroupRequest
+        .builder()
+        .userPoolId(userPoolId.id)
+        .username(email.underlying)
+        .groupName("Sellers")
+        .build()      
+
+      val removeFromGroupPgm = Async[F]
+        .async[AdminRemoveUserFromGroupResponse]{ cb => cb(Try(client.adminRemoveUserFromGroup(removeUserFromGroup)).toEither)}        
+
+      val deleteUserPgm = Async[F]
+        .async[AdminDeleteUserResponse] { cb => cb(Try(client.adminDeleteUser(request)).toEither) }
+
+      removeFromGroupPgm >> deleteUserPgm
     }
 
     def listGroupsForUser(

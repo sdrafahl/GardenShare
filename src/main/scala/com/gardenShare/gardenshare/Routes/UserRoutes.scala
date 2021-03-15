@@ -49,9 +49,14 @@ import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.AddressNotProvided
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 import _root_.fs2.text
+import java.net.URL
+import scala.util.Try
+import scala.util.Failure
+import scala.util.Success
+import com.gardenShare.gardenshare.ApplyUserToBecomeUserEncodersDecoders._
 
 object UserRoutes {
-  def userRoutes[F[_]: Async: GetTypeSafeConfig:GetUserInfo: com.gardenShare.gardenshare.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller: ContextShift]()
+  def userRoutes[F[_]: Async: GetTypeSafeConfig:GetUserInfo: com.gardenShare.gardenshare.SignupUser: GetUserPoolSecret: AuthUser: GetUserPoolId: AuthJWT: GetRegion: HttpsJwksBuilder: GetDistance:GetUserPoolName: CogitoClient:ApplyUserToBecomeSeller: ContextShift: VerifyUserAsSeller]()
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -110,13 +115,25 @@ object UserRoutes {
         ).catchError
       }
       case req @ POST -> Root / "user" / "apply-to-become-seller" => {
-        parseREquestAndValidateUserAndParseBodyResponse[Address,F](req, {(email, address) =>
+        parseREquestAndValidateUserAndParseBodyResponse[ApplyUserToBecomeSellerData ,F](req, {(email, sellerRequest) =>
           ProcessData(
-            implicitly[ApplyUserToBecomeSeller[F]].applyUser(email, Sellers, address),
-            (_: Unit) => ResponseBody("User is now a seller", true),
+            implicitly[ApplyUserToBecomeSeller[F]].applyUser(email, sellerRequest.address, sellerRequest.refreshUrl ,sellerRequest.returnUrl),
+            (resp: ApplyUserToBecomeSellerResponse) => resp,
             (err:Throwable) => ResponseBody(err.getMessage(), false)
           )
             .process
+        })
+      }
+      case req @ POST -> Root / "user" / "verify-user-as-seller" => {
+        parseREquestAndValidateUserAndParseBodyResponse[Address, F](req, {(email, address) =>
+          ProcessData(
+            VerifyUserAsSeller[F]().verify(email, address),
+            (resp: Boolean) => resp match {
+              case true => ResponseBody("User is now a seller and address was set", true)
+              case false => ResponseBody("User has not created completed flow and is not a user", false)
+            },
+            (err:Throwable) => ResponseBody(s"There was an error validating user, Error: ${err.getMessage()}", false)
+          ).process
         })
       }
       case req @ GET -> Root / "user" / "info" => {

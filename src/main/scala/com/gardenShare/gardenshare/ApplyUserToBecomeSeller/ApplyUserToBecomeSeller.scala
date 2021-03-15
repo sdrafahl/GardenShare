@@ -5,14 +5,21 @@ import cats.effect.IO
 import com.gardenShare.gardenshare.CogitoClient
 import com.gardenShare.gardenshare.UserType
 import com.gardenShare.gardenshare.Sellers
-import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.InsertStore
 import com.gardenShare.gardenshare.CreateStoreRequest
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
+import java.net.URL
+import scala.jdk.CollectionConverters._
+import scala.util.Try
+import scala.util.Success
+import scala.util.Failure
+import cats.effect.ContextShift
+
+case class ApplyUserToBecomeSellerResponse(url: URL)
 
 abstract class ApplyUserToBecomeSeller[F[_]] {
-  def applyUser(userName: Email, userType: UserType, address: Address): F[Unit]
+  def applyUser(userName: Email, address: Address,refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[F]): F[ApplyUserToBecomeSellerResponse]
 }
 
 object ApplyUserToBecomeSeller {
@@ -23,30 +30,31 @@ object ApplyUserToBecomeSeller {
     cognito: CogitoClient[IO],
     g:GetStore[IO],
     insertStore:InsertStore[IO],
+    insertSlickEmailRef: InsertAccountEmailReference[IO],
     paymentCommandEvaluator: PaymentCommandEvaluator[IO]) = new ApplyUserToBecomeSeller[IO] {
-    def applyUser(userName: Email, userType: UserType, address: Address): IO[Unit] = {
-      (userType match {
-        case Sellers => {
-          for {
-            _ <- CreateStripeConnectedAccount(userName).evaluate
-          } yield ???
-          
-
-
-          // stuff to add user to seller group
-          // gupn
-          //   .exec()
-          //   .flatMap(userPoolName => cognito.addUserToGroup(userName.underlying, userPoolName, "Sellers"))
-          //   .flatMap{_ =>
-          //     g.getStoresByUserEmail(userName).flatMap{
-          //       case List() => insertStore.add(List(CreateStoreRequest(address, userName)))
-          //       case _ => IO.raiseError(new Throwable(s"Store already exists for email: ${userName}"))
-          //     }
-          //   }
-          ???
+    def applyUser(userName: Email, address: Address, refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[IO]): IO[ApplyUserToBecomeSellerResponse] = {      
+      for {
+        stores <- g.getStoresByUserEmail(userName)
+        _ <- stores match {
+          case List() => IO.pure("")
+          case _ => IO.raiseError(new Throwable("Store already exists at that address"))
         }
-        case g => IO.raiseError(new Throwable(s"group does not exist: ${g}"))
-      }).map(_ => ())
+        userPoolId <- gupn.exec()
+        groupsResponse <- cognito.listGroupsForUser(userName.underlying, userPoolId)
+        isAlreadyASeller = groupsResponse.groups().asScala.find(gt => gt.groupName() == "Sellers")
+        res <- isAlreadyASeller match {
+          case Some(_) => IO.raiseError(new Throwable("User is already a seller"))
+          case None => for {
+            account <- CreateStripeConnectedAccount(userName).evaluate
+            _ <- insertSlickEmailRef.insert(account.getId(), userName)
+            link <- CreateStripeAccountLink(account.getId(), refreshUrl, returnUrl).evaluate
+          } yield link.getUrl()
+        }
+        parsedUrl <- Try(new URL(res)) match {
+	  case Success(url) => IO.pure(url)
+          case Failure(err) => IO.raiseError(new Throwable(s"URL is not parsable: ${err.getMessage()}"))
+        }
+      } yield ApplyUserToBecomeSellerResponse(parsedUrl)
     }
   }
 }

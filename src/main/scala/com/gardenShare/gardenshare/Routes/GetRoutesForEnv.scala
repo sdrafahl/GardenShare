@@ -11,7 +11,7 @@ abstract class GetRoutesForEnv[F[_]] {
   def getRoutesGivenEnv(env: SystemEnvionment): HttpRoutes[F] 
 }
 
-object GetRoutesForEnv {
+ object GetRoutesForEnv {
   def apply[F[_]: GetRoutesForEnv]() = implicitly[GetRoutesForEnv[F]]
 
   implicit def createIoGetRoutesForEnv(implicit testingGetRoutes: GetRoutes[IO, TestingAndProductionRoutes], productionRoutes: GetRoutes[IO, OnlyProductionRoutes], tsc: GetTypeSafeConfig[IO]) = new GetRoutesForEnv[IO] {

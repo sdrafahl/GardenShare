@@ -14,7 +14,7 @@ import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.JdbcBackend.DatabaseDef
 import scala.concurrent.ExecutionContext
 import com.gardenShare.gardenshare.Migrator._
-import com.gardenShare.gardenshare.Storage.Relational.ProductTable._
+import com.gardenShare.gardenshare.ProductTable._
 
 object Migrator1 {
 
@@ -25,6 +25,7 @@ object Migrator1 {
     val dropOrderRequests: DBIO[Int] = sqlu"DROP TABLE IF EXISTS storeorderrequest;"
     val dropOrderAcceptedTabelRequests: DBIO[Int] = sqlu"DROP TABLE IF EXISTS acceptedstoreorderrequest;"
     val dropOrderDeniedTabelRequests: DBIO[Int] = sqlu"DROP TABLE IF EXISTS deniedstoreorderrequest;"
+    val dropSlickEmailRefRequest: DBIO[Int] = sqlu"DROP TABLE IF EXISTS stripeaccountemailtable;"
 
     val dropCommands: DBIOAction[Unit, NoStream, Nothing] = DBIO.seq(
       dropProducts,
@@ -32,23 +33,26 @@ object Migrator1 {
       dropOrderRequests,
       dropProductReferences,
       dropOrderAcceptedTabelRequests,
-      dropOrderDeniedTabelRequests
+      dropOrderDeniedTabelRequests,
+      dropSlickEmailRefRequest
     )
 
-    val createProductTable = com.gardenShare.gardenshare.Storage.Relational.ProductTable.products.schema.create
-    val createStoresTable = com.gardenShare.gardenshare.Storage.Relational.StoreTable.stores.schema.create
-    val createOrderRequestTable = com.gardenShare.gardenshare.Storage.Relational.StoreOrderRequestTable.storeOrderRequests.schema.create
-    val productReferenceTable = com.gardenShare.gardenshare.Storage.Relational.ProductReferenceTable.productReferenceTable.schema.create
-    val orderAcceptedStatusTable = com.gardenShare.gardenshare.Storage.Relational.AcceptedStoreOrderRequestTable.acceptedStoreOrderRequestTable.schema.create
-    val orderDeniedStatusTable = com.gardenShare.gardenshare.Storage.Relational.DeniedStoreOrderRequestTable.deniedStoreOrderRequestTable.schema.create
-
+    val createProductTable = com.gardenShare.gardenshare.ProductTable.products.schema.create
+    val createStoresTable = com.gardenShare.gardenshare.StoreTable.stores.schema.create
+    val createOrderRequestTable = com.gardenShare.gardenshare.StoreOrderRequestTable.storeOrderRequests.schema.create
+    val productReferenceTable = com.gardenShare.gardenshare.ProductReferenceTable.productReferenceTable.schema.create
+    val orderAcceptedStatusTable = com.gardenShare.gardenshare.AcceptedStoreOrderRequestTable.acceptedStoreOrderRequestTable.schema.create
+    val orderDeniedStatusTable = com.gardenShare.gardenshare.DeniedStoreOrderRequestTable.deniedStoreOrderRequestTable.schema.create
+    val slickAccountEmailRef = com.gardenShare.gardenshare.StripeAccountEmailTable.stripeAccountEmailTable.schema.create
+   
     val createTables: DBIOAction[Unit, NoStream, Nothing] =  DBIO.seq(
       createProductTable,
       createStoresTable,
       createOrderRequestTable,
       productReferenceTable,
       orderAcceptedStatusTable,
-      orderDeniedStatusTable
+      orderDeniedStatusTable,
+      slickAccountEmailRef
     )
 
     MigrateDB.createIOMigrator(CreateMigrator[IO](

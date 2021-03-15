@@ -67,7 +67,7 @@ object GetStripePrivateKey {
   def apply[F[_]:GetStripePrivateKey]() = implicitly[GetStripePrivateKey[F]]
   implicit def createIOGetStripePrivateKey(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]) = new GetStripePrivateKey[IO] {    
     def getKey: IO[StripePrivateKey] = for {
-      conf <- getTypeSafeConfig.get("stripe.privateKey")
+      conf <- getTypeSafeConfig.get("stripe.api-key")
     } yield StripePrivateKey(conf)
   }
 }
@@ -297,9 +297,9 @@ object GetPostgreConfig {
   implicit def createIOGetPostgreConfig(implicit getTypeSafeConfig: GetTypeSafeConfig[IO], getBooleanConfig:GetTypeSafeConfigBoolean[IO]) = new GetPostgreConfig[IO] {
     def getConfig: IO[PostgreConfig] = for {
       url <- IO("jdbc:postgresql://localhost/garden_share?user=postgres&password=postgres")//getTypeSafeConfig.get("postgres.url")
-      driver <- IO("org.postgresql.Driver")//getTypeSafeConfig.get("postgres.driver")
-      connectionPool <- IO("disabled")//getTypeSafeConfig.get("postgres.connectionPool")
-      keepAliveConnection <- IO(true) //getBooleanConfig.get("postgres.keepAliveConnection")
+      driver <- IO("org.postgresql.Driver")
+      connectionPool <- IO("disabled")
+      keepAliveConnection <- IO(true) 
     } yield PostgreConfig(url, driver,connectionPool, keepAliveConnection)
   }
 }

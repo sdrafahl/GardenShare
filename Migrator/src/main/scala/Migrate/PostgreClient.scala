@@ -5,7 +5,7 @@ import slick.dbio.DBIOAction
 import slick.lifted.AbstractTable
 import cats.effect.IO
 import scala.util.Try
-import com.gardenShare.gardenshare.Config.GetPostgreConfig
+import com.gardenShare.gardenshare.GetPostgreConfig
 import javax.sql.DataSource
 
 abstract class GetPostgreClient[F[_]] {

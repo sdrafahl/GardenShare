@@ -21,7 +21,7 @@ object CreateAccountLinkEvalutor {
         _ <- IO(Stripe.apiKey = stripeApiKey.n)
         accountLinkParams = AccountLinkCreateParams
         .builder()
-        .setAccount(x.sellerEmail.underlying)
+        .setAccount(x.sellerId)
         .setRefreshUrl(x.refreshUrl.toExternalForm())
         .setReturnUrl(x.returnUrl.toExternalForm())
         .setType(com.stripe.param.AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)

@@ -22,6 +22,7 @@ import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.IA
 import com.gardenShare.gardenshare.Store._
 import com.typesafe.config.ConfigFactory
+import java.net.URL
 
 object StoreOrderRequestsTest extends TestSuite {
 
@@ -35,6 +36,9 @@ object StoreOrderRequestsTest extends TestSuite {
       val testBuyerEmail = "testbuyer@gmail.com"
       val testpassword = "testPass12123$"
       val testSellerEmail = "testseller@gmail.com"
+      val testRefreshURL = new URL("http://localhost:3000/")
+      val testReturnURL = new URL("http://localhost:3000/")
+      val accountID = "acct_1IV66N2R0KHt4WIV"
       test("Can create a order, and query for the order, then accept the request, and then deny the request") {
         UserTestsHelper.deleteUserAdmin(testBuyerEmail)
         UserTestsHelper.deleteUserAdmin(testSellerEmail)
@@ -42,6 +46,7 @@ object StoreOrderRequestsTest extends TestSuite {
 
         UserTestsHelper.adminCreateUser(testBuyerEmail, testpassword)
         UserTestsHelper.adminCreateUser(testSellerEmail, testpassword)
+        UserTestsHelper.insertSlickEmailReference(Email(testSellerEmail), accountID).unsafeRunSync()       
        
         val r = UserTestsHelper.authUser(testSellerEmail, testpassword)
         val jwtTokenOfTheSeller = r.auth.get.jwt
@@ -49,7 +54,8 @@ object StoreOrderRequestsTest extends TestSuite {
         val jwtTokenOfTheBuyer = UserTestsHelper.authUser(testBuyerEmail, testpassword).auth.get.jwt
 
         val address = Address("500 hickman Rd", "Waukee", "50263", IA)
-        val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtTokenOfTheSeller, address)
+        UserTestsHelper.verifyUserAsSeller(jwtTokenOfTheSeller, address)
+
         UserTestsHelper.addProductToStore("BrownOysterMushrooms", jwtTokenOfTheSeller, Amount(100, USD))
 
         val products = UserTestsHelper.getProductsFromStore(jwtTokenOfTheSeller)
