@@ -10,16 +10,18 @@ import com.gardenShare.gardenshare.InsertStore
 import com.gardenShare.gardenshare.CreateStoreRequest
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
 import java.net.URL
+import java.net.URI
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
 import cats.effect.ContextShift
+import com.gardenShare.gardenshare.Encoders._
 
-case class ApplyUserToBecomeSellerResponse(url: URL)
+case class ApplyUserToBecomeSellerResponse(url: URI)
 
 abstract class ApplyUserToBecomeSeller[F[_]] {
-  def applyUser(userName: Email, address: Address,refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[F]): F[ApplyUserToBecomeSellerResponse]
+  def applyUser(userName: Email, address: Address,refreshUrl: URI, returnUrl: URI)(implicit cs: ContextShift[F]): F[ApplyUserToBecomeSellerResponse]
 }
 
 object ApplyUserToBecomeSeller {
@@ -32,7 +34,7 @@ object ApplyUserToBecomeSeller {
     insertStore:InsertStore[IO],
     insertSlickEmailRef: InsertAccountEmailReference[IO],
     paymentCommandEvaluator: PaymentCommandEvaluator[IO]) = new ApplyUserToBecomeSeller[IO] {
-    def applyUser(userName: Email, address: Address, refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[IO]): IO[ApplyUserToBecomeSellerResponse] = {      
+    def applyUser(userName: Email, address: Address, refreshUrl: URI, returnUrl: URI)(implicit cs: ContextShift[IO]): IO[ApplyUserToBecomeSellerResponse] = {      
       for {
         stores <- g.getStoresByUserEmail(userName)
         _ <- stores match {
@@ -47,10 +49,12 @@ object ApplyUserToBecomeSeller {
           case None => for {
             account <- CreateStripeConnectedAccount(userName).evaluate
             _ <- insertSlickEmailRef.insert(account.getId(), userName)
+            _ = println("About to link")
             link <- CreateStripeAccountLink(account.getId(), refreshUrl, returnUrl).evaluate
+            _ = println("created the link")
           } yield link.getUrl()
         }
-        parsedUrl <- Try(new URL(res)) match {
+        parsedUrl <- Try( URI.create(res)) match {
 	  case Success(url) => IO.pure(url)
           case Failure(err) => IO.raiseError(new Throwable(s"URL is not parsable: ${err.getMessage()}"))
         }

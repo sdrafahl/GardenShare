@@ -17,7 +17,7 @@ import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.IA
 import com.typesafe.config.ConfigFactory
-import java.net.URL
+import java.net.URI
 
 object ProductDescriptionTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()
@@ -27,8 +27,8 @@ object ProductDescriptionTest extends TestSuite {
 
   val testEmail = "shane@gmail.com"
   val testPassword = "teST12$5jljasdf"
-  val testRefreshURL = new URL("http://localhost:3000/")
-  val testReturnURL = new URL("http://localhost:3000/")
+  val testRefreshURL = URI.create("http://localhost:3000/")
+  val testReturnURL = URI.create("http://localhost:3000/")
 
   val tests = Tests {
     test("Product Description Routes") {
@@ -37,19 +37,6 @@ object ProductDescriptionTest extends TestSuite {
         val expectedProductDescription = ProductDescription("Brown-Oyster-Mushrooms",Pound,BrownOysterMushrooms)
         assert(descriptionOfMushrooms equals expectedProductDescription)
       }
-    }
-    test("A user should be created, apply to be a seller, and then add a product to the sellers store") {
-      UserTestsHelper.deleteUserAdmin(testEmail)
-      UserTestsHelper.deletestore(Email(testEmail))
-      UserTestsHelper.adminCreateUser(testEmail, testPassword)
-      val r = UserTestsHelper.authUser(testEmail, testPassword)
-      val jwtToken = r.auth.get.jwt
-      val address = Address("500 hickman Rd", "Waukee", "50263", IA)
-      UserTestsHelper.applyUserToBecomeSeller(jwtToken,ApplyUserToBecomeSellerData(address, testRefreshURL, testReturnURL))     
-      // val response = UserTestsHelper.addProductToStore("BrownOysterMushrooms", jwtToken, Amount(100, USD))
-      // val productsInStore = UserTestsHelper.getProductsFromStore(jwtToken).listOfProduce.map(f => f.product.productName)
-      // assert(productsInStore equals List(BrownOysterMushrooms))
-      assert(false)
-    }
+    }    
   }
 }

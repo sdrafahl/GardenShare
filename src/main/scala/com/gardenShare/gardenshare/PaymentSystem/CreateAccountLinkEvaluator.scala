@@ -22,8 +22,8 @@ object CreateAccountLinkEvalutor {
         accountLinkParams = AccountLinkCreateParams
         .builder()
         .setAccount(x.sellerId)
-        .setRefreshUrl(x.refreshUrl.toExternalForm())
-        .setReturnUrl(x.returnUrl.toExternalForm())
+        .setRefreshUrl(x.refreshUrl.toString())
+        .setReturnUrl(x.returnUrl.toString())
         .setType(com.stripe.param.AccountLinkCreateParams.Type.ACCOUNT_ONBOARDING)
         .build()
         accountLink <- IO(AccountLink.create(accountLinkParams))

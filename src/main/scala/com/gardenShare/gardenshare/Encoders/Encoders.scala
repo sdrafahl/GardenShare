@@ -5,8 +5,8 @@ import io.circe.{ Decoder, Encoder, HCursor, Json }
 import io.circe.KeyEncoder
 import io.circe.generic.auto._, io.circe.syntax._
 import io.circe.generic.JsonCodec, io.circe.syntax._
+import io.circe.generic.semiauto._
 import com.gardenShare.gardenshare.domain._
-import cats.syntax.functor._
 import io.circe.{ Decoder, Encoder }, io.circe.generic.auto._
 import io.circe.syntax._
 import com.gardenShare.gardenshare.Requester
@@ -25,6 +25,9 @@ import com.gardenShare.gardenshare.Currency
 import com.gardenShare.gardenshare.USD
 import com.gardenShare.gardenshare.Parser
 import com.gardenShare.gardenshare.EncodeToString
+import java.net.URL
+import scala.util.Try
+import java.net.URI
 
 object Encoders {  
   implicit val priceEncoder: Encoder[PriceUnit] = new Encoder[PriceUnit] {
@@ -182,9 +185,42 @@ object Encoders {
     case _ => Left("Invalid price unit")
   }}
 
+  implicit val urlDecoder: Decoder[URL] = Decoder.decodeString.emap{(s: String) =>
+    Try(new URL(s))
+      .toEither
+      .left
+      .map(_.getMessage())
+  }
+
+  implicit val uriDecoder: Decoder[URI] = Decoder.decodeString.emap{(s: String) =>
+    Try(URI.create(s))
+      .toEither
+      .left
+      .map(_.getMessage())
+  }
+
+  implicit val urlEncoder: Encoder[URL] = Encoder.instance{
+    case a => a.toExternalForm().asJson
+  }
+
+  implicit val uriEncoder: Encoder[URI] = Encoder.instance{
+    case a => a.toString().asJson
+  }
+
+  implicit val ApplyUserToBecomeSellerDataDecoder = deriveDecoder[ApplyUserToBecomeSellerData]
+  implicit val ApplyUserToBecomeSellerDataEncoder = deriveEncoder[ApplyUserToBecomeSellerData]
+
+  implicit val ApplyUserToBecomeSellerResponseDecoder = deriveDecoder[ApplyUserToBecomeSellerResponse]
+  implicit val ApplyUserToBecomeSellerResponseEncoder = deriveEncoder[ApplyUserToBecomeSellerResponse]
+
+  implicit val ProductDescriptionDecoder = deriveDecoder[ProductDescription]
+  implicit val AuthUserResponseDecoder = deriveDecoder[AuthUserResponse]
+
   implicit def CurrencyDecoder(implicit c:Parser[Currency]): Decoder[Currency] = Decoder.decodeString.emap{(s:String) => c.parse(s)}
 
   implicit def produceDecoder(implicit p:ParseProduce[String]): Decoder[Produce] = Decoder.decodeString.emap{(s: String) =>
     p.parse(s)
   }
+
+
 }

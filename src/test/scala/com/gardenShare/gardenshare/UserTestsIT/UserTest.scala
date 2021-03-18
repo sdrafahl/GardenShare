@@ -8,13 +8,12 @@ import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.Password
 import fs2.text
 import io.circe.fs2._
-import io.circe.generic.auto._, io.circe.syntax._
+import io.circe.syntax._
 import utest.TestSuite
 import utest.test
 import utest.Tests
 import com.gardenShare.gardenshare.UserInfo
 import com.gardenShare.gardenshare.Sellers
-import com.gardenShare.gardenshare.Encoders._
 import com.gardenShare.gardenshare.Shows._
 import com.gardenShare.gardenshare.DeleteStore
 import com.gardenShare.gardenshare.GetStore
@@ -24,7 +23,6 @@ import com.gardenShare.gardenshare.Store._
 import com.gardenShare.gardenshare.InsertStore
 import com.gardenShare.gardenshare.DeleteStoreOrderRequestsForSeller
 import cats.effect.ContextShift
-import com.gardenShare.gardenshare.Encoders._
 import scala.util.Try
 import java.time.ZonedDateTime
 import com.gardenShare.gardenshare.SearchStoreOrderRequestTable
@@ -36,8 +34,10 @@ import com.typesafe.config.ConfigFactory
 import com.gardenShare.gardenshare.PostGresSetup
 import com.gardenShare.gardenshare.ConcurrencyHelper
 import com.gardenShare.gardenshare.ApplyUserToBecomeUserEncodersDecoders._
-import java.net.URL
+import java.net.URI
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
+import com.gardenShare.gardenshare.Encoders._
+import io.circe.generic.auto._
 
 object UserTestSpec extends TestSuite {  
 
@@ -48,8 +48,8 @@ object UserTestSpec extends TestSuite {
 
       val testEmail = "shanedrafahl@gmail.com"
       val testPassword = "teST12$5jljasdf"
-      val testRefreshURL = new URL("http://localhost:3000/")
-      val testReturnURL = new URL("http://localhost:3000/")
+      val testRefreshURL = URI.create("http://localhost:3000/")
+      val testReturnURL = URI.create("http://localhost:3000/")
       test("/user/signup/shanedrafahl@gmail.com/teST12$5jljasdf") {
         test("Should register a user") {
           UserTestsHelper.deleteUserAdmin(testEmail)                          
@@ -91,7 +91,7 @@ object UserTestSpec extends TestSuite {
           val address = Address("500 hickman Rd", "Waukee", "50263", IA)
           val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken,ApplyUserToBecomeSellerData(address,testRefreshURL, testReturnURL ))
           val userVerified = UserTestsHelper.verifyUserAsSeller(jwtToken, address)
-          assert(!responseForApplication.head.url.toExternalForm().isEmpty())          
+          assert(!responseForApplication.head.url.toString().isEmpty())          
         }
       }
       test("/user/verify-user-as-seller") {
