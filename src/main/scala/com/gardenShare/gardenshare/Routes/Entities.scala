@@ -2,7 +2,7 @@ package com.gardenShare.gardenshare
 
 import com.gardenShare.gardenshare.AuthenticatedUser
 import com.gardenShare.gardenshare.Store
-import java.net.URI
+import java.net.URL
 
 case class ResponseBody(msg: String, success: Boolean)
 case class ListOfProduce(listOfProduce: List[ProductWithId])
@@ -33,4 +33,4 @@ abstract class RoutesTypes
 case class TestingAndProductionRoutes() extends RoutesTypes
 case class OnlyProductionRoutes() extends RoutesTypes
 
-case class ApplyUserToBecomeSellerData(address: Address, refreshUrl: URI, returnUrl: URI)
+case class ApplyUserToBecomeSellerData(address: Address, refreshUrl: URL, returnUrl: URL)

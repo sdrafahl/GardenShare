@@ -30,6 +30,7 @@ import java.time.ZonedDateTime
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
+import scala.concurrent.ExecutionContext
 
 case class StoreOrderRequestBody(body: List[ProductAndQuantity])
 case class StoreOrderRequestsBelongingToSellerBody(body: List[StoreOrderRequestWithId])
@@ -37,7 +38,7 @@ case class StoreOrderRequestStatusBody(response: StoreOrderRequestStatus)
 
 object StoreOrderRoutes {
   def storeOrderRoutes[F[_]: Async: ContextShift:CreateStoreOrderRequest:AuthUser: AuthJWT:GetCurrentDate:GetStoreOrderRequestsWithinTimeRangeOfSeller: StatusOfStoreOrderRequest:AcceptOrderRequest:DeniedOrderRequests]
-    (implicit ae: ApplicativeError[F, Throwable], pp: ProcessAndJsonResponse, en: Encoder[Produce], produceDecoder: Decoder[Produce], currencyEncoder: Encoder[Currency], currencyDecoder: Decoder[Currency], zoneDateparser: ParseZoneDateTime, orderStatusEncoder: Encoder[StoreOrderRequestStatus], orderStatusDecoder: Decoder[StoreOrderRequestStatus]): HttpRoutes[F] = {
+    (implicit ae: ApplicativeError[F, Throwable], pp: ProcessAndJsonResponse, en: Encoder[Produce], produceDecoder: Decoder[Produce], currencyEncoder: Encoder[Currency], currencyDecoder: Decoder[Currency], zoneDateparser: ParseZoneDateTime, orderStatusEncoder: Encoder[StoreOrderRequestStatus], orderStatusDecoder: Decoder[StoreOrderRequestStatus], ec: ExecutionContext): HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of {

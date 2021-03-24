@@ -39,6 +39,7 @@ object GetProductById {
       val query = for {
         re <- ProductTable.products if re.productId === id
       } yield re
+
       IO.fromFuture(IO(client.run(query.result)))
         .map(_.headOption)
         .map(_.flatMap{f =>
@@ -100,7 +101,8 @@ object InsertProduct {
     ): IO[Unit] = {
       val table = ProductTable.products
       val qu = ProductTable.products.returning(table)
-      val res = qu ++= l.map(da => (0, da.storeId, g.gestDesc(da.product).name, da.am.quantityOfCurrency, et.encode(da.am.currencyType)))
+      val res = (qu ++= l.map(da => (0, da.storeId, g.gestDesc(da.product).name, da.am.quantityOfCurrency, et.encode(da.am.currencyType)))).transactionally
+
       IO.fromFuture(IO(client.run(res))).flatMap(_ => IO.unit)
     }
   }

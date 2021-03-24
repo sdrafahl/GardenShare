@@ -34,7 +34,7 @@ import com.typesafe.config.ConfigFactory
 import com.gardenShare.gardenshare.PostGresSetup
 import com.gardenShare.gardenshare.ConcurrencyHelper
 import com.gardenShare.gardenshare.ApplyUserToBecomeUserEncodersDecoders._
-import java.net.URI
+import java.net.URL
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
 import com.gardenShare.gardenshare.Encoders._
 import io.circe.generic.auto._
@@ -48,8 +48,8 @@ object UserTestSpec extends TestSuite {
 
       val testEmail = "shanedrafahl@gmail.com"
       val testPassword = "teST12$5jljasdf"
-      val testRefreshURL = URI.create("http://localhost:3000/")
-      val testReturnURL = URI.create("http://localhost:3000/")
+      val testRefreshURL = new URL("http://localhost:3000/")
+      val testReturnURL = new URL("http://localhost:3000/")
       test("/user/signup/shanedrafahl@gmail.com/teST12$5jljasdf") {
         test("Should register a user") {
           UserTestsHelper.deleteUserAdmin(testEmail)                          
@@ -132,6 +132,7 @@ object UserTestsHelper {
   lazy implicit val dbClient = PostGresSetup.createPostgresClient
   val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
   implicit val cs = executionStuff._3
+  implicit val ec = executionStuff._2
   implicit val timer = executionStuff._5
 
   /**

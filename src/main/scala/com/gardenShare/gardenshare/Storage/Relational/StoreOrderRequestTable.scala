@@ -16,6 +16,7 @@ import com.gardenShare.gardenshare.ParseZoneDateTime
 import com.gardenShare.gardenshare.ProductAndQuantity
 import com.gardenShare.gardenshare.ParseDate
 import slick.jdbc.PostgresProfile
+import scala.concurrent.ExecutionContext
 
 object StoreOrderRequestTableSchemas {
   type StoreOrderRequestTableSchema = (Int, String, String, String)
@@ -102,26 +103,24 @@ object DeleteStoreOrderRequestsForSeller {
 }
 
 abstract class InsertStoreOrderRequest[F[_]] {
-  def insertStoreOrderRequest(req: StoreOrderRequest)(implicit cs: ContextShift[F]): F[StoreOrderRequestWithId]
+  def insertStoreOrderRequest(req: StoreOrderRequest)(implicit cs: ContextShift[F], ec: ExecutionContext): F[StoreOrderRequestWithId]
 }
 
 object InsertStoreOrderRequest {
   implicit def createIOInsertStoreOrderRequest(implicit client: PostgresProfile.backend.DatabaseDef) = new InsertStoreOrderRequest[IO] {
-    def insertStoreOrderRequest(req: StoreOrderRequest)(implicit cs: ContextShift[IO]): IO[StoreOrderRequestWithId] = {
+    def insertStoreOrderRequest(req: StoreOrderRequest)(implicit cs: ContextShift[IO], ec: ExecutionContext): IO[StoreOrderRequestWithId] = {
       val storeOrderRequestTable = StoreOrderRequestTable.storeOrderRequests
       val qu = StoreOrderRequestTable.storeOrderRequests.returning(storeOrderRequestTable)
       val res = qu += (0, req.seller.underlying, req.buyer.underlying, req.dateSubmitted.toString())
-      IO.fromFuture(IO(client.run(res))).flatMap{a =>
-        val prodRefTable = ProductReferenceTable.productReferenceTable
-        val prodRefRequest = ProductReferenceTable.productReferenceTable.returning(prodRefTable)
-        val productReferencesToAdd = req.products.map{f =>
-          (a._1, f.product.id, f.quantity)
-        }
-        val prodRefRequestData = prodRefRequest ++= productReferencesToAdd
-        IO.fromFuture(IO(client.run(prodRefRequestData))).map{_ =>
-          StoreOrderRequestWithId(a._1, req)
-        }
-      }
+
+      val prodRefTable = ProductReferenceTable.productReferenceTable
+      val prodRefRequest = ProductReferenceTable.productReferenceTable.returning(prodRefTable)
+      val query = (for {
+        product <- res
+        productReferencesToAdd = req.products.map{f => (product._1, f.product.id, f.quantity)}
+        _ <- prodRefRequest ++= productReferencesToAdd
+      } yield product).transactionally
+      IO.fromFuture(IO(client.run(query))).map{a => StoreOrderRequestWithId(a._1, req)}      
     }
   }
 }
