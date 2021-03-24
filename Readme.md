@@ -18,3 +18,30 @@ https://stripe.com/docs/connect/collect-then-transfer-guide
 6. In the root of the project run "sbt run"
 
    
+# Apply To Be Seller
+
+1. Apply to become a seller, include the address of where you will be selling from, also include a return URL and a refresh URL for where you want the user to be redirected to after filling out Stripe flow. 
+It will return a URL to the Stripe flow.
+
+```
+POST
+<Root>/user/apply-to-become-seller
+Headers: JWT token
+Body: {
+	Address,
+    refreshUrl,
+    returnUrl
+}
+
+```
+
+2. After the user has been redirected the server will need to verify the user has completed the flow to create them as a seller in the system. You will need to call to verify when the user returns to wherever the refresh url brings them.
+
+```
+POST 
+<Root>/user/verify-user-as-seller
+Headers: JWT token
+Body: {
+	Address
+}
+```
