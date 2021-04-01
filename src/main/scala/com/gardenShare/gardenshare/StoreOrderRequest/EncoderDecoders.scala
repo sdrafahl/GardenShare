@@ -12,6 +12,7 @@ object StoreOrderRequestStatusEncodersDecoders {
     case DeniedRequest => "DeniedRequest".asJson
     case ExpiredRequest => "ExpiredRequest".asJson
     case RequestToBeDetermined => "RequestToBeDetermined".asJson
+    case RequestPaidFor => "RequestPaidFor".asJson
   }
 
   implicit val storeOrderRequestStatusDecoder: Decoder[StoreOrderRequestStatus] = Decoder.decodeString.emap{
@@ -19,6 +20,8 @@ object StoreOrderRequestStatusEncodersDecoders {
     case "DeniedRequest" => Right(DeniedRequest)
     case "ExpiredRequest" => Right(ExpiredRequest)
     case "RequestToBeDetermined" => Right(RequestToBeDetermined)
+    case "RequestPaidFor" => Right(RequestPaidFor)
     case _ => Left("Invalid string for order status")
   }
 }
+

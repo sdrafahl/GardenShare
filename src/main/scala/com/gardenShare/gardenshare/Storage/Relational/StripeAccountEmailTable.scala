@@ -5,6 +5,7 @@ import cats.effect.IO
 import slick.lifted.AbstractTable
 import slick.jdbc.PostgresProfile
 import cats.effect.ContextShift
+import scala.concurrent.ExecutionContext
 
 object StripeAccountEmailTableSchemas {
   type StripeAccountEmailTableSchema = (String, String) 
@@ -28,7 +29,7 @@ object SearchAccountIdsByEmail {
   implicit def createIOSearchAccountIdsByEmail(implicit client: PostgresProfile.backend.DatabaseDef) = new SearchAccountIdsByEmail[IO] {
     def search(e: Email)(implicit cs: ContextShift[IO]): IO[Option[String]] = {
       val query = for {
-        res <- StripeAccountEmailTable.stripeAccountEmailTable if res.userEmail === e.underlying
+        res <- StripeAccountEmailTable.stripeAccountEmailTable if res.userEmail === e.underlying.value
       } yield res.stripeAccountId
       IO.fromFuture(IO(client.run(query.result))).map(_.headOption)
     }
@@ -36,22 +37,23 @@ object SearchAccountIdsByEmail {
 }
 
 abstract class InsertAccountEmailReference[F[_]] {
-  def insert(slickAccountId: String, accountEmail: Email)(implicit cs: ContextShift[F]): F[Unit]
+  def insert(slickAccountId: String, accountEmail: Email)(implicit cs: ContextShift[F], ec: ExecutionContext): F[Unit]
 }
 
 object InsertAccountEmailReference {
   implicit def createIOInsertAccountEmailReference(implicit client: PostgresProfile.backend.DatabaseDef) = new InsertAccountEmailReference[IO] {
-    def insert(slickAccountId: String, accountEmail: Email)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    def insert(slickAccountId: String, accountEmail: Email)(implicit cs: ContextShift[IO], ec: ExecutionContext): IO[Unit] = {
       val tableBaseQuery = StripeAccountEmailTable.stripeAccountEmailTable
       val request = StripeAccountEmailTable.stripeAccountEmailTable.returning(tableBaseQuery)
-      val requestWithData = request += (accountEmail.underlying,slickAccountId)
+      val requestWithData = request += (accountEmail.underlying.value,slickAccountId)
+      val deleteQuery = StripeAccountEmailTable.stripeAccountEmailTable.filter(f => f.userEmail === accountEmail.underlying.value).delete
 
-      val deleteQuery = for {
-        res <- StripeAccountEmailTable.stripeAccountEmailTable if res.userEmail === accountEmail.underlying
-      } yield res
+      val query = (for {
+        _ <- deleteQuery
+        insertQuery <- requestWithData
+      } yield insertQuery).transactionally
 
-      val deletePgm:IO[Int] = IO.fromFuture(IO(client.run(deleteQuery.delete)))
-      deletePgm.flatMap{_ => IO.fromFuture(IO(client.run(requestWithData))).map(_ => ())}      
+      IO.fromFuture(IO(client.run(query))).map(_ => ())      
     }
   }
 }
@@ -64,7 +66,7 @@ object DeleteAccountEmailReferences {
   implicit def createIODeleteAccountEmailReferences(implicit client: PostgresProfile.backend.DatabaseDef) = new DeleteAccountEmailReferences[IO] {
     def delete(e: Email)(implicit cs: ContextShift[IO]): IO[Unit] = {
       val query = for {
-        res <- StripeAccountEmailTable.stripeAccountEmailTable if res.userEmail === e.underlying
+        res <- StripeAccountEmailTable.stripeAccountEmailTable if res.userEmail === e.underlying.value
       } yield res
       IO.fromFuture(IO(client.run(query.delete))).map(_ => ())
     }

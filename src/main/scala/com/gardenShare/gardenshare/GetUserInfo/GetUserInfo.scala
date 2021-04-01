@@ -20,7 +20,7 @@ object GetUserInfo {
   implicit def createIOGetUserInfo(implicit cognito: CogitoClient[IO], gupn: GetUserPoolId[IO], getStore: GetStore[IO]) = new GetUserInfo[IO] {
     def getInfo(userName: Email)(implicit cs: ContextShift[IO]): IO[UserInfo] = {
       gupn.exec().flatMap{userPoolId =>
-        cognito.listGroupsForUser(userName.underlying, userPoolId).parProduct(getStore.getStoresByUserEmail(userName)).map{resp =>
+        cognito.listGroupsForUser(userName.underlying.value, userPoolId).parProduct(getStore.getStoresByUserEmail(userName)).map{resp =>
           val groups = resp._1.groups().asScala.toList.map(_.groupName())
           val UserTypeAndStore = if(groups.contains("Sellers")) {
             (Sellers, resp._2.headOption)

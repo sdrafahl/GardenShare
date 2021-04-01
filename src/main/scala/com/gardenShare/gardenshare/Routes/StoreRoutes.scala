@@ -36,6 +36,7 @@ import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 import cats.effect.ContextShift
 import cats.effect.Timer
+import EmailCompanion._
 
 object StoreRoutes {
   def storeRoutes[F[_]:
@@ -49,7 +50,8 @@ object StoreRoutes {
       GetDistance:
       ContextShift:
       Timer:
-      GetThreadCountForFindingNearestStores
+      GetThreadCountForFindingNearestStores:
+      JoseProcessJwt
   ](implicit d: Decoder[Address], e: Encoder[Address])
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
@@ -62,32 +64,19 @@ object StoreRoutes {
         val maybeRange = Try(rangeInMiles.toFloat).toEither.left
           .map(a => InvalidRangeProvided(a.getMessage()))
 
-        addJsonHeaders(maybeLimit.map{limit =>
-          maybeRange.map{range =>
-            parseJWTokenFromRequest(req)
-              .map(_.auth)
-              .map{resultOfValidation =>
-                resultOfValidation.flatMap{
-                  case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-                  case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-                  case ValidToken(Some(email)) => {
-                    parseBodyFromRequest[Address, F](req).flatMap{
-                      case None => Applicative[F].pure(ResponseBody("Invalid address provided", false).asJson)
-                      case Some(address) => {
-                        ProcessData(
-                          GetNearestStore(DistanceInMiles(range), limit, address).nearest,
-                          (lst: List[RelativeDistanceAndStore]) => NearestStores(lst),
-                          (err:Throwable) => ResponseBody("Error finding stores", false)
-                        ).process
-                      }
-                    }                    
-                  }
-                }
-              }.foldIntoJson
-          }.foldIntoJson
-        }.foldIntoJson
-          .flatMap(js => Ok(js.toString())))
-          .catchError
+        (maybeLimit, maybeRange) match {
+          case (Left(_), _) => Ok(ResponseBody("There was a error parsing limit", false).asJson.toString())
+          case (_, Left(_)) => Ok(ResponseBody("There was a error parsing the range", false).asJson.toString())
+          case (Right(limit), Right(range)) => {
+            parseREquestAndValidateUserAndParseBodyResponse[Address, F](req, {(email, address) =>
+              ProcessData(
+                GetNearestStore(DistanceInMiles(range), limit, address).nearest,
+                (lst: List[RelativeDistanceAndStore]) => NearestStores(lst),
+                (err:Throwable) => ResponseBody("Error finding stores", false)
+              ).process
+            })
+          }
+        }
       }
     }
   }

@@ -26,6 +26,8 @@ object Migrator1 {
     val dropOrderAcceptedTabelRequests: DBIO[Int] = sqlu"DROP TABLE IF EXISTS acceptedstoreorderrequest;"
     val dropOrderDeniedTabelRequests: DBIO[Int] = sqlu"DROP TABLE IF EXISTS deniedstoreorderrequest;"
     val dropSlickEmailRefRequest: DBIO[Int] = sqlu"DROP TABLE IF EXISTS stripeaccountemailtable;"
+    val dropOrdersPaidForTable = sqlu"DROP TABLE IF EXISTS orderspaidfortable"
+    val dropPaymentIntentReferenceTable = sqlu"DROP TABLE IF EXISTS paymentintentreferencetable"
 
     val dropCommands: DBIOAction[Unit, NoStream, Nothing] = DBIO.seq(
       dropProducts,
@@ -34,7 +36,9 @@ object Migrator1 {
       dropProductReferences,
       dropOrderAcceptedTabelRequests,
       dropOrderDeniedTabelRequests,
-      dropSlickEmailRefRequest
+      dropSlickEmailRefRequest,
+      dropOrdersPaidForTable,
+      dropPaymentIntentReferenceTable
     )
 
     val createProductTable = com.gardenShare.gardenshare.ProductTable.products.schema.create
@@ -44,6 +48,8 @@ object Migrator1 {
     val orderAcceptedStatusTable = com.gardenShare.gardenshare.AcceptedStoreOrderRequestTable.acceptedStoreOrderRequestTable.schema.create
     val orderDeniedStatusTable = com.gardenShare.gardenshare.DeniedStoreOrderRequestTable.deniedStoreOrderRequestTable.schema.create
     val slickAccountEmailRef = com.gardenShare.gardenshare.StripeAccountEmailTable.stripeAccountEmailTable.schema.create
+    val ordersPaidForTable = com.gardenShare.gardenshare.OrdersPaidForTable.ordersPaidForTable.schema.create
+    val paymentIntentReferenceTableScheme = com.gardenShare.gardenshare.PaymentIntentReferenceTable.paymentIntentReferenceTable.schema.create
    
     val createTables: DBIOAction[Unit, NoStream, Nothing] =  DBIO.seq(
       createProductTable,
@@ -52,7 +58,9 @@ object Migrator1 {
       productReferenceTable,
       orderAcceptedStatusTable,
       orderDeniedStatusTable,
-      slickAccountEmailRef
+      slickAccountEmailRef,
+      ordersPaidForTable,
+      paymentIntentReferenceTableScheme
     )
 
     MigrateDB.createIOMigrator(CreateMigrator[IO](

@@ -28,7 +28,7 @@ object SignupUser {
     def signupUser(email: Email, password: Password): IO[SignUpResponse] = {
       for {
         id <- getUserPoolName.exec()
-        result = cognitoClient.createUser(password.underlying, email.underlying, id)
+        result = cognitoClient.createUser(password.underlying, email.underlying.value, id)
       } yield result      
     }      
   }

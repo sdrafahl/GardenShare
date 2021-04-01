@@ -32,7 +32,8 @@ import cats.Monad
 import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
-
+import com.gardenShare.gardenshare.EmailCompanion._
+import EmailCompanion._
 
 object Helpers {
   def parseJWTokenFromRequest[F[_]: Functor](req: Request[F]) = {
@@ -52,19 +53,19 @@ object Helpers {
     ))
   }
 
-  def parseRequestAndValidateUser[F[_]:AuthUser: AuthJWT:Monad](req: Request[F] ,validWithEmail: Email => F[Json]) = {
+  def parseRequestAndValidateUser[F[_]:AuthUser: AuthJWT:Monad:JoseProcessJwt](req: Request[F] ,validWithEmail: Email => F[Json]) = {
     parseJWTokenFromRequest(req)
       .map(_.auth)
       .map{resultOfValidation =>
         resultOfValidation.flatMap{
           case InvalidToken(msg) => Applicative[F].pure(InvalidToken("Invalid Token was provided").asJson)
           case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-          case ValidToken(Some(email)) => validWithEmail(Email(email))
+          case ValidToken(Some(email)) => validWithEmail(email)
         }
       }.foldIntoJson
   }
 
-  def parseRequestAndValidateUserResponse[F[_]:AuthUser:AuthJWT:Http4sDsl](req: Request[F] ,validWithEmail: Email => F[Json])(implicit me: MonadError[F, Throwable]) = {
+  def parseRequestAndValidateUserResponse[F[_]:AuthUser:AuthJWT:Http4sDsl:JoseProcessJwt](req: Request[F] ,validWithEmail: Email => F[Json])(implicit me: MonadError[F, Throwable]) = {
     val dsl = implicitly[Http4sDsl[F]]
     import dsl._
     parseRequestAndValidateUser[F](req, validWithEmail)
@@ -72,7 +73,7 @@ object Helpers {
       .catchError
   }
 
-  def parseREquestAndValidateUserAndParseBody[A:Decoder,F[_]:AuthUser:AuthJWT:Monad:Sync](req: Request[F], pr: (Email,A) => F[Json]) = {
+  def parseREquestAndValidateUserAndParseBody[A:Decoder,F[_]:AuthUser:AuthJWT:Monad:Sync:JoseProcessJwt](req: Request[F], pr: (Email,A) => F[Json]) = {
     parseRequestAndValidateUser[F](req, {email =>
       parseBodyFromRequest[A, F](req)
         .flatMap{
@@ -82,10 +83,10 @@ object Helpers {
     })
   }
 
-  def parseREquestAndValidateUserAndParseBodyResponse[A:Decoder,F[_]:AuthUser:AuthJWT:Monad:Sync:Http4sDsl](req: Request[F], pr: (Email,A) => F[Json])(implicit me: MonadError[F, Throwable]) = {
+  def parseREquestAndValidateUserAndParseBodyResponse[A:Decoder,F[_]:AuthUser:AuthJWT:Monad:Sync:Http4sDsl:JoseProcessJwt](req: Request[F], pr: (Email,A) => F[Json])(implicit me: MonadError[F, Throwable]) = {
     val dsl = implicitly[Http4sDsl[F]]
     import dsl._
-    parseREquestAndValidateUserAndParseBody(req, pr)
+    parseREquestAndValidateUserAndParseBody[A, F](req, pr)
       .flatMap(k => Ok(k.toString()))
       .catchError
   }
@@ -94,7 +95,7 @@ object Helpers {
     req
       .body
       .through(text.utf8Decode)
-      .through(stringStreamParser)
+      .through(stringStreamParser)      
       .through(decoder[F, T])
       .compile
       .toList
@@ -106,7 +107,7 @@ object Helpers {
       import h._
       resp
         .attempt
-        .flatMap(_.fold(err => Ok(ResponseBody(err.getMessage(), false).asJson.toString()),b => Applicative[F].pure(b)))
+        .flatMap(_.fold(err => Ok(ResponseBody(s"There was an error parsing: ${err.getMessage()}", false).asJson.toString()),b => Applicative[F].pure(b)))
     }
   }
 }

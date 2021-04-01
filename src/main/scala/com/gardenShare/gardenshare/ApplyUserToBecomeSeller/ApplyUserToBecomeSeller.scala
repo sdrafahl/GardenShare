@@ -17,11 +17,12 @@ import scala.util.Success
 import scala.util.Failure
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Encoders._
+import scala.concurrent.ExecutionContext
 
-case class ApplyUserToBecomeSellerResponse(url: URI)
+case class ApplyUserToBecomeSellerResponse(url: URL)
 
 abstract class ApplyUserToBecomeSeller[F[_]] {
-  def applyUser(userName: Email, address: Address,refreshUrl: URI, returnUrl: URI)(implicit cs: ContextShift[F]): F[ApplyUserToBecomeSellerResponse]
+  def applyUser(userName: Email, address: Address,refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[F], ec: ExecutionContext): F[ApplyUserToBecomeSellerResponse]
 }
 
 object ApplyUserToBecomeSeller {
@@ -34,7 +35,7 @@ object ApplyUserToBecomeSeller {
     insertStore:InsertStore[IO],
     insertSlickEmailRef: InsertAccountEmailReference[IO],
     paymentCommandEvaluator: PaymentCommandEvaluator[IO]) = new ApplyUserToBecomeSeller[IO] {
-    def applyUser(userName: Email, address: Address, refreshUrl: URI, returnUrl: URI)(implicit cs: ContextShift[IO]): IO[ApplyUserToBecomeSellerResponse] = {      
+    def applyUser(userName: Email, address: Address, refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[IO], ec: ExecutionContext): IO[ApplyUserToBecomeSellerResponse] = {      
       for {
         stores <- g.getStoresByUserEmail(userName)
         _ <- stores match {
@@ -42,7 +43,7 @@ object ApplyUserToBecomeSeller {
           case _ => IO.raiseError(new Throwable("Store already exists at that address"))
         }
         userPoolId <- gupn.exec()
-        groupsResponse <- cognito.listGroupsForUser(userName.underlying, userPoolId)
+        groupsResponse <- cognito.listGroupsForUser(userName.underlying.value, userPoolId)
         isAlreadyASeller = groupsResponse.groups().asScala.find(gt => gt.groupName() == "Sellers")
         res <- isAlreadyASeller match {
           case Some(_) => IO.raiseError(new Throwable("User is already a seller"))
@@ -54,7 +55,7 @@ object ApplyUserToBecomeSeller {
             _ = println("created the link")
           } yield link.getUrl()
         }
-        parsedUrl <- Try( URI.create(res)) match {
+        parsedUrl <- Try(new URL(res)) match {
 	  case Success(url) => IO.pure(url)
           case Failure(err) => IO.raiseError(new Throwable(s"URL is not parsable: ${err.getMessage()}"))
         }

@@ -28,6 +28,7 @@ import com.gardenShare.gardenshare.EncodeToString
 import java.net.URL
 import scala.util.Try
 import java.net.URI
+import EmailCompanion._
 
 object Encoders {  
   implicit val priceEncoder: Encoder[PriceUnit] = new Encoder[PriceUnit] {

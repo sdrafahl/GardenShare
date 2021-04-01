@@ -22,6 +22,12 @@ import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.IA
 import com.gardenShare.gardenshare.Store._
 import com.typesafe.config.ConfigFactory
+import eu.timepit.refined._
+import eu.timepit.refined.api.Refined
+import eu.timepit.refined.auto._
+import eu.timepit.refined.string.MatchesRegex
+import eu.timepit.refined.api.RefType
+import EmailCompanion._
 
 object StoreTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()
@@ -29,7 +35,7 @@ object StoreTest extends TestSuite {
   val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
   implicit val cs = executionStuff._3
 
-  val email = "gardenShare@gmail.com"
+  val email = Email("gardenshare@gmail.com")
   val password = "testPass12$"
   val tests = Tests {
     test("Product Routes") {

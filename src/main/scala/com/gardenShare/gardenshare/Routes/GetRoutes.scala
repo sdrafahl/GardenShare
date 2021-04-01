@@ -16,6 +16,8 @@ import com.gardenShare.gardenshare.Address
 import io.circe.Encoder
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.effect.Timer
+import scala.concurrent.ExecutionContext
+import EmailCompanion._
 
 abstract class GetRoutes[F[_], T <: RoutesTypes] {
   def getRoutes: HttpRoutes[F]
@@ -45,7 +47,9 @@ object GetRoutes {
     addProductToStore: AddProductToStore[IO],
     getProductsByStore:GetProductsByStore[IO],
     timer: Timer[IO],
-    verifyUserAsSeller: VerifyUserAsSeller[IO]
+    verifyUserAsSeller: VerifyUserAsSeller[IO],
+    initiatePayment: InitiatePaymentForOrder[IO],
+    ec: ExecutionContext
   ) = new GetRoutes[IO, TestingAndProductionRoutes]{
     def getRoutes: HttpRoutes[IO] = (
       UserRoutes.userRoutes[IO]() <+>
@@ -76,7 +80,9 @@ object GetRoutes {
     addProductToStore: AddProductToStore[IO],
     getProductsByStore:GetProductsByStore[IO],
     timer: Timer[IO],
-    verifyUserAsSeller: VerifyUserAsSeller[IO]
+    verifyUserAsSeller: VerifyUserAsSeller[IO],
+    initiatePayment: InitiatePaymentForOrder[IO],
+    ec: ExecutionContext
   ) = new GetRoutes[IO, OnlyProductionRoutes] {
     def getRoutes: HttpRoutes[IO] = UserRoutes.userRoutes[IO]() <+> ProductRoutes.productRoutes[IO] <+> StoreRoutes.storeRoutes[IO]
   }

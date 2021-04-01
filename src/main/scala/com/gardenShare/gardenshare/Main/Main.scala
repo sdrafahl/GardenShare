@@ -11,6 +11,7 @@ import io.circe.generic.auto._, io.circe.syntax._
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.Config
 import com.gardenShare.gardenshare.GetTypeSafeConfig
+import EmailCompanion._
 
 object Main extends IOApp {
   val confPgm: IO[GetTypeSafeConfig[IO]] = IO(ConfigFactory.load()).map(conf => GetTypeSafeConfig.ioGetTypeSafeConfig(conf))

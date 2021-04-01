@@ -38,6 +38,14 @@ import java.net.URL
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
 import com.gardenShare.gardenshare.Encoders._
 import io.circe.generic.auto._
+import EmailCompanion._
+import eu.timepit.refined._
+import eu.timepit.refined.api.Refined
+import eu.timepit.refined.auto._
+import eu.timepit.refined.string.MatchesRegex
+import eu.timepit.refined.api.RefType
+import PaymentVerificationStatus._
+import com.stripe.model.Account
 
 object UserTestSpec extends TestSuite {  
 
@@ -46,13 +54,14 @@ object UserTestSpec extends TestSuite {
   val tests = Tests {
     test("User Routes") {
 
-      val testEmail = "shanedrafahl@gmail.com"
+      val testEmail = Email("shanedrafahl@gmail.com")
       val testPassword = "teST12$5jljasdf"
       val testRefreshURL = new URL("http://localhost:3000/")
       val testReturnURL = new URL("http://localhost:3000/")
       test("/user/signup/shanedrafahl@gmail.com/teST12$5jljasdf") {
         test("Should register a user") {
-          UserTestsHelper.deleteUserAdmin(testEmail)                          
+          UserTestsHelper.deleteUserAdmin(testEmail)
+
           val responseFromCreatingUser = UserTestsHelper.createUser(testEmail, testPassword)
           val expectedUserCreatedResponse = UserCreationRespose(
             "User Request Made: CodeDeliveryDetailsType(Destination=s***@g***.com, DeliveryMedium=EMAIL, AttributeName=email)",
@@ -82,9 +91,9 @@ object UserTestSpec extends TestSuite {
       }
       test("/user/apply-to-become-seller") {
         test("Should create application to become a seller"){
-          UserTestsHelper.clearSlickAccounts(List(Email(testEmail)))
+          UserTestsHelper.clearSlickAccounts(List(testEmail))
           UserTestsHelper.deleteUserAdmin(testEmail)
-          UserTestsHelper.deletestore(Email(testEmail))
+          UserTestsHelper.deletestore(testEmail)
           UserTestsHelper.adminCreateUser(testEmail, testPassword)          
           val r = UserTestsHelper.authUser(testEmail, testPassword)
           val jwtToken = r.auth.get.jwt
@@ -97,16 +106,16 @@ object UserTestSpec extends TestSuite {
       test("/user/verify-user-as-seller") {
         test("Should create application to become a seller") {
 
-          val testEmailSlickAccount = "gardensharetest@gmail.com"
+          val testEmailSlickAccount = Email("gardensharetest@gmail.com")
           val testPass = "testPass12$"
-          val accountID = "acct_1IV66N2R0KHt4WIV"
+          val accountID = "acct_1IaV882R5fpwMLQe"
 
           UserTestsHelper.deleteUserAdmin(testEmailSlickAccount)
-          UserTestsHelper.deletestore(Email(testEmailSlickAccount))          
-          UserTestsHelper.deleteSlickEmailReference(Email(testEmailSlickAccount)).unsafeRunSync()
+          UserTestsHelper.deletestore(testEmailSlickAccount)
+          UserTestsHelper.deleteSlickEmailReference(testEmailSlickAccount).unsafeRunSync()
 
           UserTestsHelper.adminCreateUser(testEmailSlickAccount, testPass)
-          UserTestsHelper.insertSlickEmailReference(Email(testEmailSlickAccount), accountID).unsafeRunSync()
+          UserTestsHelper.insertSlickEmailReference(testEmailSlickAccount, accountID).unsafeRunSync()
 
           val r = UserTestsHelper.authUser(testEmailSlickAccount, testPass)
           val jwtToken = r.auth.get.jwt
@@ -117,9 +126,9 @@ object UserTestSpec extends TestSuite {
           assert(response.equals(expectedResponse))
 
           val info = UserTestsHelper.getUserInfo(jwtToken)
-          val expectedInfo = UserInfo(Email(testEmailSlickAccount), Sellers, Some(Store(info.store.get.id, address, Email(testEmailSlickAccount))))
+          val expectedInfo = UserInfo(testEmailSlickAccount, Sellers, Some(Store(info.store.get.id, address, testEmailSlickAccount)))
           assert(info equals expectedInfo)
-          val store = UserTestsHelper.getStore(Email(testEmailSlickAccount))
+          val store = UserTestsHelper.getStore(testEmailSlickAccount)
           assert(store.address equals address)
         }
       }
@@ -138,9 +147,9 @@ object UserTestsHelper {
   /**
     Do Not Use in production
     */
-  def deleteUserAdmin(email: String) = {
+  def deleteUserAdmin(email: Email) = {
     val uriToDeleteUser =
-      Uri.fromString(s"/user/delete/${email}").toOption.get
+      Uri.fromString(s"/user/delete/${email.underlying.value}").toOption.get
     val requestToDelteUser = Request[IO](Method.DELETE, uriToDeleteUser)
 
     TestUserRoutes
@@ -150,8 +159,8 @@ object UserTestsHelper {
       .unsafeRunSync()
   }
 
-  def createUser(email: String, password: String) = {
-    val registrationArgs = s"${email}/${password}"
+  def createUser(email: Email, password: String) = {
+    val registrationArgs = s"${email.underlying.value}/${password}"
 
     val uriArg =
       Uri.fromString(s"/user/signup/$registrationArgs").toOption.get
@@ -172,8 +181,8 @@ object UserTestsHelper {
       .head
   }
 
-  def adminCreateUser(email: String, password: String) = {
-    val registrationArgs = s"${email}/${password}"
+  def adminCreateUser(email: Email, password: String) = {
+    val registrationArgs = s"${email.underlying.value}/${password}"
 
     val uriArg =
       Uri.fromString(s"/user/$registrationArgs").toOption.get
@@ -186,8 +195,8 @@ object UserTestsHelper {
       .unsafeRunSync()
   }
 
-  def authUser(email: String, password: String) = {
-    val registrationArgs = s"${email}/${password}"
+  def authUser(email: Email, password: String) = {
+    val registrationArgs = s"${email.underlying.value}/${password}"
 
     val uriArg =
       Uri.fromString(s"/user/auth/$registrationArgs").toOption.get
@@ -367,10 +376,9 @@ object UserTestsHelper {
       .head
   }
 
-  def createStoreOrderRequest(jwtOfTheBuyer: String ,emailOfTheSeller: String, s: StoreOrderRequestBody) = {
-    val uri = Uri.fromString(s"storeOrderRequest/${emailOfTheSeller}").toOption.get
+  def createStoreOrderRequest(jwtOfTheBuyer: String ,emailOfTheSeller: Email, s: StoreOrderRequestBody) = {
+    val uri = Uri.fromString(s"storeOrderRequest/${emailOfTheSeller.underlying.value}").toOption.get
     val headers = Headers.of(Header("authentication", jwtOfTheBuyer))
-
     val request = Request[IO](Method.POST, uri, headers = headers).withEntity(s.asJson.toString())
 
     StoreOrderRoutes
@@ -450,12 +458,60 @@ object UserTestsHelper {
       .unsafeRunSync()
   }
 
-  def deleteAllStoreOrdersForSeller[F[_]: DeleteStoreOrderRequestsForSeller: ContextShift](e: String) = implicitly[DeleteStoreOrderRequestsForSeller[IO]].delete(Email(e))
+  def deleteAllStoreOrdersForSeller[F[_]: DeleteStoreOrderRequestsForSeller: ContextShift](e: Email) = implicitly[DeleteStoreOrderRequestsForSeller[IO]].delete(e)
 
   def clearSlickAccounts(emails: List[Email]) = ClearStripeAccounts(emails).evaluate[IO].unsafeRunSync()
 
   def insertSlickEmailReference(email: Email, slickId: String) = implicitly[InsertAccountEmailReference[IO]].insert(slickId, email)
 
   def deleteSlickEmailReference(email: Email) = implicitly[DeleteAccountEmailReferences[IO]].delete(email)
+
+  def initiatePayment(buyerJwt: String, orderId: Int, receiptEmail: Email, paymentType: PaymentType) = {    
+    val uri = Uri.fromString(s"storeOrderRequest/initiate-payment/${orderId}/${receiptEmail.underlying.value}/${implicitly[EncodeToString[PaymentType]].encode(paymentType)}").toOption.get
+    val headers = Headers.of(Header("authentication", buyerJwt))
+    val request = Request[IO](Method.POST, uri, headers = headers)
+
+    StoreOrderRoutes
+      .storeOrderRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, PaymentIntentToken])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def verifyPayment(orderId: Int, buyerJwt: String) = {
+    val uri = Uri.fromString(s"storeOrderRequest/verify-payment/${orderId}").toOption.get
+    val headers = Headers.of(Header("authentication", buyerJwt))
+    val request = Request[IO](Method.POST, uri, headers = headers)
+
+    StoreOrderRoutes
+      .storeOrderRoutes[IO]
+      .orNotFound(request)
+      .unsafeRunSync()
+      .body
+      .through(text.utf8Decode)
+      .through(stringArrayParser)
+      .through(decoder[IO, PaymentVerification])
+      .compile
+      .toList
+      .unsafeRunSync()
+      .head
+  }
+
+  def createCustomAccount() = CreateCustomAccountCommand().evaluate[IO].unsafeRunSync()
+
+  def deleteCustomAccount(account: Account) = DeleteAccountCommand(account.getId()).evaluate[IO].unsafeRunSync()
+
+  def confirmOrder(orderId: String, card: CreditCard) = ConfirmPaymentIntentCard(orderId, card).evaluate.unsafeRunSync()
+
+  def getStatusOfIntent(intentId: String) = GetPaymentIntentCommand(intentId).evaluate.unsafeRunSync()
+
+  def getPaymentIntentID(orderId: Int) = implicitly[GetPaymentIntentFromStoreRequest[IO]].search(orderId.toString()).unsafeRunSync()
 
 }

@@ -12,3 +12,4 @@ case object AcceptedRequest extends StoreOrderRequestStatus
 case object DeniedRequest extends StoreOrderRequestStatus
 case object ExpiredRequest extends StoreOrderRequestStatus
 case object RequestToBeDetermined extends StoreOrderRequestStatus
+case object RequestPaidFor extends StoreOrderRequestStatus

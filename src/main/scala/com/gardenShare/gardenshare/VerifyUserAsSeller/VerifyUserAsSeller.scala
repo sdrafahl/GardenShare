@@ -32,7 +32,7 @@ object VerifyUserAsSeller {
           case true => {
             for {
               userPoolId <- gupn.exec()
-              addUserToGroupResponse <- cognito.addUserToGroup(email.underlying,userPoolId, "Sellers")
+              addUserToGroupResponse <- cognito.addUserToGroup(email.underlying.value,userPoolId, "Sellers")
               storesThatBelongToUser <- g.getStoresByUserEmail(email)
               responseFromAddingStore <- storesThatBelongToUser match {
                 case List() => insertStore.add(List(CreateStoreRequest(address, email))).map(_ => true)

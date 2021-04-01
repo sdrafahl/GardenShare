@@ -158,7 +158,7 @@ object CogitoClient {
             client.adminCreateUser(
               AdminCreateUserRequest
                 .builder()
-                .username(userName.underlying)
+                .username(userName.underlying.value)
                 .userPoolId(userPoolId.id)
                 .temporaryPassword(tempPassword)
                 .build()
@@ -182,7 +182,7 @@ object CogitoClient {
             .challengeResponses(
               Map(
                 "NEW_PASSWORD" -> password.underlying,
-                "USERNAME" -> userName.underlying
+                "USERNAME" -> userName.underlying.value
               ).asJava
             )
             .clientId(clientId)
@@ -238,7 +238,7 @@ object CogitoClient {
     ): F[AdminInitiateAuthResponse] = {
 
       val params = Map(
-        "USERNAME" -> user.email.underlying,
+        "USERNAME" -> user.email.underlying.value,
         "PASSWORD" -> user.password.underlying
       ).asJava
 
@@ -262,13 +262,13 @@ object CogitoClient {
       val request = AdminDeleteUserRequest
         .builder()
         .userPoolId(userPoolId.id)
-        .username(email.underlying)
+        .username(email.underlying.value)
         .build()
 
       val removeUserFromGroup = AdminRemoveUserFromGroupRequest
         .builder()
         .userPoolId(userPoolId.id)
-        .username(email.underlying)
+        .username(email.underlying.value)
         .groupName("Sellers")
         .build()      
 

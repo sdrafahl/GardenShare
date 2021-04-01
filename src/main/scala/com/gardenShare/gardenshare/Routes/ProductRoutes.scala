@@ -43,37 +43,55 @@ import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.GetProductsByStore
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
+import EmailCompanion._
 
 object ProductRoutes {
-  def productRoutes[F[_]: Async: AuthUser: AuthJWT: GetDistance: InsertProduct: AddProductToStoreForSeller:GetUserInfo:AddProductToStore:ContextShift: Monad: GetProductsSoldFromSeller:GetStore:GetProductsByStore]
-    (implicit pp: ParseProduce[String], ae: ApplicativeError[F, Throwable], currencyParser: com.gardenShare.gardenshare.Parser[Currency], en: Encoder[Produce], currencyEncoder: Encoder[Currency], dep: Decoder[Produce], dee: Decoder[Currency])
+  def productRoutes[F[_]:
+      Async:
+      AuthUser:
+      AuthJWT:
+      GetDistance:
+      InsertProduct:
+      AddProductToStoreForSeller:
+      GetUserInfo:
+      AddProductToStore:
+      ContextShift:
+      Monad:
+      GetProductsSoldFromSeller:
+      GetStore:
+      GetProductsByStore:
+      JoseProcessJwt
+  ]
+    (
+      implicit pp: ParseProduce[String],
+      ae: ApplicativeError[F, Throwable],
+      currencyParser: com.gardenShare.gardenshare.Parser[Currency],
+      en: Encoder[Produce],
+      currencyEncoder: Encoder[Currency],
+      dep: Decoder[Produce],
+      dee: Decoder[Currency],
+      emailParser: com.gardenShare.gardenshare.Parser[Email]
+    )
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
       case req @ POST -> Root / "product" / "add" / produce / price / priceUnit => {
-        parseJWTokenFromRequest(req)
-          .map{(a: JWTValidationTokens) =>            
-            (price.toIntOption,currencyParser.parse(priceUnit)) match {
-              case (None, _) => Applicative[F].pure(ResponseBody("Price is not a number", false).asJson)
-              case (_, Left(x)) => Applicative[F].pure(ResponseBody(s"Price unit is not valid", false).asJson)
-              case (Some(x), Right(priceUnit)) => {
-                a.auth.flatMap {
-                  case InvalidToken(msg) => Applicative[F].pure(ResponseBody(msg, false).asJson)
-                  case ValidToken(None) => Applicative[F].pure(ResponseBody("Token is valid but without email", false).asJson)
-                  case ValidToken(Some(email)) => {
-                    pp.parse(produce) match {
-                      case Right(pd) => {
-                        implicitly[AddProductToStoreForSeller[F]].add(Email(email), pd, Amount(x, priceUnit)).map(_ => ResponseBody("Product was added to the store", true).asJson)
-                      }
-                      case Left(err) => Applicative[F].pure(ResponseBody("Invalid produce", false).asJson)
-                    }
-                  }
-                }
-              }
-            }            
-          }.leftMap(no => no.asJson)
-        .fold(a => Ok(a.toString), b => b.flatMap(js => Ok(js.toString()))).catchError
+
+        (pp.parse(produce), price.toIntOption, currencyParser.parse(priceUnit)) match {
+          case (Left(error), _, _) => Ok(ResponseBody("Produce was invalid", false).asJson.toString())
+          case (_, None, _) => Ok(ResponseBody("Price is not a integer", false).asJson.toString())
+          case (_, _, Left(err)) => Ok(ResponseBody("Invalid currency type", false).asJson.toString())
+          case (Right(produce), Some(price), Right(currency)) => {
+            parseRequestAndValidateUserResponse[F](req, {email =>
+              ProcessData(
+                implicitly[AddProductToStoreForSeller[F]].add(email, produce, Amount(price, currency)),
+                (_: Unit) => ResponseBody("Product was added to the store", true),
+                (err: Throwable) => ResponseBody(s"There was an error adding produce ${err.getMessage()}", false)
+              ).process
+            })
+          }
+        }
       }
       case req @ GET -> Root / "product" => {
         parseJWTokenFromRequest(req)
@@ -83,7 +101,7 @@ object ProductRoutes {
               case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
               case ValidToken(Some(email)) => {
                 ProcessData(
-                  implicitly[GetProductsSoldFromSeller[F]].get(Email(email)),
+                  implicitly[GetProductsSoldFromSeller[F]].get(email),
                   (a:List[ProductWithId]) => ListOfProduce(a).asJson,
                   (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false))
                 
@@ -96,15 +114,20 @@ object ProductRoutes {
           .flatMap(a => Ok(a.toString())).catchError
       }
       case GET -> Root / "product" / email => {
-        ProcessData(
-          implicitly[GetProductsSoldFromSeller[F]].get(Email(email)),
-          (a:List[ProductWithId]) => ListOfProduce(a).asJson,
-          (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false)
-        )
-          .process
-          .flatMap(a => Ok(a.toString()))
-          .catchError
-      }
+        implicitly[com.gardenShare.gardenshare.Parser[Email]].parse(email) match {
+          case Left(_) => Ok(ResponseBody("Invalid email provided", false).asJson.toString())
+          case Right(email) => {
+            ProcessData(
+              implicitly[GetProductsSoldFromSeller[F]].get(email),
+              (a:List[ProductWithId]) => ListOfProduce(a).asJson,
+              (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false)
+            )
+              .process
+              .flatMap(a => Ok(a.toString()))
+              .catchError
+          }
+        }        
+      }      
     }
   }
 }
