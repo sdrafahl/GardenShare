@@ -42,7 +42,6 @@ import com.gardenShare.gardenshare.UserResponse
 import com.gardenShare.gardenshare.JWTValidationResult
 import cats.Applicative
 import com.gardenShare.gardenshare.Sellers
-import com.gardenShare.gardenshare.domain._
 import com.gardenShare.gardenshare.GetUserInfo.GetUserInfoOps
 import com.gardenShare.gardenshare.UserInfo
 import com.gardenShare.gardenshare.Address
@@ -178,7 +177,7 @@ object UserRoutes {
           ProcessData(
             email.getUserInfo,
             (a:UserInfo) => a.asJson,
-            (err:Throwable) => FailedToGetUserInfo(err.getMessage())
+            (err:Throwable) => ResponseBody(s"Failed to get user info ${err.getMessage()}", false)
           )
             .process
         })

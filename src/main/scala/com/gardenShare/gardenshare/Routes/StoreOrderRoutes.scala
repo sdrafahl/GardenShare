@@ -35,10 +35,6 @@ import EmailCompanion._
 import com.gardenShare.gardenshare.ParseProduce._
 import com.gardenShare.gardenshare.ParseCurrency._
 
-case class StoreOrderRequestBody(body: List[ProductAndQuantity])
-case class StoreOrderRequestsBelongingToSellerBody(body: List[StoreOrderRequestWithId])
-case class StoreOrderRequestStatusBody(response: StoreOrderRequestStatus)
-
 object StoreOrderRoutes {
   def storeOrderRoutes[
     F[_]:

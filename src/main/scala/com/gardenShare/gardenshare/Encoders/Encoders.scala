@@ -6,7 +6,6 @@ import io.circe.KeyEncoder
 import io.circe.generic.auto._, io.circe.syntax._
 import io.circe.generic.JsonCodec, io.circe.syntax._
 import io.circe.generic.semiauto._
-import com.gardenShare.gardenshare.domain._
 import io.circe.{ Decoder, Encoder }, io.circe.generic.auto._
 import io.circe.syntax._
 import com.gardenShare.gardenshare.Requester
