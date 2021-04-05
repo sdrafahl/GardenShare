@@ -1,9 +1,8 @@
 package com.gardenShare.gardenshare.FoldOver
 
-import io.circe._, io.circe.parser._
+import io.circe._
 import io.circe.syntax._
 import cats.Applicative
-import cats.syntax.applicative._
 
 abstract class FoldOverEithers {
   def foldOver[B: Encoder, F[_]: Applicative](a: Either[B, F[Json]]): F[Json]

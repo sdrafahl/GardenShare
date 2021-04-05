@@ -1,7 +1,5 @@
 package com.gardenShare.gardenshare.GetListOfProductNames
 
-import com.gardenShare.gardenshare.Storage.S3.GetKeys
-import cats.effect.IO
 import com.gardenShare.gardenshare.GetDescriptionBucketName
 import com.gardenShare.gardenshare.Storage.S3.GetKeys
 import com.gardenShare.gardenshare.Storage.S3.GetKeys.GetKeysOps

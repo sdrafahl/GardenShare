@@ -3,10 +3,8 @@ package com.gardenShare.gardenshare
 import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.Store
 import com.gardenShare.gardenshare.GetStoresStream
-import cats.effect.IO
-import fs2.concurrent.Queue
 import cats.syntax.all._
-import cats.effect.{Concurrent, ExitCode, IO, IOApp, Timer}
+import cats.effect.{IO, Timer}
 import fs2.concurrent.InspectableQueue
 import fs2.Stream
 import scala.concurrent.duration._

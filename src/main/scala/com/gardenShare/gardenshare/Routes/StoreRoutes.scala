@@ -36,7 +36,7 @@ import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 import cats.effect.ContextShift
 import cats.effect.Timer
-import EmailCompanion._
+import ParsingDecodingImplicits._
 
 object StoreRoutes {
   def storeRoutes[F[_]:

@@ -17,7 +17,6 @@ import io.circe.Encoder
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.effect.Timer
 import scala.concurrent.ExecutionContext
-import EmailCompanion._
 
 abstract class GetRoutes[F[_], T <: RoutesTypes] {
   def getRoutes: HttpRoutes[F]

@@ -32,7 +32,6 @@ import com.gardenShare.gardenshare.AuthUser.AuthUserOps
 import com.gardenShare.gardenshare.AuthenticatedUser
 import com.gardenShare.gardenshare.FailedToAuthenticate
 import com.gardenShare.gardenshare.ValidToken
-import com.gardenShare.gardenshare.Encoders._
 import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare._
 import com.gardenShare.gardenshare.InsertStore
@@ -42,17 +41,16 @@ import eu.timepit.refined.types.string.NonEmptyString
 import cats.Applicative
 import com.gardenShare.gardenshare.GetproductDescription
 import com.gardenShare.gardenshare.GetproductDescription._
-import com.gardenShare.gardenshare.ParseProduce.ParseProduceOps
+import com.gardenShare.gardenshare.Parser
 
 object ProductDescriptionRoutes {
-  def productDescriptionRoutes[F[_]: Async](implicit c: GetproductDescription[Produce], p: ParseProduce[String])
+  def productDescriptionRoutes[F[_]: Async](implicit c: GetproductDescription[Produce], p: Parser[Produce])
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
-      case GET -> Root / "productDescription" / descKey => {
-        descKey
-          .parseProduce
+      case GET -> Root / "productDescription" / descKey => {        
+        p.parse(descKey)
           .map(a => a.getProductDescription)
           .fold(a => Ok(ResponseBody("Invalid product description key was provided.", false).asJson.toString), b => Ok(b.asJson.toString))
       }

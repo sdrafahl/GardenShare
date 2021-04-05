@@ -17,7 +17,6 @@ import fs2.text
 import com.gardenShare.gardenshare.Address
 import cats.effect.IO
 import cats.effect.Sync
-import com.gardenShare.gardenshare.Encoders._
 import io.circe.Decoder
 import cats.MonadError
 import cats.implicits._
@@ -32,8 +31,6 @@ import cats.Monad
 import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
-import com.gardenShare.gardenshare.EmailCompanion._
-import EmailCompanion._
 
 object Helpers {
   def parseJWTokenFromRequest[F[_]: Functor](req: Request[F]) = {

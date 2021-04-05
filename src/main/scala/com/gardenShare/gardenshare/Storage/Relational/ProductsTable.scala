@@ -32,7 +32,7 @@ abstract class GetProductById[F[_]] {
 }
 
 object GetProductById {
-  implicit def createIOGetProductById(implicit e:Parser[Currency], pp: ParseProduce[String], client: PostgresProfile.backend.DatabaseDef) = new GetProductById[IO] {
+  implicit def createIOGetProductById(implicit e:Parser[Currency], pp: Parser[Produce], client: PostgresProfile.backend.DatabaseDef) = new GetProductById[IO] {
     def get(id: Int)(
       implicit cs: ContextShift[IO]      
     ): IO[Option[ProductWithId]] = {
@@ -60,7 +60,7 @@ abstract class GetProductsByStore[F[_]: Async] {
 object GetProductsByStore {
   def apply[F[_]: GetProductsByStore]() = implicitly[GetProductsByStore[F]]
 
-  implicit def IOGetProductsByStore(implicit e:Parser[Currency], pp: ParseProduce[String], client: PostgresProfile.backend.DatabaseDef) = new GetProductsByStore[IO]{
+  implicit def IOGetProductsByStore(implicit e:Parser[Currency], pp: Parser[Produce], client: PostgresProfile.backend.DatabaseDef) = new GetProductsByStore[IO]{
     def getProductsByStore(storeid: Int)(
       implicit cs:ContextShift[IO]      
     ): IO[List[ProductWithId]] = {

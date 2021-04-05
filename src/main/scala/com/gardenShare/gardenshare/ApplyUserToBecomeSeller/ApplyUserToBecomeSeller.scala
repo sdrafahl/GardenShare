@@ -3,20 +3,15 @@ package com.gardenShare.gardenshare
 import com.gardenShare.gardenshare.Email
 import cats.effect.IO
 import com.gardenShare.gardenshare.CogitoClient
-import com.gardenShare.gardenshare.UserType
-import com.gardenShare.gardenshare.Sellers
 import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.InsertStore
-import com.gardenShare.gardenshare.CreateStoreRequest
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
 import java.net.URL
-import java.net.URI
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
 import cats.effect.ContextShift
-import com.gardenShare.gardenshare.Encoders._
 import scala.concurrent.ExecutionContext
 
 case class ApplyUserToBecomeSellerResponse(url: URL)

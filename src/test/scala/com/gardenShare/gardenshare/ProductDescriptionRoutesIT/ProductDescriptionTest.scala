@@ -7,7 +7,6 @@ import com.gardenShare.gardenshare.ProductDescriptionRoutes
 import org.http4s._
 import org.http4s.implicits._
 import cats.effect.IO
-import com.gardenShare.gardenshare.Encoders._
 import com.gardenShare.gardenshare.Shows._
 import fs2.text
 import io.circe.fs2._
@@ -18,6 +17,7 @@ import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.IA
 import com.typesafe.config.ConfigFactory
 import java.net.URI
+import ParsingDecodingImplicits._
 
 object ProductDescriptionTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()

@@ -1,24 +1,14 @@
 package com.gardenShare.gardenshare
 
-import com.typesafe.config.ConfigFactory
 import cats.effect.IO
 import com.typesafe.config._
-import cats.effect.Async
-import scala.util.Try
-import cats.syntax.functor._
 import cats.Functor
-import javax.crypto.Cipher
-import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
-import java.security.KeyPairGenerator
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.security.KeyFactory
-import collection.JavaConverters._
 import java.security.interfaces.RSAPublicKey
 import java.security.interfaces.RSAPrivateKey
 import java.io.BufferedReader
-import java.io.FileReader
-import java.io.File
 import scala.io.Source
 import org.apache.commons.codec.binary.Base64
 import com.gardenShare.gardenshare.BucketN

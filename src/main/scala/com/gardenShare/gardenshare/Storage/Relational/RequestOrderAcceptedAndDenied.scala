@@ -12,9 +12,8 @@ import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.StoreOrderRequestWithId
 import java.time.ZonedDateTime
 import scala.util.Try
-import com.gardenShare.gardenshare.ParseZoneDateTime
+import com.gardenShare.gardenshare.ParseBase64EncodedZoneDateTime
 import com.gardenShare.gardenshare.ProductAndQuantity
-import com.gardenShare.gardenshare.ParseDate
 import slick.jdbc.PostgresProfile
 
 object Schemas {

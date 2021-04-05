@@ -4,7 +4,6 @@ import com.gardenShare.gardenshare.Email
 import cats.effect.IO
 import com.gardenShare.gardenshare.UserInfo
 import cats.effect.ContextShift
-import com.gardenShare.gardenshare.Store
 
 abstract class AddProductToStoreForSeller[F[_]] {
   def add(s: Email, produce: Produce, am:Amount)(implicit g: GetUserInfo[F], a:AddProductToStore[F], cs: ContextShift[F]): F[Unit]

@@ -32,7 +32,6 @@ import com.gardenShare.gardenshare.AuthUser.AuthUserOps
 import com.gardenShare.gardenshare.AuthenticatedUser
 import com.gardenShare.gardenshare.FailedToAuthenticate
 import com.gardenShare.gardenshare.ValidToken
-import com.gardenShare.gardenshare.Encoders._
 import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.ProcessAndJsonResponse
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
@@ -52,12 +51,11 @@ import java.net.URL
 import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
-import com.gardenShare.gardenshare.ApplyUserToBecomeUserEncodersDecoders._
 import org.http4s.StaticFile
 import org.http4s.StaticFile
 import java.io.File
 import scala.concurrent.ExecutionContext
-import EmailCompanion._
+import ParsingDecodingImplicits._
 
 object UserRoutes {
   def userRoutes[F[_]:

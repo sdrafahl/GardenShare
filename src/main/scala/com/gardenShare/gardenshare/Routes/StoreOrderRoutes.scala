@@ -31,9 +31,7 @@ import scala.util.Try
 import scala.util.Failure
 import scala.util.Success
 import scala.concurrent.ExecutionContext
-import EmailCompanion._
-import com.gardenShare.gardenshare.ParseProduce._
-import com.gardenShare.gardenshare.ParseCurrency._
+import ParsingDecodingImplicits._
 
 object StoreOrderRoutes {
   def storeOrderRoutes[
@@ -54,7 +52,7 @@ object StoreOrderRoutes {
   ]
     (
       implicit ae: ApplicativeError[F, Throwable],
-      zoneDateparser: ParseZoneDateTime,
+      zoneDateparser: ParseBase64EncodedZoneDateTime,
       ec: ExecutionContext,
       emailParser: com.gardenShare.gardenshare.Parser[Email],
       en: Encoder[Produce],

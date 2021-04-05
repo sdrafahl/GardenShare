@@ -12,11 +12,11 @@ import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.StoreOrderRequestWithId
 import java.time.ZonedDateTime
 import scala.util.Try
-import com.gardenShare.gardenshare.ParseZoneDateTime
+import com.gardenShare.gardenshare.ParseBase64EncodedZoneDateTime
 import com.gardenShare.gardenshare.ProductAndQuantity
-import com.gardenShare.gardenshare.ParseDate
 import slick.jdbc.PostgresProfile
 import scala.concurrent.ExecutionContext
+import java.time.ZonedDateTime
 
 object StoreOrderRequestTableSchemas {
   type StoreOrderRequestTableSchema = (Int, String, String, String)
@@ -61,12 +61,18 @@ object SearchProductReferences {
 }
 
 abstract class SearchStoreOrderRequestTable[F[_]] {
-  def search(id: Int)(implicit cs: ContextShift[F], parseDate: ParseDate): F[Option[StoreOrderRequestWithId]]
+  def search(id: Int)(implicit cs: ContextShift[F]): F[Option[StoreOrderRequestWithId]]
 }
 
 object SearchStoreOrderRequestTable {
-  implicit def createIOSearchStoreOrderRequestTable(implicit searchProductRefs: SearchProductReferences[IO], gpid: GetProductById[IO], client: PostgresProfile.backend.DatabaseDef, emailParser: com.gardenShare.gardenshare.Parser[Email]) = new SearchStoreOrderRequestTable[IO] {
-    def search(id: Int)(implicit cs: ContextShift[IO], parseDate: ParseDate): IO[Option[StoreOrderRequestWithId]] = GetStoreOrderRequestHelper.getStoreOrderWithId(id)
+  implicit def createIOSearchStoreOrderRequestTable(
+    implicit searchProductRefs: SearchProductReferences[IO],
+    gpid: GetProductById[IO],
+    client: PostgresProfile.backend.DatabaseDef,
+    emailParser: com.gardenShare.gardenshare.Parser[Email],
+    parseDate: com.gardenShare.gardenshare.Parser[ZonedDateTime]
+  ) = new SearchStoreOrderRequestTable[IO] {
+    def search(id: Int)(implicit cs: ContextShift[IO]): IO[Option[StoreOrderRequestWithId]] = GetStoreOrderRequestHelper.getStoreOrderWithId(id)
   }
 }
 
@@ -131,7 +137,7 @@ object GetStoreOrderRequestHelper {
   def getStoreOrdersWithOrderRequestQuery(query: Query[com.gardenShare.gardenshare.StoreOrderRequestTable.StoreOrderRequestTable, StoreOrderRequestTableSchema, Seq])
     (implicit cs: ContextShift[IO],
       g: GetProductById[IO],
-      par: ParseDate,
+      zoneDateParser: Parser[ZonedDateTime],
       client: PostgresProfile.backend.DatabaseDef,
       emailParser: com.gardenShare.gardenshare.Parser[Email]
     ) = {
@@ -148,7 +154,7 @@ object GetStoreOrderRequestHelper {
           .map(_.collect{
             case (Some(a), b) => (a, b)
           }).map{pd =>
-            par.parseDate(f._4).flatMap{zdt =>
+            zoneDateParser.parse(f._4).flatMap{zdt =>
               emailParser.parse(f._3).flatMap{buyerEmail =>
                 emailParser.parse(f._2).map{sellerEmail =>
                   StoreOrderRequestWithId(f._1, StoreOrderRequest(sellerEmail, buyerEmail, pd.map(ac => ProductAndQuantity(ac._1, ac._2)).toList, zdt))
@@ -169,7 +175,7 @@ object GetStoreOrderRequestHelper {
   def getStoreOrderWithEmail(e: Email, ge:com.gardenShare.gardenshare.StoreOrderRequestTable.StoreOrderRequestTable => Rep[String])
     (implicit cs: ContextShift[IO],
       g: GetProductById[IO],
-      par: ParseDate,
+      par: Parser[ZonedDateTime],
       client: PostgresProfile.backend.DatabaseDef,
       emailParser: com.gardenShare.gardenshare.Parser[Email]
     ): IO[List[StoreOrderRequestWithId]] = {
@@ -179,7 +185,13 @@ object GetStoreOrderRequestHelper {
     getStoreOrdersWithOrderRequestQuery(query)      
   }
 
-  def getStoreOrderWithId(id: Int)(implicit cs: ContextShift[IO], g: GetProductById[IO], par: ParseDate, client: PostgresProfile.backend.DatabaseDef, emailParser: com.gardenShare.gardenshare.Parser[Email]) = {
+  def getStoreOrderWithId(id: Int)(
+    implicit cs: ContextShift[IO],
+    g: GetProductById[IO],
+    dateParser: Parser[ZonedDateTime],
+    client: PostgresProfile.backend.DatabaseDef,
+    emailParser: com.gardenShare.gardenshare.Parser[Email]
+  ) = {
     val query = for {
       re <- StoreOrderRequestTable.storeOrderRequests if re.storeRequestId === id
     } yield re
@@ -194,7 +206,12 @@ abstract class GetStoreOrderRequestsWithSellerEmail[F[_]] {
 }
 
 object GetStoreOrderRequestsWithSellerEmail {
-  implicit def createIOGetStoreOrderRequestsWithSellerEmail(implicit g: GetProductById[IO], client: PostgresProfile.backend.DatabaseDef, emailParser: com.gardenShare.gardenshare.Parser[Email]) = new GetStoreOrderRequestsWithSellerEmail[IO] {
+  implicit def createIOGetStoreOrderRequestsWithSellerEmail(
+    implicit g: GetProductById[IO],
+    client: PostgresProfile.backend.DatabaseDef,
+    emailParser: com.gardenShare.gardenshare.Parser[Email],
+    timeParser: Parser[ZonedDateTime]
+  ) = new GetStoreOrderRequestsWithSellerEmail[IO] {
     def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = getStoreOrderWithEmail(e, (x: StoreOrderRequestTable.StoreOrderRequestTable) => x.sellerEmail)
   }
 }
@@ -204,7 +221,11 @@ abstract class GetStoreOrderRequestsWithBuyerEmail[F[_]] {
 }
 
 object GetStoreOrderRequestsWithBuyerEmail {
-  implicit def createGetStoreOrderRequestsWithBuyerEmailIO(implicit client: PostgresProfile.backend.DatabaseDef, emailParser: com.gardenShare.gardenshare.Parser[Email]) = new GetStoreOrderRequestsWithBuyerEmail[IO] {
+  implicit def createGetStoreOrderRequestsWithBuyerEmailIO(
+    implicit client: PostgresProfile.backend.DatabaseDef,
+    emailParser: com.gardenShare.gardenshare.Parser[Email],
+    dateParser: Parser[ZonedDateTime]
+  ) = new GetStoreOrderRequestsWithBuyerEmail[IO] {
     def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = {
       getStoreOrderWithEmail(e, (x: StoreOrderRequestTable.StoreOrderRequestTable) => x.buyerEmail)
     }

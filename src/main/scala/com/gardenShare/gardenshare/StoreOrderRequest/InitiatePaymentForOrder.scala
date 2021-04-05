@@ -3,7 +3,6 @@ package com.gardenShare.gardenshare
 import cats.effect.IO
 import cats.effect.ContextShift
 import cats.implicits._
-import AmountOps._
 
 abstract class InitiatePaymentForOrder[F[_]] {
   def payOrder(orderId: Int, buyerEmail: Email, receiptEmail: Email, paymentType: PaymentType)(implicit cs: ContextShift[F]): F[PaymentIntentToken]
@@ -13,7 +12,12 @@ object InitiatePaymentForOrder {
 
   def apply[F[_]: InitiatePaymentForOrder]() = implicitly[InitiatePaymentForOrder[F]]
 
-  implicit def createIOPayForOrder(implicit searchForOrder: SearchStoreOrderRequestTable[IO], getStatusOfOrder: StatusOfStoreOrderRequest[IO], initiatePayment: InitiatePayment[IO], insertRef: InsertPaymentIntentReference[IO]) = new InitiatePaymentForOrder[IO] {
+  implicit def createIOPayForOrder(
+    implicit searchForOrder: SearchStoreOrderRequestTable[IO],
+    getStatusOfOrder: StatusOfStoreOrderRequest[IO],
+    initiatePayment: InitiatePayment[IO],
+    insertRef: InsertPaymentIntentReference[IO]
+  ) = new InitiatePaymentForOrder[IO] {
     def payOrder(orderId: Int, buyerEmail: Email, receiptEmail: Email, paymentType: PaymentType)(implicit cs: ContextShift[IO]): IO[PaymentIntentToken] = {
       (searchForOrder.search(orderId), getStatusOfOrder.get(orderId))
         .parBisequence

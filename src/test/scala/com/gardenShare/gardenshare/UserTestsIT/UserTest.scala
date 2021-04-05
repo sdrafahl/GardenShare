@@ -29,16 +29,12 @@ import com.gardenShare.gardenshare.SearchStoreOrderRequestTable
 import com.gardenShare.gardenshare.SearchAcceptedStoreOrderRequestTableByID._
 import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable._
 import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable
-import com.gardenShare.gardenshare.StoreOrderRequestStatusEncodersDecoders._
 import com.typesafe.config.ConfigFactory
 import com.gardenShare.gardenshare.PostGresSetup
 import com.gardenShare.gardenshare.ConcurrencyHelper
-import com.gardenShare.gardenshare.ApplyUserToBecomeUserEncodersDecoders._
 import java.net.URL
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
-import com.gardenShare.gardenshare.Encoders._
 import io.circe.generic.auto._
-import EmailCompanion._
 import eu.timepit.refined._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
@@ -46,6 +42,7 @@ import eu.timepit.refined.string.MatchesRegex
 import eu.timepit.refined.api.RefType
 import PaymentVerificationStatus._
 import com.stripe.model.Account
+import ParsingDecodingImplicits._
 
 object UserTestSpec extends TestSuite {  
 

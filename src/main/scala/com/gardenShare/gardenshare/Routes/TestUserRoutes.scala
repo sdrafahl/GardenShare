@@ -18,7 +18,6 @@ import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.Password
 import com.gardenShare.gardenshare.DeleteStore
 import cats.effect.ContextShift
-import EmailCompanion._
 
 /**
 Please do not use in production

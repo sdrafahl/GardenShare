@@ -31,7 +31,6 @@ import com.gardenShare.gardenshare
 import com.gardenShare.gardenshare.GetListOfProductNames.DescriptionName
 import com.gardenShare.gardenshare.CreateProductRequest
 import cats.Applicative
-import com.gardenShare.gardenshare.ParseProduce
 import cats.effect.ContextShift
 import cats.ApplicativeError
 import cats.FlatMap
@@ -43,7 +42,7 @@ import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.GetProductsByStore
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
-import EmailCompanion._
+import com.gardenShare.gardenshare.Parser
 
 object ProductRoutes {
   def productRoutes[F[_]:
@@ -63,7 +62,7 @@ object ProductRoutes {
       JoseProcessJwt
   ]
     (
-      implicit pp: ParseProduce[String],
+      implicit pp: Parser[Produce],
       ae: ApplicativeError[F, Throwable],
       currencyParser: com.gardenShare.gardenshare.Parser[Currency],
       en: Encoder[Produce],
