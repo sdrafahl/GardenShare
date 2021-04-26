@@ -1,15 +1,8 @@
 package com.gardenShare.gardenshare
 
-import fs2.Stream
 import cats.effect._
 import software.amazon.awssdk.services.s3.S3Client
 import fs2.aws.s3._
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.boolean.Or
-import eu.timepit.refined.generic.Equal
-import eu.timepit.refined.numeric.Greater
-import eu.timepit.refined._
-import eu.timepit.refined.refineV
 import eu.timepit.refined.auto._
 
 abstract class GetS3Stream[F[_]] {

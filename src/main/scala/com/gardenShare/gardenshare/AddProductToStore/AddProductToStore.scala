@@ -11,7 +11,7 @@ abstract class AddProductToStore[F[_]] {
 }
 
 object AddProductToStore {
-  implicit def createIOAddProductToStore(implicit i: InsertProduct[IO], g:GetProductsByStore[IO], parser: Parser[Produce]): AddProductToStore[IO] = new AddProductToStore[IO]{
+  implicit def createIOAddProductToStore(implicit i: InsertProduct[IO], g:GetProductsByStore[IO]): AddProductToStore[IO] = new AddProductToStore[IO]{
     def add(s: Store, pd: Produce, am: Amount)(implicit cs:ContextShift[IO]): IO[Unit] = {
       for {
         produceList <- g.getProductsByStore(s.id)

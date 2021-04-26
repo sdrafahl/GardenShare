@@ -2,7 +2,6 @@ package com.gardenShare.gardenshare
 
 import slick.jdbc.PostgresProfile.api._
 import cats.effect.IO
-import slick.lifted.AbstractTable
 import slick.jdbc.PostgresProfile
 import cats.effect.ContextShift
 import scala.concurrent.ExecutionContext

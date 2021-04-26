@@ -1,15 +1,8 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.ContextShift
-import cats.implicits._
 import cats.effect.IO
 import PaymentCommandEvaluator.PaymentCommandEvaluatorOps
-import com.gardenShare.gardenshare.Parser
-import io.circe.Encoder
-import io.circe.Json
-import io.circe.Decoder
-import io.circe.generic.auto._, io.circe.syntax._
-import io.circe.generic.JsonCodec, io.circe.syntax._
 import PaymentID._
 
 abstract class VerifyPaymentOfOrder[F[_]] {

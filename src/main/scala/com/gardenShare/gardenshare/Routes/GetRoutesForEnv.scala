@@ -6,7 +6,6 @@ import com.gardenShare.gardenshare.Testing
 import com.gardenShare.gardenshare.Production
 import cats.effect.IO
 import com.gardenShare.gardenshare.GetTypeSafeConfig
-import ParsingDecodingImplicits._
 
 abstract class GetRoutesForEnv[F[_]] {
   def getRoutesGivenEnv(env: SystemEnvionment): HttpRoutes[F] 

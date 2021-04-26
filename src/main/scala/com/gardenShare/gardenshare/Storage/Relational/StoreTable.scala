@@ -1,39 +1,14 @@
 package com.gardenShare.gardenshare
 
-import slick.jdbc.PostgresProfile.api._
-import cats.effect.IO
 import cats.effect.IO._
-import slick.dbio.DBIOAction
-import java.util.concurrent.Executors
-import cats.effect._
-import slick.lifted.AbstractTable
-import com.gardenShare.gardenshare.Store._
 import com.gardenShare.gardenshare._
-import com.gardenShare.gardenshare.GetGoogleMapsApiKey._
-import com.gardenShare.gardenshare.GetGoogleMapsApiKey
-import cats.Monad
-import cats.syntax.MonadOps._
-import cats.syntax.flatMap._
 import cats.implicits._
-import com.gardenShare.gardenshare.IsWithinRange
-import com.gardenShare.gardenshare.IsWithinRange.Ops
-import fs2.concurrent.Queue
-import cats.effect.{Concurrent, ExitCode, IO, IOApp, Timer}
 import fs2.Stream
-import scala.concurrent.ExecutionContext
-import cats.effect.concurrent.Semaphore
-import cats.effect._
-import scala.concurrent.duration._
-import cats.effect.{Async, Fiber, CancelToken}
-import cats.Parallel._
-import cats.effect.concurrent.Ref
-import fs2._
-import fs2.interop.reactivestreams._
+import cats.effect.Async
 import cats.effect.{ContextShift, IO}
-import scala.concurrent.ExecutionContext
 import fs2.interop.reactivestreams._
 import _root_.io.circe.Encoder
-import _root_.io.circe._, _root_.io.circe.generic.auto._, _root_.io.circe.parser._, _root_.io.circe.syntax._
+import _root_.io.circe._, _root_.io.circe.parser._
 import slick.jdbc.PostgresProfile.api._
 import slick.jdbc.PostgresProfile
 
@@ -89,8 +64,8 @@ object GetStoreByID {
         .flatMap{
           case Some(r) => (decode[State](r._5), emailParser.parse(r._6)) match {
             case (Right(st), Right(email)) => IO(Some(Store(r._1, Address(r._2, r._3, r._4, st), email)))
-            case (Left(err), _) => IO.raiseError(new Throwable(s"The state that is stored is invalid. The id of the store is ${id}"))
-            case (_, Left(err)) => IO.raiseError(new Throwable(s"Error parsing email: ${r._6}"))
+            case (Left(_), _) => IO.raiseError(new Throwable(s"The state that is stored is invalid. The id of the store is ${id}"))
+            case (_, Left(_)) => IO.raiseError(new Throwable(s"Error parsing email: ${r._6}"))
           }
           case None => IO.pure(None)          
         }

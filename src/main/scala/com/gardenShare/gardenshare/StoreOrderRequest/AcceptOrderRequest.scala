@@ -3,9 +3,7 @@ package com.gardenShare.gardenshare
 import java.time.ZonedDateTime
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Email
-import com.gardenShare.gardenshare.GetStoreOrderRequestsWithSellerEmail
 import cats.effect.IO
-import com.gardenShare.gardenshare.GetStoreOrderRequestsWithBuyerEmail
 import com.gardenShare.gardenshare.InsertIntoAcceptedStoreOrderRequestTableByID
 import com.gardenShare.gardenshare.InsertIntoDeniedStoreOrderRequestTableByID
 import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable

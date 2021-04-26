@@ -4,7 +4,6 @@ import com.gardenShare.gardenshare.Email
 import cats.effect.IO
 import com.gardenShare.gardenshare.CogitoClient
 import com.gardenShare.gardenshare.GetStore
-import com.gardenShare.gardenshare.InsertStore
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
 import java.net.URL
 import scala.jdk.CollectionConverters._
@@ -27,7 +26,6 @@ object ApplyUserToBecomeSeller {
     implicit gupn: GetUserPoolId[IO],
     cognito: CogitoClient[IO],
     g:GetStore[IO],
-    insertStore:InsertStore[IO],
     insertSlickEmailRef: InsertAccountEmailReference[IO],
     paymentCommandEvaluator: PaymentCommandEvaluator[IO]) = new ApplyUserToBecomeSeller[IO] {
     def applyUser(userName: Email, address: Address, refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[IO], ec: ExecutionContext): IO[ApplyUserToBecomeSellerResponse] = {      

@@ -1,22 +1,11 @@
 package com.gardenShare.gardenshare
 
-import com.gardenShare.gardenshare.Store._
-import cats.effect.IO
 import com.google.maps.GeoApiContext
 import com.google.maps.DirectionsApi
 import com.gardenShare.gardenshare.GetGoogleMapsApiKey
-import cats.effect.concurrent.Deferred
-import java.time._
-import com.google.maps.model.DistanceMatrix
-import java.time.Duration
-import cats.instances.float
 import cats.Show
 import cats.implicits._
-import com.google.maps.model.Distance
 import cats.effect.IO
-import cats.effect.ContextShift
-import software.amazon.awssdk.auth.credentials.AwsCredentials
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
 case class DistanceInMiles(distance: Double)
 

@@ -1,8 +1,6 @@
 package com.gardenShare.gardenshare
 
 import slick.jdbc.PostgresProfile.api._
-import slick.dbio.DBIOAction
-import slick.lifted.AbstractTable
 
 import cats.effect.IO
 import com.gardenShare.gardenshare.StoreOrderRequest
@@ -10,9 +8,6 @@ import cats.effect.ContextShift
 import cats.implicits._
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.StoreOrderRequestWithId
-import java.time.ZonedDateTime
-import scala.util.Try
-import com.gardenShare.gardenshare.ParseBase64EncodedZoneDateTime
 import com.gardenShare.gardenshare.ProductAndQuantity
 import slick.jdbc.PostgresProfile
 import scala.concurrent.ExecutionContext

@@ -1,40 +1,23 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.Async
-import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.AuthJWT
-import com.gardenShare.gardenshare.InsertStore
 import com.gardenShare.gardenshare.GetDistance
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-import org.http4s.util.CaseInsensitiveString
 import com.gardenShare.gardenshare.JWTValidationTokens
 import com.gardenShare.gardenshare.AuthUser
-import com.gardenShare.gardenshare.AuthUser._
-import io.circe._, io.circe.parser._
+import io.circe._
 import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.AuthJWT._
 import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.ValidToken
-import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.Email
-import com.gardenShare.gardenshare.CreateStoreRequest
-import com.gardenShare.gardenshare.InsertStore.CreateStoreRequestOps
-import com.gardenShare.gardenshare.InsertStore
-import scala.util.Try
-import com.gardenShare.gardenshare.DistanceInMiles
-import com.gardenShare.gardenshare.SignupUser._
-import com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames
 import com.gardenShare.gardenshare.InsertProduct
 import com.gardenShare.gardenshare.Helpers._
-import com.gardenShare.gardenshare
-import com.gardenShare.gardenshare.GetListOfProductNames.DescriptionName
-import com.gardenShare.gardenshare.CreateProductRequest
 import cats.Applicative
 import cats.effect.ContextShift
 import cats.ApplicativeError
-import cats.FlatMap
-import com.gardenShare.gardenshare.JWTValidationResult
 import cats.Monad
 import cats.implicits._
 import com.gardenShare.gardenshare.ProcessData
@@ -78,9 +61,9 @@ object ProductRoutes {
       case req @ POST -> Root / "product" / "add" / produce / price / priceUnit => {
 
         (pp.parse(produce), price.toIntOption, currencyParser.parse(priceUnit)) match {
-          case (Left(error), _, _) => Ok(ResponseBody("Produce was invalid", false).asJson.toString())
+          case (Left(_), _, _) => Ok(ResponseBody("Produce was invalid", false).asJson.toString())
           case (_, None, _) => Ok(ResponseBody("Price is not a integer", false).asJson.toString())
-          case (_, _, Left(err)) => Ok(ResponseBody("Invalid currency type", false).asJson.toString())
+          case (_, _, Left(_)) => Ok(ResponseBody("Invalid currency type", false).asJson.toString())
           case (Right(produce), Some(price), Right(currency)) => {
             parseRequestAndValidateUserResponse[F](req, {email =>
               ProcessData(

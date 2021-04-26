@@ -1,16 +1,12 @@
 package com.gardenShare.gardenshare
 
-import io.circe._, io.circe.parser._
 import cats.effect.Async
 import cats.effect.ContextShift
-import org.http4s.Request
 import com.gardenShare.gardenshare.Helpers._
-import cats.ApplicativeError
 import com.gardenShare.gardenshare.CogitoClient
 import com.gardenShare.gardenshare.GetUserPoolName
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import com.gardenShare.gardenshare.GetUserPoolSecret
-import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.GetUserPoolId
 import com.gardenShare.gardenshare.AuthJWT
 import com.gardenShare.gardenshare.GetRegion
@@ -25,7 +21,6 @@ import org.http4s.HttpRoutes
 import com.gardenShare.gardenshare.SignupUser._
 import cats.implicits._
 import io.circe.generic.auto._, io.circe.syntax._
-import org.http4s.Header
 import com.gardenShare.gardenshare.AuthJWT.AuthJwtOps
 import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.AuthUser.AuthUserOps
@@ -33,27 +28,15 @@ import com.gardenShare.gardenshare.AuthenticatedUser
 import com.gardenShare.gardenshare.FailedToAuthenticate
 import com.gardenShare.gardenshare.ValidToken
 import com.gardenShare.gardenshare.InvalidToken
-import com.gardenShare.gardenshare.ProcessAndJsonResponse
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
 import com.gardenShare.gardenshare.ProcessData
 import com.gardenShare.gardenshare.UserResponse
 import com.gardenShare.gardenshare.JWTValidationResult
-import cats.Applicative
-import com.gardenShare.gardenshare.Sellers
 import com.gardenShare.gardenshare.GetUserInfo.GetUserInfoOps
 import com.gardenShare.gardenshare.UserInfo
 import com.gardenShare.gardenshare.Address
-import com.gardenShare.gardenshare.AddressNotProvided
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
-import _root_.fs2.text
-import java.net.URL
-import scala.util.Try
-import scala.util.Failure
-import scala.util.Success
-import org.http4s.StaticFile
-import org.http4s.StaticFile
-import java.io.File
 import scala.concurrent.ExecutionContext
 import ParsingDecodingImplicits._
 
@@ -139,8 +122,8 @@ object UserRoutes {
           ProcessData(
             JWTValidationTokens(jwtToken).auth[F],
             (jwtR:JWTValidationResult) => jwtR match {
-              case ValidToken(email) => IsJwtValidResponse("Token is valid", true)
-              case InvalidToken(msg) => IsJwtValidResponse("Token is not valid", false)
+              case ValidToken(_) => IsJwtValidResponse("Token is valid", true)
+              case InvalidToken(_) => IsJwtValidResponse("Token is not valid", false)
             },
             (error:Throwable) => IsJwtValidResponse(s"Error occured: ${error}", false)
           )

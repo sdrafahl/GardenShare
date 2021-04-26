@@ -4,7 +4,6 @@ import io.circe.Encoder
 import io.circe.Decoder
 
 object ShapesDerivation {
-  import io.circe.shapes
   import shapeless.{ Coproduct, Generic }
 
   implicit def encodeAdtNoDiscr[A, Repr <: Coproduct](implicit

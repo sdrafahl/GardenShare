@@ -2,8 +2,6 @@ package com.gardenShare.gardenshare
 
 import cats.effect.{ConcurrentEffect, ContextShift, Timer}
 import cats.implicits._
-import fs2.Stream
-import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
@@ -12,7 +10,6 @@ import com.gardenShare.gardenshare.SignupUser
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import com.gardenShare.gardenshare.GetUserPoolName
 import com.gardenShare.gardenshare.GetUserPoolSecret
-import com.gardenShare.gardenshare.AuthUser._
 import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.GetUserPoolId
 import com.gardenShare.gardenshare.AuthJWT
@@ -26,11 +23,9 @@ import com.gardenShare.gardenshare.GetStoresStream
 import com.gardenShare.gardenshare.Storage.S3.GetKeys
 import com.gardenShare.gardenshare.GetDescriptionBucketName
 import com.gardenShare.gardenshare.InsertProduct
-import com.gardenShare.gardenshare.GetStore._
 import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.GetStoreByID
 import com.gardenShare.gardenshare.GetEnvironment
-import com.gardenShare.gardenshare.SystemEnvionment
 import scala.concurrent.ExecutionContext
 
 object GardenshareServer {

@@ -2,7 +2,6 @@ package com.gardenShare.gardenshare
 
 import cats.effect.IO
 import com.typesafe.config._
-import cats.Functor
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.security.KeyFactory
@@ -26,7 +25,7 @@ object GetTypeSafeConfig {
   }
 }
 
-abstract class GetTypeSafeConfigBoolean[F[_]:Functor] {
+abstract class GetTypeSafeConfigBoolean[F[_]] {
   def get(key: String): F[Boolean]
 }
 
@@ -64,7 +63,7 @@ object GetStripePrivateKey {
 
 case class UserPoolSecret(secret: String)
 
-abstract class GetUserPoolSecret[F[_]:Functor] {
+abstract class GetUserPoolSecret[F[_]] {
   def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): F[UserPoolSecret]
 }
 
@@ -284,7 +283,7 @@ abstract class GetPostgreConfig[F[_]] {
 }
 
 object GetPostgreConfig {
-  implicit def createIOGetPostgreConfig(implicit getTypeSafeConfig: GetTypeSafeConfig[IO], getBooleanConfig:GetTypeSafeConfigBoolean[IO]) = new GetPostgreConfig[IO] {
+  implicit object IOGetPostgreConfig extends GetPostgreConfig[IO] {
     def getConfig: IO[PostgreConfig] = for {
       url <- IO("jdbc:postgresql://localhost/garden_share?user=postgres&password=postgres")//getTypeSafeConfig.get("postgres.url")
       driver <- IO("org.postgresql.Driver")

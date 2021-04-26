@@ -2,11 +2,8 @@ package com.gardenShare.gardenshare
 
 import cats.effect.IO
 import com.gardenShare.gardenshare.GetStripePrivateKey
-import software.amazon.awssdk.services.organizations.model.AccountStatus
 import com.stripe.model.Account
-import com.stripe.param.AccountRetrieveParams
 import com.stripe.Stripe
-import com.stripe.net.RequestOptions
 import cats.effect.ContextShift
 
 abstract class GetStripeAccountStatusEvaluator[F[_]] {

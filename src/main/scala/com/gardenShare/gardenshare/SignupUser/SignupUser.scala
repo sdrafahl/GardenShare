@@ -1,7 +1,5 @@
 package com.gardenShare.gardenshare
 
-import cats.effect.Async
-import com.gardenShare.gardenshare.CogitoClient._
 import com.gardenShare.gardenshare.CogitoClient
 import cats.effect.IO
 import com.gardenShare.gardenshare.User
@@ -9,13 +7,7 @@ import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.Password
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
 import com.gardenShare.gardenshare.GetUserPoolName
-import com.gardenShare.gardenshare.GetUserPoolSecret
-import com.gardenShare.gardenshare.CogitoClient._
 import com.gardenShare.gardenshare.GetTypeSafeConfig
-import cats.syntax.flatMap._
-import cats.FlatMap
-import cats.syntax.functor._
-import cats.Functor
 
 abstract class SignupUser[F[_]] {
   def signupUser(email: Email, password: Password): F[SignUpResponse]

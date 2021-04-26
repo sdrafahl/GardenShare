@@ -1,15 +1,12 @@
 package com.gardenShare.gardenshare
 
-import org.http4s.dsl.Http4sDsl
 import org.http4s.HttpRoutes
 import cats.effect.IO
-import cats.syntax._
 import cats.implicits._
 import com.gardenShare.gardenshare.Shows._ 
 import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.InsertStore
 import io.circe.Decoder
-import com.gardenShare.gardenshare.State
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.GetStoresStream
 import com.gardenShare.gardenshare.Address

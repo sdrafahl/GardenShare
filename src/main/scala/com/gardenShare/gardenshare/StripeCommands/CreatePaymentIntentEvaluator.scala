@@ -2,7 +2,6 @@ package com.gardenShare.gardenshare
 
 import cats.effect.IO
 import com.stripe.Stripe
-import com.stripe.param.AccountCreateParams
 import com.stripe.model.PaymentIntent
 import com.stripe.param.PaymentIntentCreateParams
 

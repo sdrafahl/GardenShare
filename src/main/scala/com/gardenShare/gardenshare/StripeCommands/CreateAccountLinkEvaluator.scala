@@ -3,10 +3,7 @@ package com.gardenShare.gardenshare
 import cats.effect.IO
 import com.gardenShare.gardenshare.GetStripePrivateKey
 import com.stripe.Stripe
-import com.stripe.param.AccountCreateParams
-import com.stripe.model.Account
 import com.stripe.param.AccountLinkCreateParams
-import java.net.URL
 import com.stripe.model.AccountLink
 
 abstract class CreateAccountLinkEvalutor[F[_]] {

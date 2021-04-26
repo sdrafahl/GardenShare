@@ -6,7 +6,6 @@ import com.stripe.model.PaymentIntent
 import com.stripe.Stripe
 import com.stripe.model.PaymentMethod
 import com.stripe.param.PaymentIntentConfirmParams
-import com.stripe.param.PaymentIntentUpdateParams.PaymentMethodData
 import com.stripe.param.PaymentMethodCreateParams
 import com.stripe.param.PaymentMethodCreateParams.CardDetails
 

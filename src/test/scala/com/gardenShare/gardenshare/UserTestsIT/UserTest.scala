@@ -150,7 +150,7 @@ object UserTestsHelper {
     val requestToDelteUser = Request[IO](Method.DELETE, uriToDeleteUser)
 
     TestUserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(requestToDelteUser)
       .attempt
       .unsafeRunSync()
@@ -165,7 +165,7 @@ object UserTestsHelper {
     val regTestReq = Request[IO](Method.POST, uriArg)
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(regTestReq)
       .unsafeRunSync()
       .body
@@ -187,7 +187,7 @@ object UserTestsHelper {
     val regTestReq = Request[IO](Method.POST, uriArg)
 
     TestUserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(regTestReq)
       .unsafeRunSync()
   }
@@ -201,7 +201,7 @@ object UserTestsHelper {
     val regTestReq = Request[IO](Method.GET, uriArg)
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(regTestReq)
       .unsafeRunSync()
       .body
@@ -220,7 +220,7 @@ object UserTestsHelper {
     val authRequest = Request[IO](Method.GET, uriArg)
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(authRequest)
       .unsafeRunSync()
       .body
@@ -240,7 +240,7 @@ object UserTestsHelper {
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a.asJson.toString())
 
     UserRoutes
-        .userRoutes[IO]
+        .userRoutes[IO]()
         .orNotFound(request)
         .unsafeRunSync()
         .body
@@ -258,7 +258,7 @@ object UserTestsHelper {
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address.asJson.toString())
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(request)
       .unsafeRunSync()
       .body
@@ -276,7 +276,7 @@ object UserTestsHelper {
     val infoRequest = Request[IO](Method.GET, uriArg, headers = headers)
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(infoRequest)
       .unsafeRunSync()
       .body

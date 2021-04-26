@@ -1,19 +1,18 @@
 package com.gardenShare.gardenshare
 
-import io.circe.generic.auto._, io.circe.syntax._
-import io.circe._, io.circe.parser._
+import io.circe.syntax._
+import io.circe._
 import cats.ApplicativeError
 import cats.implicits._
-import cats.Functor
 import com.gardenShare.gardenshare.ProcessData
 
 abstract class ProcessAndJsonResponse {
-  def process[F[_]: Functor, D, E: Encoder,G: Encoder](a: F[D], op: D => E, errOp: Throwable => G)(implicit e: ApplicativeError[F, Throwable]): F[Json]
+  def process[F[_], D, E: Encoder,G: Encoder](a: F[D], op: D => E, errOp: Throwable => G)(implicit e: ApplicativeError[F, Throwable]): F[Json]
 }
 
 object ProcessAndJsonResponse {
   implicit object DefaultProcessAndJsonResponse extends ProcessAndJsonResponse {
-    def process[F[_]: Functor, D, E: Encoder,G: Encoder](a: F[D], op: D => E, errOp: Throwable => G)(implicit e: ApplicativeError[F, Throwable]): F[Json] = {
+    def process[F[_], D, E: Encoder,G: Encoder](a: F[D], op: D => E, errOp: Throwable => G)(implicit e: ApplicativeError[F, Throwable]): F[Json] = {
       a
         .map(op)
         .attempt
@@ -23,7 +22,7 @@ object ProcessAndJsonResponse {
         }        
     }
   }
-  implicit class ProcessAndJsonResponseOps[F[_]: Functor, D, E: Encoder,G: Encoder](underlying: ProcessData[F,D,E,G]) {
+  implicit class ProcessAndJsonResponseOps[F[_], D, E: Encoder,G: Encoder](underlying: ProcessData[F,D,E,G]) {
     def process(implicit p: ProcessAndJsonResponse, e: ApplicativeError[F, Throwable]) = p.process(underlying.data, underlying.op, underlying.errOp)
   }
 }

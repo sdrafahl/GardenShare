@@ -2,16 +2,7 @@ package com.gardenShare.gardenshare
 
 import slick.jdbc.PostgresProfile.api._
 import cats.effect.IO
-import slick.dbio.DBIOAction
-import java.util.concurrent.Executors
 import cats.effect._
-import slick.lifted.AbstractTable
-import com.gardenShare.gardenshare.Store._
-import com.gardenShare.gardenshare.Sequence.SequenceEithers
-import com.gardenShare.gardenshare.Sequence.SequenceEithers._
-import scala.util.Success
-import scala.util.Failure
-import com.gardenShare.gardenshare.GetproductDescription.GetproductDescriptionOps
 import com.gardenShare.gardenshare._
 import slick.jdbc.PostgresProfile
 

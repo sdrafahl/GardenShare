@@ -2,34 +2,22 @@ package com.gardenShare.gardenshare
 
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-import org.http4s.util.CaseInsensitiveString
 
 import cats.implicits._
 import cats.effect.Async
 import com.gardenShare.gardenshare.Helpers._
 
-import io.circe._, io.circe.parser._
+import io.circe._
 import io.circe.generic.auto._, io.circe.syntax._
 
 import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.AuthJWT
-import cats.Applicative
-import com.gardenShare.gardenshare.InvalidToken
-import com.gardenShare.gardenshare.ValidToken
 import com.gardenShare.gardenshare.CreateStoreOrderRequest
 import cats.effect.ContextShift
-import com.gardenShare.gardenshare.FoldOver.FoldOverEithers.FoldOverIntoJsonOps
-import com.gardenShare.gardenshare.FoldOver.FoldOverEithers
 import com.gardenShare.gardenshare.ProcessData
 import com.gardenShare.gardenshare.Email
 import cats.ApplicativeError
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
-import com.gardenShare.gardenshare.AuthJWT.AuthJwtOps
-import com.gardenShare.gardenshare.AuthUser.AuthUserOps
-import java.time.ZonedDateTime
-import scala.util.Try
-import scala.util.Failure
-import scala.util.Success
 import scala.concurrent.ExecutionContext
 import ParsingDecodingImplicits._
 
@@ -82,8 +70,8 @@ object StoreOrderRoutes {
       }
       case req @ GET -> Root / "storeOrderRequest" / "seller" / from / to => {
         (zoneDateparser.parseZoneDateTime(from), zoneDateparser.parseZoneDateTime(to)) match {
-          case (Left(a), _) => Ok(ResponseBody("From date is not valid zone date format", false).asJson.toString())
-          case (_, Left(a)) => Ok(ResponseBody("To date is not valid zone date format", false).asJson.toString())
+          case (Left(_), _) => Ok(ResponseBody("From date is not valid zone date format", false).asJson.toString())
+          case (_, Left(_)) => Ok(ResponseBody("To date is not valid zone date format", false).asJson.toString())
           case (Right(fromDateZone), Right(toDateZone)) => {
             parseRequestAndValidateUserResponse[F](req, {email =>
               ProcessData(

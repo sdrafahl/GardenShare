@@ -1,18 +1,12 @@
 package com.gardenShare.gardenshare
 
 import com.gardenShare.gardenshare.Address
-import com.gardenShare.gardenshare.Store
 import com.gardenShare.gardenshare.GetStoresStream
 import cats.syntax.all._
 import cats.effect.{IO, Timer}
 import fs2.concurrent.InspectableQueue
-import fs2.Stream
-import scala.concurrent.duration._
-import com.gardenShare.gardenshare.GetGoogleMapsApiKey
 import cats.Monad
 import scala.concurrent.duration._
-import cats.effect.concurrent.Ref
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import com.gardenShare.gardenshare.IsWithinRange.Ops
 import cats.effect.ContextShift
@@ -26,10 +20,6 @@ abstract class GetNearestStores[F[_]] {
     timer: Timer[F]
   ): F[List[RelativeDistanceAndStore]]
 }
-
-case class GetNearestStore(n: DistanceInMiles, limit: Int, fromLocation: Address)
-case class RelativeDistanceAndStore(store: Store, distance: DistanceInMiles)
-
 object GetNearestStores {
   def apply[F[_]: GetNearestStores]() = implicitly[GetNearestStores[F]]
 
@@ -51,7 +41,7 @@ object GetNearestStores {
       for {
         queue <- InspectableQueue.bounded[IO, RelativeDistanceAndStore](limit)
         threads <- threadCount.get
-        populateQueue <- for {
+        _ <- for {
           processQueue <- stores.parEvalMap(threads) {
             store => {
                 isWithinRange[IO](n, fromLocation, store.address, getDist).flatMap {
@@ -83,8 +73,4 @@ object GetNearestStores {
     def nearest[F[_]: GetNearestStores:GetDistance:GetStoresStream:ContextShift:Timer:GetThreadCountForFindingNearestStores](implicit getNearest: GetNearestStores[F]) =
       getNearest.getNearest(underlying.n, underlying.limit, underlying.fromLocation)
   }
-}
-
-object Temp {
-  val pp = DefaultCredentialsProvider.create()
 }

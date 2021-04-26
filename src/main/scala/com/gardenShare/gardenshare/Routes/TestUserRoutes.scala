@@ -3,17 +3,14 @@ package com.gardenShare.gardenshare
 
 import org.http4s.HttpRoutes
 import cats.effect.Async
-import com.gardenShare.gardenshare.GetUserPoolSecret
 import com.gardenShare.gardenshare.CogitoClient
 import com.gardenShare.gardenshare.GetUserPoolId
 import org.http4s.dsl.Http4sDsl
 import com.gardenShare.gardenshare.GetUserPoolName
-import cats.effect.IO
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.FlatMap
 import cats.implicits._
-import io.circe._, io.circe.parser._
 import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.Password
 import com.gardenShare.gardenshare.DeleteStore
