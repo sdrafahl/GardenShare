@@ -21,7 +21,7 @@ object ProductDescriptionTest extends TestSuite {
     test("Product Description Routes") {
       test("productDescription/BrownOysterMushrooms") {
         val descriptionOfMushrooms = UserTestsHelper.makeRequestToGetProductDescription("BrownOysterMushrooms")
-        val expectedProductDescription = ProductDescription("Brown-Oyster-Mushrooms",Pound,BrownOysterMushrooms)
+        val expectedProductDescription = ProductDescription("BrownOysterMushrooms",Pound,BrownOysterMushrooms)
         assert(descriptionOfMushrooms equals expectedProductDescription)
       }
     }    

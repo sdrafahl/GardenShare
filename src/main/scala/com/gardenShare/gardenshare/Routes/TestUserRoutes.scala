@@ -47,6 +47,7 @@ object TestUserRoutes {
               id <- implicitly[GetUserPoolId[F]].exec()
               poolName <- implicitly[GetUserPoolName[F]].exec()
               res <- implicitly[CogitoClient[F]].adminCreateUser(ema, pass, id, poolName.name)
+              
             } yield res
             pgm.flatMap(re => Ok(ResponseBody(re.toString(), true).asJson.toString()))
           }

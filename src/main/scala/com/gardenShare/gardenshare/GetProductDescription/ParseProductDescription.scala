@@ -7,7 +7,7 @@ abstract class GetproductDescription[T] {
 object GetproductDescription {
   implicit object DefaultGetproductDescription extends GetproductDescription[Produce] {
     def gestDesc(c: Produce): ProductDescription = c match {
-      case BrownOysterMushrooms => ProductDescription("Brown-Oyster-Mushrooms", Pound, c)
+      case BrownOysterMushrooms => ProductDescription("BrownOysterMushrooms", Pound, c)
     }
   }
   implicit class GetproductDescriptionOps[T](underlying: T) {

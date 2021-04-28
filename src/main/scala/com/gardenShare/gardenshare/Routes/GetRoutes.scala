@@ -44,14 +44,14 @@ object GetRoutes {
     getProductsByStore:GetProductsByStore[IO],
     timer: Timer[IO],
     verifyUserAsSeller: VerifyUserAsSeller[IO],
-    initiatePayment: InitiatePaymentForOrder[IO],
     ec: ExecutionContext
   ) = new GetRoutes[IO, TestingAndProductionRoutes]{
     def getRoutes: HttpRoutes[IO] = (
       UserRoutes.userRoutes[IO]() <+>
         TestUserRoutes.userRoutes[IO]() <+>
         ProductRoutes.productRoutes[IO] <+>
-        StoreRoutes.storeRoutes[IO]
+        StoreRoutes.storeRoutes[IO] <+>
+        ProductDescriptionRoutes.productDescriptionRoutes[IO]
     )
   }
 
@@ -71,13 +71,11 @@ object GetRoutes {
     tsc: GetTypeSafeConfig[IO],
     signUpUser: SignupUser[IO],
     cognitoClient: CogitoClient[IO],
-    deleteStore: DeleteStore[IO],
     insertProduct: InsertProduct[IO],
     addProductToStore: AddProductToStore[IO],
     getProductsByStore:GetProductsByStore[IO],
     timer: Timer[IO],
     verifyUserAsSeller: VerifyUserAsSeller[IO],
-    initiatePayment: InitiatePaymentForOrder[IO],
     ec: ExecutionContext
   ) = new GetRoutes[IO, OnlyProductionRoutes] {
     def getRoutes: HttpRoutes[IO] = UserRoutes.userRoutes[IO]() <+> ProductRoutes.productRoutes[IO] <+> StoreRoutes.storeRoutes[IO]

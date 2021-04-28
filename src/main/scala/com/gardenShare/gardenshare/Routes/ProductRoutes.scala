@@ -76,24 +76,13 @@ object ProductRoutes {
         }
       }
       case req @ GET -> Root / "product" => {
-        parseJWTokenFromRequest(req)
-          .map{(a: JWTValidationTokens) =>
-            a.auth.flatMap{
-              case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-              case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-              case ValidToken(Some(email)) => {
-                ProcessData(
-                  implicitly[GetProductsSoldFromSeller[F]].get(email),
-                  (a:List[ProductWithId]) => ListOfProduce(a).asJson,
-                  (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false))
-                
-                  .process
-              }
-            }
-          }
-          .leftMap(a => Applicative[F].pure(a.asJson))
-          .fold(a => a, b => b)
-          .flatMap(a => Ok(a.toString())).catchError
+        parseRequestAndValidateUserResponse[F](req, {email =>
+          ProcessData(
+            implicitly[GetProductsSoldFromSeller[F]].get(email),
+            (a:List[ProductWithId]) => ListOfProduce(a).asJson,
+            (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false))
+            .process
+        })        
       }
       case GET -> Root / "product" / email => {
         implicitly[com.gardenShare.gardenshare.Parser[Email]].parse(email) match {

@@ -160,7 +160,7 @@ object GetUserPoolId {
   implicit def createIOGetUserPoolId(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]) = new GetUserPoolId[IO] {
     def exec(): IO[UserPoolID] = {
       for {
-        userPoolId <- getTypeSafeConfig.get("users.id")        
+        userPoolId <- getTypeSafeConfig.get("users.id")
       } yield UserPoolID(userPoolId)
     }
   }

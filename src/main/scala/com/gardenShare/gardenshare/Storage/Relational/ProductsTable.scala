@@ -73,7 +73,7 @@ object GetProductsByStore {
           )
         )).map(f => f.collect{
           case Right(a) => a
-        })
+        })      
     }
   }
 }

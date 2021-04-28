@@ -43,9 +43,7 @@ object ApplyUserToBecomeSeller {
           case None => for {
             account <- CreateStripeConnectedAccount(userName).evaluate
             _ <- insertSlickEmailRef.insert(account.getId(), userName)
-            _ = println("About to link")
             link <- CreateStripeAccountLink(account.getId(), refreshUrl, returnUrl).evaluate
-            _ = println("created the link")
           } yield link.getUrl()
         }
         parsedUrl <- Try(new URL(res)) match {

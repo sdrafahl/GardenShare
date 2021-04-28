@@ -17,7 +17,7 @@ object GetProductsSoldFromSeller {
       c:Parser[Produce],
       cs: ContextShift[IO]
     ): IO[List[ProductWithId]] = {
-      g.getStoresByUserEmail(email).map(_.headOption).flatMap{maybeSomeStore =>
+      g.getStoresByUserEmail(email).map(_.headOption).flatMap{maybeSomeStore =>        
         maybeSomeStore.map{store =>
           b.getProductsByStore(store.id)
         }.getOrElse(IO.pure(List()))

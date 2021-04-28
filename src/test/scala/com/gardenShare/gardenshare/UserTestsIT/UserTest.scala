@@ -105,7 +105,7 @@ object UserTestSpec extends TestSuite {
 
           val testEmailSlickAccount = Email("gardensharetest@gmail.com")
           val testPass = "testPass12$"
-          val accountID = "acct_1IaV882R5fpwMLQe"
+          val accountID = UserTestsHelper.getTestStripeAccount
 
           UserTestsHelper.deleteUserAdmin(testEmailSlickAccount)
           UserTestsHelper.deletestore(testEmailSlickAccount)
@@ -339,7 +339,7 @@ object UserTestsHelper {
     val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${currencyEncoder.encode(am.currencyType)}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
-
+    
     ProductRoutes
       .productRoutes[IO]
       .orNotFound(request)
@@ -510,5 +510,7 @@ object UserTestsHelper {
   def getStatusOfIntent(intentId: String) = GetPaymentIntentCommand(intentId).evaluate.unsafeRunSync()
 
   def getPaymentIntentID(orderId: Int) = implicitly[GetPaymentIntentFromStoreRequest[IO]].search(orderId.toString()).unsafeRunSync()
+
+  def getTestStripeAccount = "acct_1IV66N2R0KHt4WIV"
 
 }

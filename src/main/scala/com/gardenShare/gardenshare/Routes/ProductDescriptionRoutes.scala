@@ -8,9 +8,10 @@ import com.gardenShare.gardenshare._
 import com.gardenShare.gardenshare.GetproductDescription
 import com.gardenShare.gardenshare.GetproductDescription._
 import com.gardenShare.gardenshare.Parser
+import ParsingDecodingImplicits.createEncoder
 
 object ProductDescriptionRoutes {
-  def productDescriptionRoutes[F[_]: Async](implicit c: GetproductDescription[Produce], p: Parser[Produce])
+  def productDescriptionRoutes[F[_]: Async](implicit p: Parser[Produce])
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
