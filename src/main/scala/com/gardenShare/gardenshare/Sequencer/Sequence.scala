@@ -1,7 +1,5 @@
 package com.gardenShare.gardenshare.Sequence
-import scala.util.Either._
 import scala.util.Either
-import scala.util.Try
 
 abstract class SequenceEithers {
   def sequenceList[B, C](lsE: List[Either[B, C]]): Either[B, List[C]]

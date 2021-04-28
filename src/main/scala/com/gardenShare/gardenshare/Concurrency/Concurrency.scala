@@ -1,13 +1,9 @@
 package com.gardenShare.gardenshare
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import cats.effect.IO
 import scala.concurrent.ExecutionContext
 import java.util.concurrent.Executors
-import cats.effect.ContextShift
 import cats.effect.Blocker
-import cats.effect.Concurrent
-import cats.effect.Concurrent._
 
 object ConcurrencyHelper {
   def createConcurrencyValues(threadCount: Int) = {

@@ -3,19 +3,6 @@ package com.gardenShare.gardenshare
 import utest.TestSuite
 import utest.test
 import utest.Tests
-import com.gardenShare.gardenshare.ProductDescriptionRoutes
-import org.http4s._
-import org.http4s.implicits._
-import cats.effect.IO
-import com.gardenShare.gardenshare.Encoders._
-import com.gardenShare.gardenshare.Shows._
-import fs2.text
-import io.circe.fs2._
-import io.circe.generic.auto._, io.circe.syntax._
-import scala.util.Try
-import com.gardenShare.gardenshare.Address
-import com.gardenShare.gardenshare.Email
-import com.gardenShare.gardenshare.IA
 import com.typesafe.config.ConfigFactory
 import java.net.URI
 
@@ -34,7 +21,7 @@ object ProductDescriptionTest extends TestSuite {
     test("Product Description Routes") {
       test("productDescription/BrownOysterMushrooms") {
         val descriptionOfMushrooms = UserTestsHelper.makeRequestToGetProductDescription("BrownOysterMushrooms")
-        val expectedProductDescription = ProductDescription("Brown-Oyster-Mushrooms",Pound,BrownOysterMushrooms)
+        val expectedProductDescription = ProductDescription("BrownOysterMushrooms",Pound,BrownOysterMushrooms)
         assert(descriptionOfMushrooms equals expectedProductDescription)
       }
     }    

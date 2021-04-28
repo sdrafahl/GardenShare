@@ -29,16 +29,12 @@ import com.gardenShare.gardenshare.SearchStoreOrderRequestTable
 import com.gardenShare.gardenshare.SearchAcceptedStoreOrderRequestTableByID._
 import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable._
 import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable
-import com.gardenShare.gardenshare.StoreOrderRequestStatusEncodersDecoders._
 import com.typesafe.config.ConfigFactory
 import com.gardenShare.gardenshare.PostGresSetup
 import com.gardenShare.gardenshare.ConcurrencyHelper
-import com.gardenShare.gardenshare.ApplyUserToBecomeUserEncodersDecoders._
 import java.net.URL
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
-import com.gardenShare.gardenshare.Encoders._
 import io.circe.generic.auto._
-import EmailCompanion._
 import eu.timepit.refined._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
@@ -46,6 +42,7 @@ import eu.timepit.refined.string.MatchesRegex
 import eu.timepit.refined.api.RefType
 import PaymentVerificationStatus._
 import com.stripe.model.Account
+import ParsingDecodingImplicits._
 
 object UserTestSpec extends TestSuite {  
 
@@ -108,7 +105,7 @@ object UserTestSpec extends TestSuite {
 
           val testEmailSlickAccount = Email("gardensharetest@gmail.com")
           val testPass = "testPass12$"
-          val accountID = "acct_1IaV882R5fpwMLQe"
+          val accountID = UserTestsHelper.getTestStripeAccount
 
           UserTestsHelper.deleteUserAdmin(testEmailSlickAccount)
           UserTestsHelper.deletestore(testEmailSlickAccount)
@@ -153,7 +150,7 @@ object UserTestsHelper {
     val requestToDelteUser = Request[IO](Method.DELETE, uriToDeleteUser)
 
     TestUserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(requestToDelteUser)
       .attempt
       .unsafeRunSync()
@@ -168,7 +165,7 @@ object UserTestsHelper {
     val regTestReq = Request[IO](Method.POST, uriArg)
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(regTestReq)
       .unsafeRunSync()
       .body
@@ -190,7 +187,7 @@ object UserTestsHelper {
     val regTestReq = Request[IO](Method.POST, uriArg)
 
     TestUserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(regTestReq)
       .unsafeRunSync()
   }
@@ -204,7 +201,7 @@ object UserTestsHelper {
     val regTestReq = Request[IO](Method.GET, uriArg)
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(regTestReq)
       .unsafeRunSync()
       .body
@@ -223,7 +220,7 @@ object UserTestsHelper {
     val authRequest = Request[IO](Method.GET, uriArg)
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(authRequest)
       .unsafeRunSync()
       .body
@@ -243,7 +240,7 @@ object UserTestsHelper {
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a.asJson.toString())
 
     UserRoutes
-        .userRoutes[IO]
+        .userRoutes[IO]()
         .orNotFound(request)
         .unsafeRunSync()
         .body
@@ -261,7 +258,7 @@ object UserTestsHelper {
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address.asJson.toString())
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(request)
       .unsafeRunSync()
       .body
@@ -279,7 +276,7 @@ object UserTestsHelper {
     val infoRequest = Request[IO](Method.GET, uriArg, headers = headers)
 
     UserRoutes
-      .userRoutes[IO]
+      .userRoutes[IO]()
       .orNotFound(infoRequest)
       .unsafeRunSync()
       .body
@@ -342,7 +339,7 @@ object UserTestsHelper {
     val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${currencyEncoder.encode(am.currencyType)}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
-
+    
     ProductRoutes
       .productRoutes[IO]
       .orNotFound(request)
@@ -513,5 +510,7 @@ object UserTestsHelper {
   def getStatusOfIntent(intentId: String) = GetPaymentIntentCommand(intentId).evaluate.unsafeRunSync()
 
   def getPaymentIntentID(orderId: Int) = implicitly[GetPaymentIntentFromStoreRequest[IO]].search(orderId.toString()).unsafeRunSync()
+
+  def getTestStripeAccount = "acct_1IV66N2R0KHt4WIV"
 
 }

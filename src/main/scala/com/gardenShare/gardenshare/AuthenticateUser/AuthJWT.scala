@@ -1,28 +1,12 @@
 package com.gardenShare.gardenshare
 
-import com.chatwork.scala.jwk.JWKSet
-import io.circe.parser._
-import com.chatwork.scala.jwk.ECJWK
-import com.chatwork.scala.jwk.JWK
-import com.chatwork.scala.jwk.KeyId
-import io.circe.Json
-import com.chatwork.scala.jwk.JWKSet
-import io.circe.parser._
 import cats.effect.IO
-import com.gardenShare.gardenshare.GetUserPoolId
 import org.jose4j.jwk.HttpsJwks
 import com.gardenShare.gardenshare.StringReps._
-import com.gardenShare.gardenshare.StringReps.UseastOneRep
-import com.gardenShare.gardenshare.StringReps
 import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver
 import org.jose4j.jwt.consumer.JwtConsumerBuilder
 import org.jose4j.jwt.consumer.JwtConsumer
-import org.jose4j.jwt.consumer.JwtContext
-import scala.util.Try
-import scala.util.Success
-import software.amazon.awssdk.services.ecs.model.Failure
 import com.gardenShare.gardenshare.GetUserPoolId
-import com.gardenShare.gardenshare.GetUserPoolId._
 import cats.MonadError
 import cats.implicits._
 
@@ -33,16 +17,24 @@ abstract class AuthJWT[F[_]] {
 object AuthJWT {
   implicit def apply[F[_]: AuthJWT]() = implicitly[AuthJWT[F]]
 
-  implicit def createAuthJWT[F[_]](implicit getUserPoolId: GetUserPoolId[F], builder: HttpsJwksBuilder[F], getRegion: GetRegion[F],joseProcessJwt:JoseProcessJwt[F], getUserPoolName: GetUserPoolName[F], get: GetTypeSafeConfig[F], ae: MonadError[F, Throwable]) = new AuthJWT[F] {
+  implicit def createAuthJWT[F[_]](
+    implicit getUserPoolId: GetUserPoolId[F],
+    builder: HttpsJwksBuilder[F],
+    getRegion: GetRegion[F],
+    joseProcessJwt:JoseProcessJwt[F],
+    getUserPoolName: GetUserPoolName[F],
+    get: GetTypeSafeConfig[F],
+    getUserPoolID: GetUserPoolId[F],
+    ae: MonadError[F, Throwable]) = new AuthJWT[F] {
     def authJWT(jwt:JWTValidationTokens): F[JWTValidationResult] = {
       (for {
         id <- getUserPoolId.exec()
         region <- getRegion.exec
         userPoolName <- getUserPoolName.exec()
-        st = StringReps[USEastOne]()
         url = s"https://cognito-idp.${region.stringRep}.amazonaws.com/${id.id}/.well-known/jwks.json"
-        consumer <- builder.build(url, userPoolName)
-        result = consumer.process(jwt.idToken)
+        userPoolId <- getUserPoolID.exec()
+        issuer = s"https://cognito-idp.${region.stringRep}.amazonaws.com/${userPoolId.id}"
+        consumer <- builder.build(url, userPoolName, issuer)
         jwt <- joseProcessJwt.processJwt(consumer, jwt)
       } yield jwt)
         .attempt
@@ -54,7 +46,7 @@ object AuthJWT {
   }
 
   implicit class AuthJwtOps(underlying:JWTValidationTokens) {
-    def auth[F[_]](implicit auth: AuthJWT[F], joe: JoseProcessJwt[F]) = auth.authJWT(underlying)
+    def auth[F[_]](implicit auth: AuthJWT[F]) = auth.authJWT(underlying)
   }
 }
 
@@ -70,11 +62,11 @@ object JoseProcessJwt {
       IO(c.processToClaims(jwt.idToken))
         .attempt
         .map{
-          case Left(err) => InvalidToken("Invalid token")
+          case Left(_) => InvalidToken("Invalid token")
           case Right(tokn) => {
             parseEmail.parse(tokn.getClaimValueAsString("email")) match {                
                 case Right(email) => ValidToken(Some(email))
-                case Left(err) => InvalidToken("Invalid email")
+                case Left(_) => InvalidToken("Invalid email")
               }
           }
         }
@@ -83,19 +75,20 @@ object JoseProcessJwt {
 }
 
 abstract class HttpsJwksBuilder[F[_]] {
-  def build(url: String, userPoolId: UserPoolName): F[JwtConsumer]
+  def build(url: String, userPoolId: UserPoolName, issuerValue: String): F[JwtConsumer]
 }
 
 object HttpsJwksBuilder {
   implicit def apply[F[_]: HttpsJwksBuilder]() = implicitly[HttpsJwksBuilder[F]]
   implicit object default extends HttpsJwksBuilder[IO] {
-    def build(url: String, userPoolId: UserPoolName): IO[JwtConsumer] = {
+    def build(url: String, userPoolId: UserPoolName, issuerValue: String): IO[JwtConsumer] = {
       IO {
         val httpsjwks = new HttpsJwks(url)
         val resolver = new HttpsJwksVerificationKeyResolver(httpsjwks)
         new JwtConsumerBuilder()
           .setVerificationKeyResolver(resolver)
           .setExpectedAudience(userPoolId.name)
+          .setExpectedIssuer(issuerValue)
           .build()
       }      
     }

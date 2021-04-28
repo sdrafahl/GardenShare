@@ -1,10 +1,6 @@
 package com.gardenShare.gardenshare
 
 import fs2.Stream
-import eu.timepit.refined._
-import eu.timepit.refined.api.Refined
-import eu.timepit.refined.auto._
-import eu.timepit.refined.numeric._
 import eu.timepit.refined.types.string.NonEmptyString
 
 case class BucketN(n: NonEmptyString)

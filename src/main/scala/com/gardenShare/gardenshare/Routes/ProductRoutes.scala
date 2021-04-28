@@ -1,41 +1,23 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.Async
-import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.AuthJWT
-import com.gardenShare.gardenshare.InsertStore
 import com.gardenShare.gardenshare.GetDistance
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-import org.http4s.util.CaseInsensitiveString
 import com.gardenShare.gardenshare.JWTValidationTokens
 import com.gardenShare.gardenshare.AuthUser
-import com.gardenShare.gardenshare.AuthUser._
-import io.circe._, io.circe.parser._
+import io.circe._
 import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.AuthJWT._
 import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.ValidToken
-import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.Email
-import com.gardenShare.gardenshare.CreateStoreRequest
-import com.gardenShare.gardenshare.InsertStore.CreateStoreRequestOps
-import com.gardenShare.gardenshare.InsertStore
-import scala.util.Try
-import com.gardenShare.gardenshare.DistanceInMiles
-import com.gardenShare.gardenshare.SignupUser._
-import com.gardenShare.gardenshare.GetListOfProductNames.GetListOfProductNames
 import com.gardenShare.gardenshare.InsertProduct
 import com.gardenShare.gardenshare.Helpers._
-import com.gardenShare.gardenshare
-import com.gardenShare.gardenshare.GetListOfProductNames.DescriptionName
-import com.gardenShare.gardenshare.CreateProductRequest
 import cats.Applicative
-import com.gardenShare.gardenshare.ParseProduce
 import cats.effect.ContextShift
 import cats.ApplicativeError
-import cats.FlatMap
-import com.gardenShare.gardenshare.JWTValidationResult
 import cats.Monad
 import cats.implicits._
 import com.gardenShare.gardenshare.ProcessData
@@ -43,7 +25,7 @@ import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.GetProductsByStore
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
-import EmailCompanion._
+import com.gardenShare.gardenshare.Parser
 
 object ProductRoutes {
   def productRoutes[F[_]:
@@ -63,7 +45,7 @@ object ProductRoutes {
       JoseProcessJwt
   ]
     (
-      implicit pp: ParseProduce[String],
+      implicit pp: Parser[Produce],
       ae: ApplicativeError[F, Throwable],
       currencyParser: com.gardenShare.gardenshare.Parser[Currency],
       en: Encoder[Produce],
@@ -79,9 +61,9 @@ object ProductRoutes {
       case req @ POST -> Root / "product" / "add" / produce / price / priceUnit => {
 
         (pp.parse(produce), price.toIntOption, currencyParser.parse(priceUnit)) match {
-          case (Left(error), _, _) => Ok(ResponseBody("Produce was invalid", false).asJson.toString())
+          case (Left(_), _, _) => Ok(ResponseBody("Produce was invalid", false).asJson.toString())
           case (_, None, _) => Ok(ResponseBody("Price is not a integer", false).asJson.toString())
-          case (_, _, Left(err)) => Ok(ResponseBody("Invalid currency type", false).asJson.toString())
+          case (_, _, Left(_)) => Ok(ResponseBody("Invalid currency type", false).asJson.toString())
           case (Right(produce), Some(price), Right(currency)) => {
             parseRequestAndValidateUserResponse[F](req, {email =>
               ProcessData(
@@ -94,24 +76,13 @@ object ProductRoutes {
         }
       }
       case req @ GET -> Root / "product" => {
-        parseJWTokenFromRequest(req)
-          .map{(a: JWTValidationTokens) =>
-            a.auth.flatMap{
-              case InvalidToken(msg) => Applicative[F].pure(InvalidToken(msg).asJson)
-              case ValidToken(None) => Applicative[F].pure(InvalidToken("Token is valid but without email").asJson)
-              case ValidToken(Some(email)) => {
-                ProcessData(
-                  implicitly[GetProductsSoldFromSeller[F]].get(email),
-                  (a:List[ProductWithId]) => ListOfProduce(a).asJson,
-                  (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false))
-                
-                  .process
-              }
-            }
-          }
-          .leftMap(a => Applicative[F].pure(a.asJson))
-          .fold(a => a, b => b)
-          .flatMap(a => Ok(a.toString())).catchError
+        parseRequestAndValidateUserResponse[F](req, {email =>
+          ProcessData(
+            implicitly[GetProductsSoldFromSeller[F]].get(email),
+            (a:List[ProductWithId]) => ListOfProduce(a).asJson,
+            (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false))
+            .process
+        })        
       }
       case GET -> Root / "product" / email => {
         implicitly[com.gardenShare.gardenshare.Parser[Email]].parse(email) match {

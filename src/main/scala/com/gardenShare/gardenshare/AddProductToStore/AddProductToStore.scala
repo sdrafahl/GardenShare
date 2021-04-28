@@ -1,7 +1,6 @@
 package com.gardenShare.gardenshare
 
 import com.gardenShare.gardenshare.Store
-import com.gardenShare.gardenshare.InsertProduct.InsertProductOps
 import com.gardenShare.gardenshare.InsertProduct
 import cats.effect.IO
 import com.gardenShare.gardenshare.GetProductsByStore
@@ -12,8 +11,8 @@ abstract class AddProductToStore[F[_]] {
 }
 
 object AddProductToStore {
-  implicit def createIOAddProductToStore(implicit i: InsertProduct[IO], g:GetProductsByStore[IO], parser: ParseProduce[String]): AddProductToStore[IO] = new AddProductToStore[IO]{
-    def add(s: Store, pd: Produce, am: Amount)(implicit cs:ContextShift[IO]): IO[Unit] = {
+  implicit def createIOAddProductToStore(implicit i: InsertProduct[IO], g:GetProductsByStore[IO]): AddProductToStore[IO] = new AddProductToStore[IO]{
+    def add(s: Store, pd: Produce, am: Amount)(implicit cs:ContextShift[IO]): IO[Unit] = {      
       for {
         produceList <- g.getProductsByStore(s.id)
         x <- if(!produceList.contains(pd)) {

@@ -3,22 +3,18 @@ package com.gardenShare.gardenshare
 
 import org.http4s.HttpRoutes
 import cats.effect.Async
-import com.gardenShare.gardenshare.GetUserPoolSecret
 import com.gardenShare.gardenshare.CogitoClient
 import com.gardenShare.gardenshare.GetUserPoolId
 import org.http4s.dsl.Http4sDsl
 import com.gardenShare.gardenshare.GetUserPoolName
-import cats.effect.IO
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.FlatMap
 import cats.implicits._
-import io.circe._, io.circe.parser._
 import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.Password
 import com.gardenShare.gardenshare.DeleteStore
 import cats.effect.ContextShift
-import EmailCompanion._
 
 /**
 Please do not use in production
@@ -51,6 +47,7 @@ object TestUserRoutes {
               id <- implicitly[GetUserPoolId[F]].exec()
               poolName <- implicitly[GetUserPoolName[F]].exec()
               res <- implicitly[CogitoClient[F]].adminCreateUser(ema, pass, id, poolName.name)
+              
             } yield res
             pgm.flatMap(re => Ok(ResponseBody(re.toString(), true).asJson.toString()))
           }

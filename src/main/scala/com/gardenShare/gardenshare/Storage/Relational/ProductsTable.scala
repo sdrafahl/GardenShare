@@ -2,16 +2,7 @@ package com.gardenShare.gardenshare
 
 import slick.jdbc.PostgresProfile.api._
 import cats.effect.IO
-import slick.dbio.DBIOAction
-import java.util.concurrent.Executors
 import cats.effect._
-import slick.lifted.AbstractTable
-import com.gardenShare.gardenshare.Store._
-import com.gardenShare.gardenshare.Sequence.SequenceEithers
-import com.gardenShare.gardenshare.Sequence.SequenceEithers._
-import scala.util.Success
-import scala.util.Failure
-import com.gardenShare.gardenshare.GetproductDescription.GetproductDescriptionOps
 import com.gardenShare.gardenshare._
 import slick.jdbc.PostgresProfile
 
@@ -32,7 +23,7 @@ abstract class GetProductById[F[_]] {
 }
 
 object GetProductById {
-  implicit def createIOGetProductById(implicit e:Parser[Currency], pp: ParseProduce[String], client: PostgresProfile.backend.DatabaseDef) = new GetProductById[IO] {
+  implicit def createIOGetProductById(implicit e:Parser[Currency], pp: Parser[Produce], client: PostgresProfile.backend.DatabaseDef) = new GetProductById[IO] {
     def get(id: Int)(
       implicit cs: ContextShift[IO]      
     ): IO[Option[ProductWithId]] = {
@@ -60,7 +51,7 @@ abstract class GetProductsByStore[F[_]: Async] {
 object GetProductsByStore {
   def apply[F[_]: GetProductsByStore]() = implicitly[GetProductsByStore[F]]
 
-  implicit def IOGetProductsByStore(implicit e:Parser[Currency], pp: ParseProduce[String], client: PostgresProfile.backend.DatabaseDef) = new GetProductsByStore[IO]{
+  implicit def IOGetProductsByStore(implicit e:Parser[Currency], pp: Parser[Produce], client: PostgresProfile.backend.DatabaseDef) = new GetProductsByStore[IO]{
     def getProductsByStore(storeid: Int)(
       implicit cs:ContextShift[IO]      
     ): IO[List[ProductWithId]] = {
@@ -82,7 +73,7 @@ object GetProductsByStore {
           )
         )).map(f => f.collect{
           case Right(a) => a
-        })
+        })      
     }
   }
 }

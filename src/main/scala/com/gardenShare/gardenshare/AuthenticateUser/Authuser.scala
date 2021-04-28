@@ -1,12 +1,7 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.IO
-import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient
-import cats.effect.Async
-import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest
 import com.gardenShare.gardenshare.CogitoClient
-import com.gardenShare.gardenshare.CogitoClient._
-import scala.jdk.OptionConverters._
 import com.gardenShare.gardenshare.GetUserPoolName
 import com.gardenShare.gardenshare.GetUserPoolId
 import com.gardenShare.gardenshare.GetTypeSafeConfig

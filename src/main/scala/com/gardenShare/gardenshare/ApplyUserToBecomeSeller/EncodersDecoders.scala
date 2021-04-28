@@ -1,6 +1,6 @@
 package com.gardenShare.gardenshare
 
-import io.circe.{ Decoder, Encoder }, io.circe.generic.auto._
+import io.circe.{ Decoder, Encoder }
 import java.net.URL
 import io.circe.syntax._
 import scala.util.Try

@@ -60,7 +60,8 @@ lazy val commonDependencies = Seq(
   "eu.timepit" %% "refined-scalaz" % "0.9.21", // optional
   "eu.timepit" %% "refined-scodec" % "0.9.21", // optional
   "eu.timepit" %% "refined-scopt" % "0.9.21", // optional
-  "eu.timepit" %% "refined-shapeless" % "0.9.21" // optional
+  "eu.timepit" %% "refined-shapeless" % "0.9.21", // optional
+  "io.circe" %% "circe-shapes" % "0.14.0-M4"
 )
 
 lazy val root = (project in file("."))
@@ -69,11 +70,14 @@ lazy val root = (project in file("."))
     organization := "com.gardenShare",
     name := "gardenshare",
     version := "0.0.1-SNAPSHOT",
-    scalaVersion := "2.13.1",
+    scalaVersion := "2.13.5",
+    scalacOptions += "-Wconf:cat=unused:info",
+    scalacOptions += "-Ywarn-unused",
     libraryDependencies ++= commonDependencies,
     testFrameworks += new TestFramework("utest.runner.Framework"),
-    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
-    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")
+    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),    
+    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full),
+    addCompilerPlugin("io.tryp" % "splain" % "0.5.8" cross CrossVersion.patch)
   )
 
 lazy val Web = crossProject(JSPlatform, JVMPlatform)

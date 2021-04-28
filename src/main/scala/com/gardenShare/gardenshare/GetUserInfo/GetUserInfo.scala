@@ -3,12 +3,10 @@ package com.gardenShare.gardenshare
 import com.gardenShare.gardenshare.CogitoClient
 import cats.effect.IO
 import com.gardenShare.gardenshare.Email
-import com.gardenShare.gardenshare.GetUserPoolName
 import com.gardenShare.gardenshare.GetUserPoolId
 import scala.jdk.CollectionConverters._
 import com.gardenShare.gardenshare.Sellers
 import com.gardenShare.gardenshare.Requester
-import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.GetStore
 import cats.effect.ContextShift
 

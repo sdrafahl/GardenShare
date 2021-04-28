@@ -1,8 +1,6 @@
 package com.gardenShare.gardenshare
 
 import slick.jdbc.PostgresProfile.api._
-import slick.dbio.DBIOAction
-import slick.lifted.AbstractTable
 import cats.effect.IO
 import slick.jdbc.PostgresProfile
 import cats.effect.ContextShift

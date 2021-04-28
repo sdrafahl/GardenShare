@@ -1,24 +1,13 @@
 package com.gardenShare.gardenshare
 
-import com.typesafe.config.ConfigFactory
 import cats.effect.IO
 import com.typesafe.config._
-import cats.effect.Async
-import scala.util.Try
-import cats.syntax.functor._
-import cats.Functor
-import javax.crypto.Cipher
-import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
-import java.security.KeyPairGenerator
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.security.KeyFactory
-import collection.JavaConverters._
 import java.security.interfaces.RSAPublicKey
 import java.security.interfaces.RSAPrivateKey
 import java.io.BufferedReader
-import java.io.FileReader
-import java.io.File
 import scala.io.Source
 import org.apache.commons.codec.binary.Base64
 import com.gardenShare.gardenshare.BucketN
@@ -36,7 +25,7 @@ object GetTypeSafeConfig {
   }
 }
 
-abstract class GetTypeSafeConfigBoolean[F[_]:Functor] {
+abstract class GetTypeSafeConfigBoolean[F[_]] {
   def get(key: String): F[Boolean]
 }
 
@@ -74,7 +63,7 @@ object GetStripePrivateKey {
 
 case class UserPoolSecret(secret: String)
 
-abstract class GetUserPoolSecret[F[_]:Functor] {
+abstract class GetUserPoolSecret[F[_]] {
   def exec()(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): F[UserPoolSecret]
 }
 
@@ -171,7 +160,7 @@ object GetUserPoolId {
   implicit def createIOGetUserPoolId(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]) = new GetUserPoolId[IO] {
     def exec(): IO[UserPoolID] = {
       for {
-        userPoolId <- getTypeSafeConfig.get("users.id")        
+        userPoolId <- getTypeSafeConfig.get("users.id")
       } yield UserPoolID(userPoolId)
     }
   }
@@ -294,7 +283,7 @@ abstract class GetPostgreConfig[F[_]] {
 }
 
 object GetPostgreConfig {
-  implicit def createIOGetPostgreConfig(implicit getTypeSafeConfig: GetTypeSafeConfig[IO], getBooleanConfig:GetTypeSafeConfigBoolean[IO]) = new GetPostgreConfig[IO] {
+  implicit object IOGetPostgreConfig extends GetPostgreConfig[IO] {
     def getConfig: IO[PostgreConfig] = for {
       url <- IO("jdbc:postgresql://localhost/garden_share?user=postgres&password=postgres")//getTypeSafeConfig.get("postgres.url")
       driver <- IO("org.postgresql.Driver")

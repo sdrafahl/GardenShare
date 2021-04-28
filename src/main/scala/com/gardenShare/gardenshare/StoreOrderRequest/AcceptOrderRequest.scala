@@ -3,9 +3,7 @@ package com.gardenShare.gardenshare
 import java.time.ZonedDateTime
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Email
-import com.gardenShare.gardenshare.GetStoreOrderRequestsWithSellerEmail
 import cats.effect.IO
-import com.gardenShare.gardenshare.GetStoreOrderRequestsWithBuyerEmail
 import com.gardenShare.gardenshare.InsertIntoAcceptedStoreOrderRequestTableByID
 import com.gardenShare.gardenshare.InsertIntoDeniedStoreOrderRequestTableByID
 import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable
@@ -23,7 +21,7 @@ object AcceptOrderRequest {
   implicit def createIOAcceptOrderRequest(
       implicit in: InsertIntoAcceptedStoreOrderRequestTableByID[IO],
       searchOrders: SearchStoreOrderRequestTable[IO],
-      pd: ParseDate
+      pd: Parser[ZonedDateTime]
   ) = new AcceptOrderRequest[IO] {
     def accept(storeOrderIdToAccept: Int, sellerEmail: Email)(
         implicit cs: ContextShift[IO]
@@ -57,7 +55,7 @@ object DeniedOrderRequests {
   implicit def createIODeniedOrderRequests(
       implicit in: InsertIntoDeniedStoreOrderRequestTableByID[IO],
       searchOrders: SearchStoreOrderRequestTable[IO],
-      pd: ParseDate
+      pd: Parser[ZonedDateTime]
   ) = new DeniedOrderRequests[IO] {
     def deny(storeOrderToDeny: Int, sellerEmail: Email)(
         implicit cs: ContextShift[IO]
@@ -90,7 +88,7 @@ object StatusOfStoreOrderRequest {
   implicit def createIOStatusOfStoreOrderRequest(
       implicit sa: SearchAcceptedStoreOrderRequestTableByID[IO],
       sd: SearchDeniedStoreOrderRequestTable[IO],
-      parseDate: ParseDate,
+      parseDate: Parser[ZonedDateTime],
       se: SearchStoreOrderRequestTable[IO],
       getTime: GetCurrentDate[IO],
       orderIdIsPaidFor: OrderIdIsPaidFor[IO]

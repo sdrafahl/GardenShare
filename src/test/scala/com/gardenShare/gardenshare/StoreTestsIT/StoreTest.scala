@@ -14,7 +14,6 @@ import utest.test
 import utest.Tests
 import com.gardenShare.gardenshare.UserInfo
 import com.gardenShare.gardenshare.Sellers
-import com.gardenShare.gardenshare.Encoders._
 import com.gardenShare.gardenshare.Shows._
 import com.gardenShare.gardenshare.DeleteStore
 import com.gardenShare.gardenshare.GetStore
@@ -27,7 +26,7 @@ import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
 import eu.timepit.refined.string.MatchesRegex
 import eu.timepit.refined.api.RefType
-import EmailCompanion._
+import ParsingDecodingImplicits._
 
 object StoreTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()

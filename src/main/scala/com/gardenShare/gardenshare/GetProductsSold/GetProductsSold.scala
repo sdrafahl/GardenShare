@@ -6,7 +6,7 @@ import com.gardenShare.gardenshare.GetProductsByStore
 import cats.effect.ContextShift
 
 abstract class GetProductsSoldFromSeller[F[_]] {
-  def get(email: Email)(implicit g:GetStore[F], b: GetProductsByStore[F], c:ParseProduce[String], cs: ContextShift[F]): F[List[ProductWithId]]
+  def get(email: Email)(implicit g:GetStore[F], b: GetProductsByStore[F], c:Parser[Produce], cs: ContextShift[F]): F[List[ProductWithId]]
 }
 
 object GetProductsSoldFromSeller {
@@ -14,10 +14,10 @@ object GetProductsSoldFromSeller {
     def get(email: Email)(
       implicit g:GetStore[IO],
       b:GetProductsByStore[IO],
-      c:ParseProduce[String],
+      c:Parser[Produce],
       cs: ContextShift[IO]
     ): IO[List[ProductWithId]] = {
-      g.getStoresByUserEmail(email).map(_.headOption).flatMap{maybeSomeStore =>
+      g.getStoresByUserEmail(email).map(_.headOption).flatMap{maybeSomeStore =>        
         maybeSomeStore.map{store =>
           b.getProductsByStore(store.id)
         }.getOrElse(IO.pure(List()))
