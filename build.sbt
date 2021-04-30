@@ -10,58 +10,45 @@ resolvers += Resolver.mavenLocal
 resolvers += "Apache public" at "https://repository.apache.org/content/groups/public/"
 
 lazy val commonDependencies = Seq(
-  "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
-  "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
-  "org.http4s" %% "http4s-circe" % Http4sVersion,
-  "org.http4s" %% "http4s-dsl" % Http4sVersion,
-  "io.circe" %% "circe-generic" % CirceVersion,
-  "org.specs2" %% "specs2-core" % Specs2Version % "test",
+  "org.http4s" % "http4s-blaze-server_2.13" % Http4sVersion,
+  "org.http4s" % "http4s-blaze-client_2.13" % Http4sVersion,
+  "org.http4s" % "http4s-circe_2.13" % Http4sVersion,
+  "org.http4s" % "http4s-dsl_2.13" % Http4sVersion,
+  "io.circe" % "circe-generic_2.13" % CirceVersion,
+  "org.specs2" % "specs2-core_2.13" % Specs2Version % "test",
   "ch.qos.logback" % "logback-classic" % LogbackVersion,
   "com.typesafe" % "config" % "1.4.0",
-  "com.lihaoyi" %% "utest" % "0.7.2" % "test",
-  "org.mockito" %% "mockito-scala" % "1.14.2",
-  "com.typesafe.slick" %% "slick" % "3.3.2",
+  "com.lihaoyi" % "utest_2.13" % "0.7.2" % "test",
+  "com.typesafe.slick" % "slick_2.13" % "3.3.2",
   "org.slf4j" % "slf4j-nop" % "1.6.4",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.3.2",
+  "com.typesafe.slick" % "slick-hikaricp_2.13" % "3.3.2",
   "org.postgresql" % "postgresql" % "42.2.12",
   "software.amazon.awssdk" % "aws-sdk-java" % "2.13.30",
-  "com.github.seratch" %% "awscala-s3" % "0.8.+",
-  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "3.0.0-RC3",
+  "com.github.seratch" % "awscala-s3_2.13" % "0.8.+",
+  //"jakarta.xml.bind" % "jakarta.xml.bind-api" % "3.0.0-RC3",
   "com.walterjwhite.java.dependencies" % "bouncy-castle" % "0.0.17",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.65.01",
-  "com.pauldijou" %% "jwt-circe" % "4.2.0",
-  "com.chatwork" %% "scala-jwk" % "1.0.5",
+  "com.pauldijou" % "jwt-circe_2.13" % "5.0.0",
+  "com.chatwork" % "scala-jwk_2.13" % "1.0.5",
   "org.bitbucket.b_c" % "jose4j" % "0.7.2",
-  "co.fs2" %% "fs2-core" % "2.4.0",
-  "co.fs2" %% "fs2-io" % "2.4.0",
-  "co.fs2" %% "fs2-reactive-streams" % "2.4.0",
-  "co.fs2" %% "fs2-experimental" % "2.4.0",
-  "com.michaelpollmeier" %% "macros" % "3.4.7.2",
+  "co.fs2" % "fs2-core_2.13" % "2.4.0",
+  "co.fs2" % "fs2-io_2.13" % "2.4.0",
+  "co.fs2" % "fs2-reactive-streams_2.13" % "2.4.0",
+  "co.fs2" % "fs2-experimental_2.13" % "2.4.0",
+  "com.michaelpollmeier" % "macros_2.13" % "3.4.7.2",
   "org.apache.tinkerpop" % "tinkergraph-gremlin" % "3.3.1",
   "com.tinkerpop.gremlin" % "gremlin" % "2.6.0",
   "org.apache.tinkerpop" % "gremlin-driver" % "3.4.1",
   "com.google.maps" % "google-maps-services" % "0.15.0",
   "org.slf4j" % "slf4j-simple" % "2.0.0-alpha1",
-  "io.circe" %% "circe-fs2" % "0.13.0",
-  "io.laserdisc" %% "fs2-aws" % "3.0.2",
-  "io.laserdisc" %% "fs2-aws-s3" % "3.0.2",
-  "eu.timepit" %% "refined" % "0.9.17",
-  "com.typesafe.akka" %% "akka-http-core" % "10.2.1",
-  "com.typesafe.akka" %% "akka-stream" % "2.6.8",
-  "org.scalameta" %% "munit" % MunitVersion % Test,
-  "org.typelevel" %% "munit-cats-effect-2" % MunitCatsEffectVersion % Test,
+  "io.circe" % "circe-fs2_2.13" % "0.13.0",
+  "io.laserdisc" % "fs2-aws_2.13" % "3.0.2",
+  "io.laserdisc" % "fs2-aws-s3_2.13" % "3.0.2",  
+  "com.typesafe.akka" % "akka-http-core_2.13" % "10.2.1",
+  "com.typesafe.akka" % "akka-stream_2.13" % "2.6.8",
   "com.stripe" % "stripe-java" % "20.41.0",
-  "eu.timepit" %% "refined" % "0.9.21",
-  "eu.timepit" %% "refined-cats" % "0.9.21", // optional
-  "eu.timepit" %% "refined-eval" % "0.9.21", // optional, JVM-only
-  "eu.timepit" %% "refined-jsonpath" % "0.9.21", // optional, JVM-only
-  "eu.timepit" %% "refined-pureconfig" % "0.9.21", // optional, JVM-only
-  "eu.timepit" %% "refined-scalacheck" % "0.9.21", // optional
-  "eu.timepit" %% "refined-scalaz" % "0.9.21", // optional
-  "eu.timepit" %% "refined-scodec" % "0.9.21", // optional
-  "eu.timepit" %% "refined-scopt" % "0.9.21", // optional
-  "eu.timepit" %% "refined-shapeless" % "0.9.21", // optional
-  "io.circe" %% "circe-shapes" % "0.14.0-M4"
+  "io.circe" % "circe-shapes_2.13" % "0.14.0-M4",
+  "eu.timepit" %% "refined" % "0.9.24"
 )
 
 lazy val root = (project in file("."))
@@ -70,14 +57,11 @@ lazy val root = (project in file("."))
     organization := "com.gardenShare",
     name := "gardenshare",
     version := "0.0.1-SNAPSHOT",
-    scalaVersion := "2.13.5",
-    scalacOptions += "-Wconf:cat=unused:info",
-    scalacOptions += "-Ywarn-unused",
-    libraryDependencies ++= commonDependencies,
-    testFrameworks += new TestFramework("utest.runner.Framework"),
-    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),    
-    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full),
-    addCompilerPlugin("io.tryp" % "splain" % "0.5.8" cross CrossVersion.patch)
+    scalaVersion := "3.0.0-RC3",
+    crossScalaVersions ++= Seq("2.13.5", "3.0.0-RC3"),    
+    scalacOptions += "-source:3.0-migration",
+    libraryDependencies ++= commonDependencies,    
+    testFrameworks += new TestFramework("utest.runner.Framework")    
   )
 
 lazy val Web = crossProject(JSPlatform, JVMPlatform)
@@ -110,7 +94,9 @@ lazy val Web = crossProject(JSPlatform, JVMPlatform)
 lazy val migratorSettings = Seq(
   name := "Migrator",
   libraryDependencies ++= commonDependencies,
-  scalaVersion := "2.13.1",
+  scalaVersion := "3.0.0-RC3",
+  crossScalaVersions ++= Seq("2.13.5", "3.0.0-RC3"),
+  scalacOptions += "-source:3.0-migration",
   Compile / run / mainClass := Some("com.gardenShare.gardenshare.migrator.Main")
 )
 

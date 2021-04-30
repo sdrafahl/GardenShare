@@ -165,7 +165,7 @@ object CogitoClient {
             .build()
 
           Async[F].async {
-            cb: (Either[Throwable, AdminRespondToAuthChallengeResponse] => Unit) =>
+            (cb: (Either[Throwable, AdminRespondToAuthChallengeResponse] => Unit)) =>
               cb(
                 Try(client.adminRespondToAuthChallenge(chngPassRequest)).toEither
               )

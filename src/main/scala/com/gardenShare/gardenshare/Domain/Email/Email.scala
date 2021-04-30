@@ -9,7 +9,6 @@ import Email._
 
 case class Email(underlying: EmailValue)
 
-
 object Email {
   type EmailValue = String Refined MatchesRegex[W.`"""[a-z0-9]+@[a-z0-9]+\\.[a-z0-9]{2,}"""`.T]
   implicit object EmailParser extends Parser[Email] {
