@@ -16,8 +16,7 @@ abstract class GetRoutesForEnv[F[_]] {
 
    implicit def createIoGetRoutesForEnv(
      implicit testingGetRoutes: GetRoutes[IO, TestingAndProductionRoutes],
-     productionRoutes: GetRoutes[IO, OnlyProductionRoutes],
-     tsc: GetTypeSafeConfig[IO]
+     productionRoutes: GetRoutes[IO, OnlyProductionRoutes]
    ) = new GetRoutesForEnv[IO] {
     def getRoutesGivenEnv(env: SystemEnvionment): HttpRoutes[IO] = env match {
       case Testing() => testingGetRoutes.getRoutes

@@ -14,7 +14,6 @@ import utest.test
 import utest.Tests
 import com.gardenShare.gardenshare.UserInfo
 import com.gardenShare.gardenshare.Sellers
-import com.gardenShare.gardenshare.Shows._
 import com.gardenShare.gardenshare.DeleteStore
 import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.Address

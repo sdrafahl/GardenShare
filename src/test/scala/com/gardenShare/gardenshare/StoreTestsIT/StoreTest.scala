@@ -14,7 +14,6 @@ import utest.test
 import utest.Tests
 import com.gardenShare.gardenshare.UserInfo
 import com.gardenShare.gardenshare.Sellers
-import com.gardenShare.gardenshare.Shows._
 import com.gardenShare.gardenshare.DeleteStore
 import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.Address
@@ -59,9 +58,9 @@ object StoreTest extends TestSuite {
 
         UserTestsHelper.deleteUserAdmin(email)
         UserTestsHelper.adminCreateUser(email, password)
+        
         val r = UserTestsHelper.authUser(email, password)
         val jwtToken = r.auth.get.jwt
-        
         UserTestsHelper.addStore(CreateStoreRequest(address0, email0)).unsafeRunSync()
         UserTestsHelper.addStore(CreateStoreRequest(address1, email1)).unsafeRunSync()
         UserTestsHelper.addStore(CreateStoreRequest(address2, email2)).unsafeRunSync()
@@ -70,7 +69,6 @@ object StoreTest extends TestSuite {
         val limit = 10
         val range = 5000000
         val addressFrom = Address("901 24th St", "Des Moines", "50312", IA)
-
 
         val result = UserTestsHelper.getStores(limit, range, jwtToken, addressFrom)
         val stores = result.store.map(s => Store(0, s.store.address, s.store.sellerEmail))

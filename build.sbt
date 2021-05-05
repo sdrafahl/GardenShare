@@ -45,7 +45,6 @@ lazy val commonDependencies = Seq(
   "io.circe" %% "circe-fs2" % "0.13.0",
   "io.laserdisc" %% "fs2-aws" % "3.0.2",
   "io.laserdisc" %% "fs2-aws-s3" % "3.0.2",
-  "eu.timepit" %% "refined" % "0.9.17",
   "com.typesafe.akka" %% "akka-http-core" % "10.2.1",
   "com.typesafe.akka" %% "akka-stream" % "2.6.8",
   "org.scalameta" %% "munit" % MunitVersion % Test,
