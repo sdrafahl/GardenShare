@@ -3,9 +3,7 @@ package com.gardenShare.gardenshare
 import org.http4s.HttpRoutes
 import cats.effect.IO
 import cats.implicits._
-import com.gardenShare.gardenshare.Shows._ 
 import com.gardenShare.gardenshare.GetStore
-import com.gardenShare.gardenshare.InsertStore
 import io.circe.Decoder
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.GetStoresStream
@@ -28,10 +26,8 @@ object GetRoutes {
     cs: ContextShift[IO],
     gs: GetStore[IO],
     dec: Decoder[Currency],
-    insertStore: InsertStore[IO],
     gst: GetStoresStream[IO],
     addressDecoder: Decoder[Address],
-    addressEncoder: Encoder[Address],
     dep: Decoder[Produce],
     produceEncoder: Encoder[Produce],
     currencyEncoder: Encoder[Currency],
@@ -61,10 +57,8 @@ object GetRoutes {
     cs: ContextShift[IO],
     gs: GetStore[IO],
     dec: Decoder[Currency],
-    insertStore: InsertStore[IO],
     gst: GetStoresStream[IO],
     addressDecoder: Decoder[Address],
-    addressEncoder: Encoder[Address],
     dep: Decoder[Produce],
     produceEncoder: Encoder[Produce],
     currencyEncoder: Encoder[Currency],

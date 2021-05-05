@@ -10,7 +10,6 @@ import com.gardenShare.gardenshare.AuthUser
 import io.circe._
 import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.Address
-import com.gardenShare.gardenshare.InsertStore
 import scala.util.Try
 import com.gardenShare.gardenshare.GetNearestStores.GetNearestOps
 import com.gardenShare.gardenshare.Helpers._
@@ -23,10 +22,8 @@ import ParsingDecodingImplicits._
 object StoreRoutes {
   def storeRoutes[F[_]:
       Async:
-      com.gardenShare.gardenshare.SignupUser:
       AuthUser:
       AuthJWT:
-      InsertStore:
       GetNearestStores:
       GetStoresStream:
       GetDistance:
@@ -34,7 +31,7 @@ object StoreRoutes {
       Timer:
       GetThreadCountForFindingNearestStores:
       JoseProcessJwt
-  ](implicit d: Decoder[Address], e: Encoder[Address])
+  ](implicit d: Decoder[Address])
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._      
@@ -50,11 +47,11 @@ object StoreRoutes {
           case (Left(_), _) => Ok(ResponseBody("There was a error parsing limit", false).asJson.toString())
           case (_, Left(_)) => Ok(ResponseBody("There was a error parsing the range", false).asJson.toString())
           case (Right(limit), Right(range)) => {
-            parseREquestAndValidateUserAndParseBodyResponse[Address, F](req, {(email, address) =>
+            parseREquestAndValidateUserAndParseBodyResponse[Address, F](req, {(_, address) =>
               ProcessData(
                 GetNearestStore(DistanceInMiles(range), limit, address).nearest,
                 (lst: List[RelativeDistanceAndStore]) => NearestStores(lst),
-                (err:Throwable) => ResponseBody("Error finding stores", false)
+                (_) => ResponseBody("Error finding stores", false)
               ).process
             })
           }
