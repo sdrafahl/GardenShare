@@ -6,20 +6,17 @@ import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import cats.effect.Async
 import com.gardenShare.gardenshare.Helpers._
-
-import io.circe._
 import io.circe.generic.auto._, io.circe.syntax._
-
 import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.AuthJWT
 import com.gardenShare.gardenshare.CreateStoreOrderRequest
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.ProcessData
 import com.gardenShare.gardenshare.Email
-import cats.ApplicativeError
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import scala.concurrent.ExecutionContext
 import ParsingDecodingImplicits._
+import com.gardenShare.gardenshare.SellerCompleteOrder._
 
 object StoreOrderRoutes {
   def storeOrderRoutes[
@@ -36,19 +33,13 @@ object StoreOrderRoutes {
         DeniedOrderRequests:
         JoseProcessJwt:
         InitiatePaymentForOrder:
-        VerifyPaymentOfOrder
+        VerifyPaymentOfOrder:
+        SellerCompleteOrder
   ]
     (
-      implicit ae: ApplicativeError[F, Throwable],
-      zoneDateparser: ParseBase64EncodedZoneDateTime,
+      implicit zoneDateparser: ParseBase64EncodedZoneDateTime,
       ec: ExecutionContext,
-      emailParser: com.gardenShare.gardenshare.Parser[Email],
-      en: Encoder[Produce],
-      produceDecoder: Decoder[Produce],
-      currencyEncoder: Encoder[Currency],
-      currencyDecoder: Decoder[Currency],
-      orderStatusEncoder: Encoder[StoreOrderRequestStatus],
-      orderStatusDecoder: Decoder[StoreOrderRequestStatus]
+      emailParser: com.gardenShare.gardenshare.Parser[Email]
     ): HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -150,6 +141,21 @@ object StoreOrderRoutes {
                 implicitly[VerifyPaymentOfOrder[F]].verifyOrder(order_id, buyerEmail),
                 (x: PaymentVerification) => x,
                 (err: Throwable) => ResponseBody(s"Error in verification error: ${err.getMessage()}", false)
+              ).process
+            })
+          }
+        }
+      }
+      case req @ POST -> Root / "storeOrderRequest" / "seller-complete-order" / orderId => {
+        orderId.toIntOption match {
+          case None => Ok(ResponseBody(s"Order ID: ${orderId} is not a valid order ID", false).asJson.toString())
+          case Some(order_id) => {
+            parseRequestAndValidateUserResponse[F](req, {sellerEmail =>
+              
+              ProcessData(
+                SellerCompleteOrderRequest(order_id, sellerEmail).complete[F],
+                (_: Unit) => ResponseBody(s"Order: ${orderId} is confirmed to be complete by seller", true),
+                (err: Throwable) => ResponseBody(s"Error in confirmation: ${err.getMessage()}", false)
               ).process
             })
           }

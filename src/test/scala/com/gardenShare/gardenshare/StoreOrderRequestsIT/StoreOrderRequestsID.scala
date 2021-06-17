@@ -1,34 +1,15 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.IO
-import org.http4s._
-import org.http4s.implicits._
-import munit.CatsEffectSuite
 import com.gardenShare.gardenshare.Email
-import com.gardenShare.gardenshare.Password
-import fs2.text
-import io.circe.fs2._
-import io.circe.generic.auto._, io.circe.syntax._
 import utest.TestSuite
 import utest.test
 import utest.Tests
-import com.gardenShare.gardenshare.UserInfo
-import com.gardenShare.gardenshare.Sellers
-import com.gardenShare.gardenshare.DeleteStore
-import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.IA
-import com.gardenShare.gardenshare.Store._
 import com.typesafe.config.ConfigFactory
-import java.net.URL
-import eu.timepit.refined._
-import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
-import eu.timepit.refined.string.MatchesRegex
-import eu.timepit.refined.api.RefType
-import scala.util.Try
 import PaymentID._
-import ParsingDecodingImplicits._
 
 object StoreOrderRequestsTest extends TestSuite {
 
@@ -42,8 +23,6 @@ object StoreOrderRequestsTest extends TestSuite {
       val testBuyerEmail = Email("testbuyer@gmail.com")
       val testpassword = "testPass12123$"
       val testSellerEmail = Email("testseller@gmail.com")
-      val testRefreshURL = new URL("http://localhost:3000/")
-      val testReturnURL = new URL("http://localhost:3000/")
       
       test("Can create a order, and query for the order, then accept the request, and then deny the request") {
         val accountID = UserTestsHelper.getTestStripeAccount
@@ -85,7 +64,6 @@ object StoreOrderRequestsTest extends TestSuite {
         val exceptedOrderStatusAfterAccepting = StoreOrderRequestStatusBody(AcceptedRequest)
         
         assert(statusAfterAcceptingTheOrder.equals(exceptedOrderStatusAfterAccepting))
-        val initiatePaymentResponse = UserTestsHelper.initiatePayment(jwtTokenOfTheBuyer, orderID, testBuyerEmail, Card)
         
         val secretId = UserTestsHelper.getPaymentIntentID(orderID).get       
         val intentId = secretId.parsePublicKey

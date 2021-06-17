@@ -11,7 +11,6 @@ import eu.timepit.refined.auto._
 import fs2.text
 import io.circe.fs2._
 import io.circe.generic.auto._
-import cats.effect.ContextShift
 import io.circe.syntax._
 import java.time.ZonedDateTime
 import PaymentCommandEvaluator._
@@ -339,7 +338,7 @@ object UserTestsHelper {
       .unsafeRunSync()
   }
 
-  def deleteAllStoreOrdersForSeller[F[_]: DeleteStoreOrderRequestsForSeller: ContextShift](e: Email) = implicitly[DeleteStoreOrderRequestsForSeller[IO]].delete(e)
+  def deleteAllStoreOrdersForSeller[F[_]](e: Email) = implicitly[DeleteStoreOrderRequestsForSeller[IO]].delete(e)
 
   def clearSlickAccounts(emails: List[Email]) = ClearStripeAccounts(emails).evaluate[IO].unsafeRunSync()
 
