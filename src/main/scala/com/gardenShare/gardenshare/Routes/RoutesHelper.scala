@@ -26,14 +26,7 @@ import cats.Monad
 import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
 
-import cats.data.{WriterT, Writer}
-
-import cats.effect.IO
-
 object Helpers {
-  val optionWriterT1 : WriterT[Option, String, Int] = WriterT(Some(("writerT value 1", 123)))
-  optionWriterT1.flatMap($0)
-
   def parseJWTokenFromRequest[F[_]: Functor](req: Request[F]) = {
     (req
       .headers
