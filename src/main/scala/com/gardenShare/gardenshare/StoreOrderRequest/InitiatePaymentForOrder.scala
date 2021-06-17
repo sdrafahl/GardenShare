@@ -27,6 +27,7 @@ object InitiatePaymentForOrder {
           case (_, ExpiredRequest) => IO.raiseError(new Throwable(s"Order was expired and cannot be paid for orderId: ${orderId}"))
           case (_, RequestToBeDetermined) => IO.raiseError(new Throwable(s"Order is not accepted so it cannot be paid for orderId: ${orderId}"))
           case (_, RequestPaidFor) => IO.raiseError(new Throwable("Order is already paid for"))
+          case (_, SellerComplete) => IO.raiseError(new Throwable("Seller has already completed this"))
           case (Some(order), AcceptedRequest) => {
             if(order.storeOrderRequest.buyer.equals(buyerEmail)) {
               val amountToCharge = order.storeOrderRequest.products.map(_.product.product.am).combineAll

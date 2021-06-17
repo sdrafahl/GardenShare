@@ -91,19 +91,21 @@ object StatusOfStoreOrderRequest {
       parseDate: Parser[ZonedDateTime],
       se: SearchStoreOrderRequestTable[IO],
       getTime: GetCurrentDate[IO],
-      orderIdIsPaidFor: OrderIdIsPaidFor[IO]
+      orderIdIsPaidFor: OrderIdIsPaidFor[IO],
+      searchCompletedOrders: SearchCompletedOrders[IO]
   ) = new StatusOfStoreOrderRequest[IO] {
     def get(
         id: Int
     )(implicit cs: ContextShift[IO]): IO[StoreOrderRequestStatus] = {
-      (sa.search(id), sd.search(id), orderIdIsPaidFor.isPaidFor(id)).parMapN {
-        (acceptedOrders, denied, isPaidFor) =>
+      (sa.search(id), sd.search(id), orderIdIsPaidFor.isPaidFor(id), searchCompletedOrders.search(id)).parMapN {
+        (acceptedOrders, denied, isPaidFor, ordersComplete) =>
         for {
-            status <- (acceptedOrders.headOption, denied.headOption, isPaidFor) match {
-              case (_, _, true)       => IO.pure(RequestPaidFor)
-              case (_, Some(_), _)    => IO.pure(DeniedRequest)
-              case (Some(_), None, _) => IO.pure(AcceptedRequest)
-              case (None, None, _) => {
+          status <- (acceptedOrders.headOption, denied.headOption, isPaidFor, ordersComplete) match {
+              case (_, _, _, Some(_))    => IO.pure(SellerComplete)
+              case (_, _, true, None)    => IO.pure(RequestPaidFor)
+              case (_, Some(_), _, None)    => IO.pure(DeniedRequest)
+              case (Some(_), None, _, None) => IO.pure(AcceptedRequest)
+              case (None, None, _, None) => {
                 se.search(id)
                   .flatMap {
                     case None =>

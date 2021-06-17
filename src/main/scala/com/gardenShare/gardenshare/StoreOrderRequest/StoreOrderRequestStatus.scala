@@ -6,6 +6,7 @@ case object DeniedRequest extends StoreOrderRequestStatus
 case object ExpiredRequest extends StoreOrderRequestStatus
 case object RequestToBeDetermined extends StoreOrderRequestStatus
 case object RequestPaidFor extends StoreOrderRequestStatus
+case object SellerComplete extends StoreOrderRequestStatus
 
 object StoreOrderRequestStatus {
   implicit object StoreOrderRequestStatusParser extends Parser[StoreOrderRequestStatus] {
@@ -15,6 +16,7 @@ object StoreOrderRequestStatus {
       case "ExpiredRequest" => Right(ExpiredRequest)
       case "RequestToBeDetermined" => Right(RequestToBeDetermined)
       case "RequestPaidFor" => Right(RequestPaidFor)
+      case "SellerComplete" => Right(SellerComplete)
       case _ => Left("Invalid string for order status")
     }
   }
@@ -26,6 +28,7 @@ object StoreOrderRequestStatus {
       case ExpiredRequest => "ExpiredRequest"
       case RequestToBeDetermined => "RequestToBeDetermined"
       case RequestPaidFor => "RequestPaidFor"
+      case SellerComplete => "SellerComplete"
     }
   }
 }

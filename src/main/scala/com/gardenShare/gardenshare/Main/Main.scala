@@ -18,7 +18,7 @@ object Main extends IOApp {
     x <- {     
       implicit val c = typeSafeConfig
       val executionValues = ConcurrencyHelper.createConcurrencyValues(4)
-      implicit val ec = executionValues._2      
+      implicit val ec = executionValues._2
       Resource.make(IO(PostGresSetup.createPostgresClient))((a: PostgresProfile.backend.DatabaseDef) => IO(a.close())).use{dbClient =>
         implicit val x = dbClient
         GardenshareServer.stream[IO].as(ExitCode.Success)

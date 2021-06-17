@@ -201,13 +201,54 @@ abstract class GetStoreOrderRequestsWithSellerEmail[F[_]] {
 }
 
 object GetStoreOrderRequestsWithSellerEmail {
-  implicit def createIOGetStoreOrderRequestsWithSellerEmail(
+  def createIOGetStoreOrderRequestsWithSellerEmail(
     implicit g: GetProductById[IO],
     client: PostgresProfile.backend.DatabaseDef,
     emailParser: com.gardenShare.gardenshare.Parser[Email],
     timeParser: Parser[ZonedDateTime]
   ) = new GetStoreOrderRequestsWithSellerEmail[IO] {
     def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = getStoreOrderWithEmail(e, (x: StoreOrderRequestTable.StoreOrderRequestTable) => x.sellerEmail)
+  }
+
+  implicit def createIOGetStoreOrderRequestsWithSellerEmail_(
+    implicit g: GetProductById[IO],
+    client: PostgresProfile.backend.DatabaseDef,
+    emailParser: com.gardenShare.gardenshare.Parser[Email],
+    timeParser: Parser[ZonedDateTime]
+  ) = new GetStoreOrderRequestsWithSellerEmail[IO] {
+    def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = {
+      val abc = for {
+        resultsWithSellerEmail <- StoreOrderRequestTable.storeOrderRequests join ProductReferenceTable.productReferenceTable on (_.storeRequestId === _.productReferenceTableId) if resultsWithSellerEmail._1.sellerEmail === e.underlying.value
+      } yield resultsWithSellerEmail
+      for {
+        queryResult <- IO.fromFuture(IO(client.run(abc.result)))
+        collectionOfOrders = queryResult.groupBy(_._1._1).values.toList
+        orders <- collectionOfOrders.map{orderAndReference: Seq[(StoreOrderRequestTableSchema, ProductReferenceTableSchema)] =>
+          orderAndReference.headOption.map{headOrder =>
+            (emailParser.parse(headOrder._1._2), emailParser.parse(headOrder._1._3), timeParser.parse(headOrder._1._4)) match {
+              case (Right(sellerEmail), Right(buyerEmail), Right(dateSubmited)) => {
+                orderAndReference.map{y =>
+                  g.get(y._2._2).map{ab => ab.map{productWithID =>
+                    ProductAndQuantity(productWithID, y._2._3)
+                  }}
+                }.parSequence
+                  .map(acb => acb.collect{
+                    case Some(a) => a
+                  })
+                  .map{(products: Seq[ProductAndQuantity]) =>
+                    StoreOrderRequestWithId(headOrder._1._1, StoreOrderRequest(sellerEmail, buyerEmail, products.toList, dateSubmited))
+                  }
+              }
+              case (Left(err), _, _) => IO.raiseError(new Throwable(s"Seller email is invalid ${err}"))
+              case (_, Left(err), _) => IO.raiseError(new Throwable(s"Buyer email is invalid ${err}"))
+              case (_, _, Left(err)) => IO.raiseError(new Throwable(s"Date is invalid ${err}"))
+            }
+          }
+        }.collect{
+          case Some(a) => a
+        }.parSequence
+      } yield orders
+    }
   }
 }
 
