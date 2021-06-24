@@ -58,22 +58,14 @@ object ProductRoutes {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
-      case req @ POST -> Root / "product" / "add" / produce / price / priceUnit => {
-
-        (pp.parse(produce), price.toIntOption, currencyParser.parse(priceUnit)) match {
-          case (Left(_), _, _) => Ok(ResponseBody("Produce was invalid", false).asJson.toString())
-          case (_, None, _) => Ok(ResponseBody("Price is not a integer", false).asJson.toString())
-          case (_, _, Left(_)) => Ok(ResponseBody("Invalid currency type", false).asJson.toString())
-          case (Right(produce), Some(price), Right(currency)) => {
-            parseRequestAndValidateUserResponse[F](req, {email =>
-              ProcessData(
-                implicitly[AddProductToStoreForSeller[F]].add(email, produce, Amount(price, currency)),
-                (_: Unit) => ResponseBody("Product was added to the store", true),
-                (err: Throwable) => ResponseBody(s"There was an error adding produce ${err.getMessage()}", false)
-              ).process
-            })
-          }
-        }
+      case req @ POST -> Root / "product" / "add" / Produce(produce) / Price(price) / Currency(currency) => {
+        parseRequestAndValidateUserResponse[F](req, {email =>
+          ProcessData(
+            implicitly[AddProductToStoreForSeller[F]].add(email, produce, Amount(price, currency)),
+            (_: Unit) => ResponseBody("Product was added to the store", true),
+            (err: Throwable) => ResponseBody(s"There was an error adding produce ${err.getMessage()}", false)
+          ).process
+        })
       }
       case req @ GET -> Root / "product" => {
         parseRequestAndValidateUserResponse[F](req, {email =>

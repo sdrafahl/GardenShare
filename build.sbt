@@ -4,6 +4,7 @@ val Specs2Version = "4.9.3"
 val LogbackVersion = "1.2.3"
 val MunitVersion = "0.7.20"
 val MunitCatsEffectVersion = "0.12.0"
+val scala_Version = "2.13.5"
 
 resolvers += "Sonatype OSS Release Repository" at "https://oss.sonatype.org/content/repositories/releases/"
 resolvers += Resolver.mavenLocal
@@ -69,7 +70,7 @@ lazy val root = (project in file("."))
     organization := "com.gardenShare",
     name := "gardenshare",
     version := "0.0.1-SNAPSHOT",
-    scalaVersion := "2.13.5",
+    scalaVersion := scala_Version,
     scalacOptions += "-Wconf:cat=unused:info",
     scalacOptions += "-Ywarn-unused",
     libraryDependencies ++= commonDependencies,
@@ -109,7 +110,7 @@ lazy val Web = crossProject(JSPlatform, JVMPlatform)
 lazy val migratorSettings = Seq(
   name := "Migrator",
   libraryDependencies ++= commonDependencies,
-  scalaVersion := "2.13.1",
+  scalaVersion := scala_Version,
   Compile / run / mainClass := Some("com.gardenShare.gardenshare.migrator.Main")
 )
 

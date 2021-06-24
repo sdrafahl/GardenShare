@@ -1,4 +1,7 @@
 package com.gardenShare.gardenshare
 
-case class Password(underlying: String)
+final case class Password(underlying: String)
 
+object Password {
+  def unapply(passStr: String): Option[Password] = Some(Password(passStr))
+}

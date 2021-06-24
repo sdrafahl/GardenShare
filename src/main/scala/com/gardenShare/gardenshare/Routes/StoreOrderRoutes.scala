@@ -17,6 +17,7 @@ import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponse
 import scala.concurrent.ExecutionContext
 import ParsingDecodingImplicits._
 import com.gardenShare.gardenshare.SellerCompleteOrder._
+import org.http4s.circe._
 
 object StoreOrderRoutes {
   def storeOrderRoutes[
@@ -45,19 +46,14 @@ object StoreOrderRoutes {
     import dsl._
 
     HttpRoutes.of {
-      case req @ POST -> Root / "storeOrderRequest" / sellerEmail => {
-        emailParser.parse(sellerEmail) match {
-          case Left(_) => Ok(ResponseBody("seller email provide is not a valid email address", false).asJson.toString())
-          case Right(emailOfSeller) => {
-            parseREquestAndValidateUserAndParseBodyResponse[StoreOrderRequestBody, F](req, {(email, products) =>
-              ProcessData(
-                implicitly[CreateStoreOrderRequest[F]].createOrder(emailOfSeller, email, products.body),
-                (l: StoreOrderRequestWithId) => l,
-                (err: Throwable) => ResponseBody(s"Error creating store order request: ${err.getMessage()}", false)
-              ).process
-            })
-          }
-        }               
+      case req @ POST -> Root / "storeOrderRequest" / Email(sellerEmail) => {
+        parseREquestAndValidateUserAndParseBodyResponse[StoreOrderRequestBody, F](req, {(email, products) =>
+          ProcessData(
+            implicitly[CreateStoreOrderRequest[F]].createOrder(sellerEmail, email, products.body),
+            (l: StoreOrderRequestWithId) => l,
+            (err: Throwable) => ResponseBody(s"Error creating store order request: ${err.getMessage()}", false)
+          ).process
+        })
       }
       case req @ GET -> Root / "storeOrderRequest" / "seller" / from / to => {
         (zoneDateparser.parseZoneDateTime(from), zoneDateparser.parseZoneDateTime(to)) match {

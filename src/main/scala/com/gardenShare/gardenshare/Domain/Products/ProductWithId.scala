@@ -6,8 +6,8 @@ import cats.kernel.Order
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 
-case class Product(storeId: Int, productName: Produce, am: Amount)
+case class ProductWithId(id: Int, product: Product)
 
-object Product {
-  implicit lazy final val productCodec: Codec[Product] = deriveCodec
+object ProductWithId {
+  implicit lazy final val productWithIdCodec: Codec[ProductWithId] = deriveCodec
 }
