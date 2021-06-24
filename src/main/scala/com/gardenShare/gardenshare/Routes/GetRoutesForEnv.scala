@@ -13,7 +13,6 @@ abstract class GetRoutesForEnv[F[_]] {
 
  object GetRoutesForEnv {
   def apply[F[_]: GetRoutesForEnv]() = implicitly[GetRoutesForEnv[F]]
-
    implicit def createIoGetRoutesForEnv(
      implicit testingGetRoutes: GetRoutes[IO, TestingAndProductionRoutes],
      productionRoutes: GetRoutes[IO, OnlyProductionRoutes]

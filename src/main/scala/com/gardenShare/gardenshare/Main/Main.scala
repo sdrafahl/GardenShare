@@ -7,7 +7,6 @@ import com.gardenShare.gardenshare.GetRoutes._
 import io.circe.generic.auto._
 import com.typesafe.config.ConfigFactory
 import com.gardenShare.gardenshare.GetTypeSafeConfig
-import ParsingDecodingImplicits._
 import slick.jdbc.PostgresProfile
 
 object Main extends IOApp {

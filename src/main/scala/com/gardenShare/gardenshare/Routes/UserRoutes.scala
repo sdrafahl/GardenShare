@@ -38,7 +38,6 @@ import com.gardenShare.gardenshare.UserInfo
 import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 import scala.concurrent.ExecutionContext
-import ParsingDecodingImplicits._
 
 object UserRoutes {
   def userRoutes[F[_]:

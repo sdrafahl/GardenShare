@@ -44,10 +44,8 @@ object ProductRoutes {
       GetProductsByStore:
       JoseProcessJwt
   ]
-    (
-      implicit pp: Parser[Produce],
-      ae: ApplicativeError[F, Throwable],
-      currencyParser: com.gardenShare.gardenshare.Parser[Currency],
+    (      
+      implicit  ae: ApplicativeError[F, Throwable],
       en: Encoder[Produce],
       currencyEncoder: Encoder[Currency],
       dep: Decoder[Produce],

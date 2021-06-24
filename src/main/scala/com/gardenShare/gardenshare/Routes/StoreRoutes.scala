@@ -17,7 +17,6 @@ import com.gardenShare.gardenshare.ProcessAndJsonResponse._
 import com.gardenShare.gardenshare.ProcessData
 import cats.effect.ContextShift
 import cats.effect.Timer
-import ParsingDecodingImplicits._
 
 object StoreRoutes {
   def storeRoutes[F[_]:
@@ -31,8 +30,7 @@ object StoreRoutes {
       Timer:
       GetThreadCountForFindingNearestStores:
       JoseProcessJwt
-  ](implicit d: Decoder[Address])
-      : HttpRoutes[F] = {
+  ]: HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._      
     HttpRoutes.of[F] {
