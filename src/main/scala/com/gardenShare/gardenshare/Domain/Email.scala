@@ -4,8 +4,11 @@ import eu.timepit.refined._
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.string.MatchesRegex
 import eu.timepit.refined.api.RefType
+import io.circe.generic.extras.semiauto._
+import io.circe._
 
 import Email._
+import io.circe.Codec
 
 sealed case class Email(underlying: EmailValue)
 
@@ -16,11 +19,11 @@ object Email {
     RefType.applyRef[EmailValue](str).map(x => Email(x)).toOption
   }
 
-  implicit object EmailParser extends Parser[Email] {
-    def parse(s: String): Either[String, Email] = RefType.applyRef[EmailValue](s).left.map(s => s"Failed to parse Email: ${s}").map(x => Email(x))
-  }
+  private[this] lazy val emailValueDecoder: Decoder[EmailValue] = Decoder.decodeString.emap(s => RefType.applyRef[EmailValue](s))
 
-  implicit object EmailEncoder extends EncodeToString[Email] {
-    def encode(x:Email): String = x.underlying.value
-  }
+  private[this] lazy val emailValueEncoder: Encoder[EmailValue] = Encoder.encodeString.contramap(_.value)
+
+  implicit lazy val emailValueCodec: Codec[EmailValue] = Codec.from(emailValueDecoder, emailValueEncoder)
+
+  implicit lazy val emailCodec: Codec[Email] = deriveUnwrappedCodec
 }

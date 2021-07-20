@@ -16,6 +16,7 @@ lazy val commonDependencies = Seq(
   "org.http4s" %% "http4s-circe" % Http4sVersion,
   "org.http4s" %% "http4s-dsl" % Http4sVersion,
   "io.circe" %% "circe-generic" % CirceVersion,
+  "io.circe" %% "circe-generic-extras" % CirceVersion,
   "org.specs2" %% "specs2-core" % Specs2Version % "test",
   "ch.qos.logback" % "logback-classic" % LogbackVersion,
   "com.typesafe" % "config" % "1.4.0",
