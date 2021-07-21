@@ -10,7 +10,6 @@ import java.security.interfaces.RSAPrivateKey
 import java.io.BufferedReader
 import scala.io.Source
 import org.apache.commons.codec.binary.Base64
-import com.gardenShare.gardenshare.BucketN
 import eu.timepit.refined.types.string.NonEmptyString
 
 abstract class GetTypeSafeConfig[F[_]] {

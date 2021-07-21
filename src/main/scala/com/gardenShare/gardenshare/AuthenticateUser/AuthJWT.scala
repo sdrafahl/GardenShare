@@ -9,6 +9,7 @@ import org.jose4j.jwt.consumer.JwtConsumer
 import com.gardenShare.gardenshare.GetUserPoolId
 import cats.MonadError
 import cats.implicits._
+import JWTValidationResult._
 
 abstract class AuthJWT[F[_]] {
   def authJWT(jwt:JWTValidationTokens): F[JWTValidationResult]

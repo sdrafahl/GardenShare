@@ -12,12 +12,12 @@ abstract class CreatePaymentIntentEvaluator[F[_]] {
 object CreatePaymentIntentEvaluator {
   def apply[F[_]: CreatePaymentIntentEvaluator]() = implicitly[CreatePaymentIntentEvaluator[F]]
 
-  implicit def createIOCreatePaymentIntentEvaluator(implicit getStripeKey: GetStripePrivateKey[IO], decodeCurrency: DecodeCurrency, decodePaymentType: EncodeToString[PaymentType]) = new CreatePaymentIntentEvaluator[IO] {
+  implicit def createIOCreatePaymentIntentEvaluator(implicit getStripeKey: GetStripePrivateKey[IO], decodePaymentType: EncodeToString[PaymentType]) = new CreatePaymentIntentEvaluator[IO] {
     def eval(c: CreatePaymentIntentEvaluatorCommand): IO[PaymentIntent] = {      
       for {
         stripeApiKey <- getStripeKey.getKey
         _ <- IO(Stripe.apiKey = stripeApiKey.n)
-        curr = decodeCurrency.decode(c.currency)
+        curr = Currency.encodeCurrency(c.currency)
         paymentType = decodePaymentType.encode(c.paymentType)
         transerData = PaymentIntentCreateParams.TransferData
         .builder()

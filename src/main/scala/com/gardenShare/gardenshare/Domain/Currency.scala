@@ -14,11 +14,11 @@ object Currency {
 
   def unapply(str: String): Option[Currency] = decoderCurrency(str).toOption
 
-  private def encodeCurrency(c: Currency) = c match {
+  def encodeCurrency(c: Currency) = c match {
     case USD => "USD"
   }
 
-  private def decoderCurrency(str: String): Either[String, Currency] = str match {
+  def decoderCurrency(str: String): Either[String, Currency] = str match {
     case "USD" => Right(USD)
     case x => Left(s"Invalid currency provided: ${x}")
   }

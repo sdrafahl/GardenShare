@@ -1,3 +1,10 @@
 package com.gardenShare.gardenshare.GardenData
 
-case class Plant(name: String)
+import io.circe.Codec
+import io.circe.generic.extras.semiauto._
+
+case class Plant(name: String) extends AnyVal
+
+object Plant {
+  implicit lazy final val plantCodec: Codec[Plant] = deriveUnwrappedCodec
+}
