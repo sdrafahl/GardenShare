@@ -20,7 +20,7 @@ import cats.effect.ContextShift
 Please do not use in production
   */
 object TestUserRoutes {
-  def userRoutes[F[_]: Async: GetUserPoolId: CogitoClient: GetTypeSafeConfig: FlatMap:GetUserPoolName:DeleteStore:ContextShift]()(implicit emailParser: com.gardenShare.gardenshare.Parser[Email])
+  def userRoutes[F[_]: Async: GetUserPoolId: CogitoClient: GetTypeSafeConfig: FlatMap:GetUserPoolName:DeleteStore:ContextShift]()
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._

@@ -24,10 +24,6 @@ import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.AuthJWT.AuthJwtOps
 import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.AuthUser.AuthUserOps
-import com.gardenShare.gardenshare.AuthenticatedUser
-import com.gardenShare.gardenshare.FailedToAuthenticate
-import com.gardenShare.gardenshare.ValidToken
-import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import software.amazon.awssdk.services.cognitoidentityprovider.model.SignUpResponse
 import com.gardenShare.gardenshare.ProcessData
@@ -38,6 +34,7 @@ import com.gardenShare.gardenshare.UserInfo
 import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 import scala.concurrent.ExecutionContext
+import JWTValidationResult._
 
 object UserRoutes {
   def userRoutes[F[_]:
@@ -59,8 +56,7 @@ object UserRoutes {
       VerifyUserAsSeller:
       JoseProcessJwt
   ]()(
-    implicit ec: ExecutionContext,
-    parseEmail: com.gardenShare.gardenshare.Parser[Email]
+    implicit ec: ExecutionContext
   )
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}

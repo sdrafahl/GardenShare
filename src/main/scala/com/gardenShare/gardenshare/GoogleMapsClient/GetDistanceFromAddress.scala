@@ -7,8 +7,6 @@ import cats.Show
 import cats.implicits._
 import cats.effect.IO
 
-case class DistanceInMiles(distance: Double)
-
 abstract class IsWithinRange {
   def isInRange(range: DistanceInMiles, dist: DistanceInMiles): Boolean
 }

@@ -1,5 +1,7 @@
 package com.gardenShare.gardenshare
 
+import PriceUnit._
+
 abstract class GetproductDescription[T] {
   def gestDesc(c: T): ProductDescription
 }

@@ -1,6 +1,5 @@
 package com.gardenShare.gardenshare
 
-import com.gardenShare.gardenshare.Parser
 import io.circe._
 
 sealed abstract class PaymentType

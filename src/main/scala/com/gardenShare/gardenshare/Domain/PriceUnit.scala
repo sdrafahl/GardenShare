@@ -5,7 +5,6 @@ import io.circe._
 sealed abstract class PriceUnit
 
 object PriceUnit {
-
   case object Pound extends PriceUnit
   case object Units extends PriceUnit
   case object Invalid extends PriceUnit

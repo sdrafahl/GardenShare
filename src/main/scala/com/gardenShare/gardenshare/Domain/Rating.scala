@@ -19,5 +19,5 @@ object Rating {
   private[this] lazy val ratingScoreEncoder: Encoder[RatingScore] = Encoder.encodeInt.contramap(_.value)
   implicit lazy val ratingScoreCodec: Codec[RatingScore] = Codec.from(ratingScoreDecoder, ratingScoreEncoder)
 
-  implicit lazy final val ratingCodec: Codec[Rating] = deriveCodec
+  //implicit lazy final val ratingCodec: Codec[Rating] = deriveCodec
 }

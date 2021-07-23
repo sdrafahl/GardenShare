@@ -11,6 +11,7 @@ import java.io.BufferedReader
 import scala.io.Source
 import org.apache.commons.codec.binary.Base64
 import eu.timepit.refined.types.string.NonEmptyString
+import SystemEnvionment._
 
 abstract class GetTypeSafeConfig[F[_]] {
   def get(key: String): F[String]
@@ -245,16 +246,16 @@ object GetGoogleMapsApiKey {
 }
 
 abstract class GetDescriptionBucketName[F[_]] {
-  def get(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[BucketN]
+  def get(implicit getTypeSafeConfig: GetTypeSafeConfig[F]): F[com.gardenShare.gardenshare.Bucket]
 }
 
 object GetDescriptionBucketName {
   def apply[F[_]: GetDescriptionBucketName]() = implicitly[GetDescriptionBucketName[F]]
   implicit object IOGetDescriptionBucketName extends GetDescriptionBucketName[IO] {
-    def get(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[BucketN] = {
+    def get(implicit getTypeSafeConfig: GetTypeSafeConfig[IO]): IO[Bucket] = {
       (for {
       bucketName <- getTypeSafeConfig.get("descriptions.bucketName")
-      maybeBucket = NonEmptyString.from(bucketName).fold(err => IO.raiseError(new Throwable(err)), parsed => IO(BucketN(parsed)))
+      maybeBucket = NonEmptyString.from(bucketName).fold(err => IO.raiseError(new Throwable(err)), parsed => IO(Bucket(parsed)))
       } yield maybeBucket).flatMap(a => a)
     }      
   }
@@ -271,8 +272,8 @@ object GetEnvironment {
     def getEnv: IO[SystemEnvionment] = for {
       envName <- getTypeSafeConfig.get("environment.name")      
     } yield envName match {
-      case "testing" => Testing()
-      case "production" => Production()
+      case "testing" => Testing
+      case "production" => Production
     }
   }
 }

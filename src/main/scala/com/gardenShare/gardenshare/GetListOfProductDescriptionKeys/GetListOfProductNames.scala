@@ -1,12 +1,10 @@
-package com.gardenShare.gardenshare.GetListOfProductNames
+package com.gardenShare.gardenshare
 
-import com.gardenShare.gardenshare.GetDescriptionBucketName
-import com.gardenShare.gardenshare.Storage.S3.GetKeys
-import com.gardenShare.gardenshare.Storage.S3.GetKeys.GetKeysOps
 import com.gardenShare.gardenshare.GetTypeSafeConfig
+import com.gardenShare.gardenshare._
 import cats.effect.IO
+import GetKeys.GetKeysOps
 
-case class DescriptionName(underlying: String)
 abstract class GetListOfProductNames[F[_]] {
   def getListOfProducts: F[List[DescriptionName]]
 }
@@ -14,7 +12,7 @@ abstract class GetListOfProductNames[F[_]] {
 object GetListOfProductNames {
   def apply[F[_]: GetListOfProductNames]() = implicitly[GetListOfProductNames[F]]
 
-  implicit def createIOGetListOfProductNames(implicit getKeys: GetKeys[IO], getDescBucketName: GetDescriptionBucketName[IO], get: GetTypeSafeConfig[IO]) = new GetListOfProductNames[IO] {
+  implicit def createIOGetListOfProductNames(implicit getKeys: GetKeys[IO], getDescBucketName: GetDescriptionBucketName[IO], get: GetTypeSafeConfig[IO]): GetListOfProductNames[IO]  = new GetListOfProductNames[IO] {
     def getListOfProducts: IO[List[DescriptionName]] = for {
       bucketName <- getDescBucketName.get
       keys <- bucketName.keys      

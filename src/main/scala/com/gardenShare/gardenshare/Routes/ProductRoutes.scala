@@ -10,8 +10,6 @@ import com.gardenShare.gardenshare.AuthUser
 import io.circe._
 import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.AuthJWT._
-import com.gardenShare.gardenshare.InvalidToken
-import com.gardenShare.gardenshare.ValidToken
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.InsertProduct
 import com.gardenShare.gardenshare.Helpers._
@@ -49,8 +47,7 @@ object ProductRoutes {
       en: Encoder[Produce],
       currencyEncoder: Encoder[Currency],
       dep: Decoder[Produce],
-      dee: Decoder[Currency],
-      emailParser: com.gardenShare.gardenshare.Parser[Email]
+      dee: Decoder[Currency]
     )
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
