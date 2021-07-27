@@ -6,6 +6,7 @@ import cats.kernel.Hash
 import cats.kernel.Order
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
+import com.gardenShare.gardenshare.Currency.USD
 
 case class Amount(quantityOfCurrency: Price, currencyType: Currency)
 

@@ -6,7 +6,6 @@ import org.http4s.HttpRoutes
 import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare._
 import com.gardenShare.gardenshare.GetproductDescription._
-import ParsingDecodingImplicits.createEncoder
 
 object ProductDescriptionRoutes {
   def productDescriptionRoutes[F[_]: Async]

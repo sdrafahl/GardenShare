@@ -219,7 +219,7 @@ object UserTestsHelper {
 
     val currencyEncoder = implicitly[EncodeToString[Currency]]
 
-    val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${currencyEncoder.encode(am.currencyType)}").toOption.get
+    val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${Cur(am.currencyType)}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
     

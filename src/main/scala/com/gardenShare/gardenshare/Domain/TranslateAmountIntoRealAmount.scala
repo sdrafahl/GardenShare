@@ -1,5 +1,7 @@
 package com.gardenShare.gardenshare
 
+import com.gardenShare.gardenshare.Currency.USD
+
 abstract class TranslateAmountIntoRealAmount {
   def translate(a: Amount): Long
 }

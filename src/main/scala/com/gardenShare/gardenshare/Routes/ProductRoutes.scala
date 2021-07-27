@@ -23,7 +23,6 @@ import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.GetProductsByStore
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
-import com.gardenShare.gardenshare.Parser
 
 object ProductRoutes {
   def productRoutes[F[_]:

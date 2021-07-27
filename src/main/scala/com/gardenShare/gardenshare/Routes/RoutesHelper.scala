@@ -8,7 +8,6 @@ import org.http4s._
 import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.AuthJWT
 import com.gardenShare.gardenshare.AuthJWT.AuthJwtOps
-import com.gardenShare.gardenshare.ValidToken
 import cats.Functor
 import io.circe.fs2._
 import io.circe.generic.auto._, io.circe.syntax._
@@ -23,7 +22,6 @@ import org.http4s.Header
 import com.gardenShare.gardenshare.Email
 import io.circe.Json
 import cats.Monad
-import com.gardenShare.gardenshare.InvalidToken
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
 
 object Helpers {
