@@ -35,6 +35,8 @@ import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.Helpers.ResponseHelper
 import scala.concurrent.ExecutionContext
 import JWTValidationResult._
+import com.gardenShare.gardenshare.UserResponse._
+import AuthenticateJWTOnRequest.AuthenticateJWTOnRequestOps
 
 object UserRoutes {
   def userRoutes[F[_]:
@@ -113,14 +115,22 @@ object UserRoutes {
         ).catchError
       }
       case req @ POST -> Root / "user" / "apply-to-become-seller" => {
-        parseREquestAndValidateUserAndParseBodyResponse[ApplyUserToBecomeSellerData ,F](req, {(email, sellerRequest) =>
-          ProcessData(
-            implicitly[ApplyUserToBecomeSeller[F]].applyUser(email, sellerRequest.address, sellerRequest.refreshUrl ,sellerRequest.returnUrl),
-            (resp: ApplyUserToBecomeSellerResponse) => resp,
-            (err:Throwable) => ResponseBody(err.getMessage(), false)
-          )
-            .process
-        })
+        for {
+          emailOfUser <- req.authJWT
+          applyUserToBecomeSeller <- req.as[ApplyUserToBecomeSellerData]
+          applyUserToBecomeSellerResponse <- implicitly[ApplyUserToBecomeSeller[F]].applyUser(emailOfUser, applyUserToBecomeSeller.address, applyUserToBecomeSeller.refreshUrl ,applyUserToBecomeSeller.returnUrl)
+
+        } yield ???
+        
+
+        // parseREquestAndValidateUserAndParseBodyResponse[ApplyUserToBecomeSellerData ,F](req, {(email, sellerRequest) =>
+        //   ProcessData(
+        //     implicitly[ApplyUserToBecomeSeller[F]].applyUser(email, sellerRequest.address, sellerRequest.refreshUrl ,sellerRequest.returnUrl),
+        //     (resp: ApplyUserToBecomeSellerResponse) => resp,
+        //     (err:Throwable) => ResponseBody(err.getMessage(), false)
+        //   )
+        //     .process
+        
       }
       case req @ POST -> Root / "user" / "verify-user-as-seller" => {
         parseREquestAndValidateUserAndParseBodyResponse[Address, F](req, {(email, address) =>

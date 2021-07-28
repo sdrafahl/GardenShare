@@ -70,20 +70,15 @@ object ProductRoutes {
             .process
         })        
       }
-      case GET -> Root / "product" / email => {
-        implicitly[com.gardenShare.gardenshare.Parser[Email]].parse(email) match {
-          case Left(_) => Ok(ResponseBody("Invalid email provided", false).asJson.toString())
-          case Right(email) => {
-            ProcessData(
-              implicitly[GetProductsSoldFromSeller[F]].get(email),
-              (a:List[ProductWithId]) => ListOfProduce(a).asJson,
-              (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false)
-            )
-              .process
-              .flatMap(a => Ok(a.toString()))
-              .catchError
-          }
-        }        
+      case GET -> Root / "product" / Email(email) => {
+        ProcessData(
+          implicitly[GetProductsSoldFromSeller[F]].get(email),
+          (a:List[ProductWithId]) => ListOfProduce(a).asJson,
+          (err:Throwable) => ResponseBody(s"Failed to get products from seller: ${err.getMessage()}", false)
+        )
+          .process
+          .flatMap(a => Ok(a.toString()))
+          .catchError
       }      
     }
   }

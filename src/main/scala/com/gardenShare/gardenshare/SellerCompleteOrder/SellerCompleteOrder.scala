@@ -3,6 +3,7 @@ package com.gardenShare.gardenshare
 import cats.effect.IO
 import cats.effect.ContextShift
 import cats.implicits._
+import com.gardenShare.gardenshare.StoreOrderRequestStatus._
 
 abstract class SellerCompleteOrder[F[_]] {
   def completeOrder(request: SellerCompleteOrderRequest)(implicit cs: ContextShift[F]): F[Unit]

@@ -1,4 +1,3 @@
-
 package com.gardenShare.gardenshare
 
 import org.http4s.Request
@@ -23,9 +22,28 @@ import com.gardenShare.gardenshare.Email
 import io.circe.Json
 import cats.Monad
 import com.gardenShare.gardenshare.FoldOver.FoldOverEithers._
+import JWTValidationResult._
+import UserResponse.AuthenticatedUser
+import UserResponse.FailedToAuthenticate
+import AuthenticateJWTOnRequest.AuthenticateJWTOnRequestOps
 
 object Helpers {
-  def parseJWTokenFromRequest[F[_]: Functor](req: Request[F]) = {
+  def validateJWTToken[F[_]: AuthJWT](request: Request[F])(implicit me: MonadError[F, Throwable]): F[Email] = {    
+    val asbc: Either[NoJWTTokenProvided, JWTValidationTokens] = parseJWTokenFromRequest(request)
+    val throwableAsbc = asbc.left.map(_ => new Throwable("No JWT token provided"))
+    val jwtPgm: F[JWTValidationTokens] = me.fromEither(throwableAsbc)
+    for {
+      jwtToken <- jwtPgm
+      jwtTokenValidationResult <- jwtToken.auth
+      emailForJwt <- jwtTokenValidationResult match {
+        case InvalidToken(msg) => me.raiseError[Email](new Throwable(msg))
+        case ValidToken(None) => me.raiseError[Email](new Throwable("Token is valid but without email"))
+        case ValidToken(Some(email)) => me.pure(email)
+      }
+    } yield emailForJwt
+  }
+
+  def parseJWTokenFromRequest[F[_]](req: Request[F]) = {
     (req
       .headers
       .get(CaseInsensitiveString("authentication"))) match {
@@ -74,6 +92,8 @@ object Helpers {
 
   def parseREquestAndValidateUserAndParseBodyResponse[A:Decoder,F[_]:AuthUser:AuthJWT:Monad:Sync:Http4sDsl:JoseProcessJwt](req: Request[F], pr: (Email,A) => F[Json])(implicit me: MonadError[F, Throwable]) = {
     val dsl = implicitly[Http4sDsl[F]]
+    
+
     import dsl._
     parseREquestAndValidateUserAndParseBody[A, F](req, pr)
       .flatMap(k => Ok(k.toString()))

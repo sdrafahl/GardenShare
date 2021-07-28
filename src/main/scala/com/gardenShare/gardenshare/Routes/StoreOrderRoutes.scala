@@ -15,7 +15,6 @@ import com.gardenShare.gardenshare.ProcessData
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import scala.concurrent.ExecutionContext
-import ParsingDecodingImplicits._
 import com.gardenShare.gardenshare.SellerCompleteOrder._
 import org.http4s.circe._
 
@@ -39,8 +38,7 @@ object StoreOrderRoutes {
   ]
     (
       implicit zoneDateparser: ParseBase64EncodedZoneDateTime,
-      ec: ExecutionContext,
-      emailParser: com.gardenShare.gardenshare.Parser[Email]
+      ec: ExecutionContext
     ): HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -112,21 +110,14 @@ object StoreOrderRoutes {
           }
         }
       }
-      case req @ POST -> Root / "storeOrderRequest" / "initiate-payment" / orderId / receiptEmail / paymentType => {
-        (orderId.toIntOption, implicitly[com.gardenShare.gardenshare.Parser[Email]].parse(receiptEmail), implicitly[com.gardenShare.gardenshare.Parser[PaymentType]].parse(paymentType)) match {
-          case (None, _, _) => Ok(ResponseBody("Order Id is not a valid id", false).asJson.toString())
-          case (_, Left(_), _) => Ok(ResponseBody("Receipt email is not a valid email", false).asJson.toString())
-          case (_, _, Left(_)) => Ok(ResponseBody("Payment type is not valid", false).asJson.toString())
-          case (Some(id), Right(emailToSendReceipt), Right(pymtType)) => {
-            parseRequestAndValidateUserResponse[F](req, {buyerEmail =>
-              ProcessData(
-                implicitly[InitiatePaymentForOrder[F]].payOrder(id, buyerEmail, emailToSendReceipt, pymtType),
-                (tkn: PaymentIntentToken) => tkn,
-                (err: Throwable) => ResponseBody(s"There was a problem initiating a payment message: ${err.getMessage()}", false)
-              ).process
-            })
-          }
-        }
+      case req @ POST -> Root / "storeOrderRequest" / "initiate-payment" / IntVar(orderId) / Email(receiptEmail) / PaymentType(paymentType) => {
+        parseRequestAndValidateUserResponse[F](req, {buyerEmail =>
+          ProcessData(
+            implicitly[InitiatePaymentForOrder[F]].payOrder(orderId, buyerEmail, receiptEmail, paymentType),
+            (tkn: PaymentIntentToken) => tkn,
+            (err: Throwable) => ResponseBody(s"There was a problem initiating a payment message: ${err.getMessage()}", false)
+          ).process
+        })
       }
       case req @ POST -> Root / "storeOrderRequest" / "verify-payment" / orderId => {
         orderId.toIntOption match {

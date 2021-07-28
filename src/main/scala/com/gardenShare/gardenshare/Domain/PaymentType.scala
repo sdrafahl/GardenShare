@@ -9,6 +9,8 @@ object PaymentType {
 
   case object Card extends PaymentType
 
+  def unapply(s: String): Option[PaymentType] = parse(s).toOption
+
   implicit lazy val paymentTypeShow: Show[PaymentType] = Show.show(encode)
 
   private[this] def parse(x:String): Either[String, PaymentType] = x match {

@@ -25,33 +25,21 @@ object TestUserRoutes {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
-      case DELETE -> Root / "user" / "delete" / email => {
-        emailParser.parse(email) match {
-          case Left(_) => Ok(ResponseBody("email is not valid", false).asJson.toString())
-          case Right(email) => {            
-            val pgm = for {
-              id <- implicitly[GetUserPoolId[F]].exec()
-              resp <- implicitly[CogitoClient[F]].adminDeleteUser(email ,id)
-              _ <- implicitly[DeleteStore[F]].delete(email)
-            } yield resp
-            pgm.flatMap(re => Ok(ResponseBody(re.toString(), true).asJson.toString()))
-          }
-        }        
+      case DELETE -> Root / "user" / "delete" / Email(email) => {
+        val pgm = for {
+           id <- implicitly[GetUserPoolId[F]].exec()
+           resp <- implicitly[CogitoClient[F]].adminDeleteUser(email ,id)
+           _ <- implicitly[DeleteStore[F]].delete(email)
+         } yield resp
+        pgm.flatMap(re => Ok(ResponseBody(re.toString(), true).asJson.toString()))
       }
-      case POST -> Root / "user" / email / password => {
-        emailParser.parse(email) match {
-          case Left(_) => Ok(ResponseBody("email is not valid", false).asJson.toString())
-          case Right(ema) => {
-            val pass = Password(password)
-            val pgm = for {
-              id <- implicitly[GetUserPoolId[F]].exec()
-              poolName <- implicitly[GetUserPoolName[F]].exec()
-              res <- implicitly[CogitoClient[F]].adminCreateUser(ema, pass, id, poolName.name)
-              
-            } yield res
-            pgm.flatMap(re => Ok(ResponseBody(re.toString(), true).asJson.toString()))
-          }
-        }        
+      case POST -> Root / "user" / Email(email) / Password(password) => {
+        val pgm = for {
+          id <- implicitly[GetUserPoolId[F]].exec()
+          poolName <- implicitly[GetUserPoolName[F]].exec()
+          res <- implicitly[CogitoClient[F]].adminCreateUser(email, password, id, poolName.name)              
+        } yield res
+        pgm.flatMap(re => Ok(ResponseBody(re.toString(), true).asJson.toString()))
       }
     }
   }
