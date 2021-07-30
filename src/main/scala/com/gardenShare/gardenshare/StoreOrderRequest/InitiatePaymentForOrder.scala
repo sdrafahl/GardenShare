@@ -3,6 +3,7 @@ package com.gardenShare.gardenshare
 import cats.effect.IO
 import cats.effect.ContextShift
 import cats.implicits._
+import StoreOrderRequestStatus._
 
 abstract class InitiatePaymentForOrder[F[_]] {
   def payOrder(orderId: Int, buyerEmail: Email, receiptEmail: Email, paymentType: PaymentType)(implicit cs: ContextShift[F]): F[PaymentIntentToken]

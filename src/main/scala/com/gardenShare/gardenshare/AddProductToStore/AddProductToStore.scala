@@ -5,7 +5,6 @@ import com.gardenShare.gardenshare.InsertProduct
 import cats.effect.IO
 import com.gardenShare.gardenshare.GetProductsByStore
 import cats.effect.ContextShift
-import cats.Monad
 
 abstract class AddProductToStore[F[_]] {
   def add(s: Store, pd: Produce, am: Amount)(implicit cs:ContextShift[F]): F[Unit]

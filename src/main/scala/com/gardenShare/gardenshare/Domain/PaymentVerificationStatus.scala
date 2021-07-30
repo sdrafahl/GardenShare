@@ -13,6 +13,8 @@ object PaymentVerificationStatus {
   case object Canceled extends PaymentVerificationStatus
   case class RequiresFurtherAction(msg: String) extends PaymentVerificationStatus
 
+  def unapply(s: String): Option[PaymentVerificationStatus] = parse(s).toOption
+
   private[this] def parse(x: String): Either[String, PaymentVerificationStatus] = {
       x match {
         case "requires_payment_method" =>

@@ -3,9 +3,10 @@ package com.gardenShare.gardenshare
 import io.circe._
 
 sealed abstract class Produce
-case object BrownOysterMushrooms extends Produce
 
 object Produce {
+
+  case object BrownOysterMushrooms extends Produce
 
   def unapply(str: String): Option[Produce] = str match {
     case "BrownOysterMushrooms" => Option(BrownOysterMushrooms)

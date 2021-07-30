@@ -5,6 +5,8 @@ import utest.test
 import utest.Tests
 import com.typesafe.config.ConfigFactory
 import java.net.URI
+import PriceUnit.Pound
+import Produce.BrownOysterMushrooms
 
 object ProductDescriptionTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()
@@ -21,7 +23,7 @@ object ProductDescriptionTest extends TestSuite {
     test("Product Description Routes") {
       test("productDescription/BrownOysterMushrooms") {
         val descriptionOfMushrooms = UserTestsHelper.makeRequestToGetProductDescription("BrownOysterMushrooms")
-        val expectedProductDescription = ProductDescription("BrownOysterMushrooms",Pound,BrownOysterMushrooms)
+        val expectedProductDescription = ProductDescription("BrownOysterMushrooms",Pound, BrownOysterMushrooms)
         assert(descriptionOfMushrooms equals expectedProductDescription)
       }
     }    

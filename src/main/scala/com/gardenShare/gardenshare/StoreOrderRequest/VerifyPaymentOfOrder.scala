@@ -4,6 +4,11 @@ import cats.effect.ContextShift
 import cats.effect.IO
 import PaymentCommandEvaluator.PaymentCommandEvaluatorOps
 import PaymentID._
+import PaymentVerificationStatus.PaymentComplete
+import PaymentVerificationStatus.PaymentProcessing
+import PaymentVerificationStatus.Canceled
+import PaymentVerificationStatus.RequiresFurtherAction
+import scala.util._
 
 abstract class VerifyPaymentOfOrder[F[_]] {
   def verifyOrder(orderId: Int, buyerEmail: Email)(
@@ -16,7 +21,6 @@ object VerifyPaymentOfOrder {
       implicit evaluator: PaymentCommandEvaluator[IO],
       searchForOrder: SearchStoreOrderRequestTable[IO],
       getPaymentIntent: GetPaymentIntentFromStoreRequest[IO],
-      paymentVerificationStatus: com.gardenShare.gardenshare.Parser[PaymentVerificationStatus],
       setPayment: SetOrderIsPaid[IO]
   ) = new VerifyPaymentOfOrder[IO] {
     def verifyOrder(orderId: Int, buyerEmail: Email)(
@@ -26,30 +30,37 @@ object VerifyPaymentOfOrder {
         case None => IO.raiseError(new Throwable("Order does not exist"))
         case Some(order) => {
           if (order.storeOrderRequest.buyer.equals(buyerEmail)) {
-            getPaymentIntent.search(order.id.toString()).flatMap {
+            getPaymentIntent.search(order.id.toString()).map(maybeIntId => maybeIntId.map(intId => intId.parsePublicKey)).flatMap {
               case None =>
                 IO.raiseError(
                     new Throwable(
                     s"No reference found for intent for order id:${order.id}"
                   )
                 )
-              case Some(intentId) => {                
+              case Some(Failure(_)) => {
+                IO.raiseError(
+                    new Throwable(
+                    "Error parsing public key"
+                  )
+                )
+              }
+              case Some(Success(intentId)) => {                
                 for {
-                  intent <- GetPaymentIntentCommand(intentId.parsePublicKey).evaluate
+                  intent <- GetPaymentIntentCommand(intentId).evaluate
                   paymentStatus = intent.getStatus()
-                  stat <- paymentVerificationStatus.parse(paymentStatus) match {
-                    case Right(PaymentComplete) =>
+                  stat <- PaymentVerificationStatus.unapply(paymentStatus) match {
+                    case Some(PaymentComplete) =>
                       {                        
                         setPayment.setOrder(orderId).map(_ => PaymentComplete)
                       }
-                    case Right(Canceled)          => IO.pure(Canceled)
-                    case Right(PaymentProcessing) => IO.pure(PaymentProcessing)
-                    case Right(RequiresFurtherAction(msg)) =>
+                    case Some(Canceled)          => IO.pure(Canceled)
+                    case Some(PaymentProcessing) => IO.pure(PaymentProcessing)
+                    case Some(RequiresFurtherAction(msg)) =>
                       IO.pure(RequiresFurtherAction(msg))
-                    case Left(err) =>
+                    case None =>
                       IO.raiseError(
                         new Throwable(
-                          s"There was an error getting the status ${err}"
+                          s"There was an error parsing payment verification status."
                         )
                       )
                   }

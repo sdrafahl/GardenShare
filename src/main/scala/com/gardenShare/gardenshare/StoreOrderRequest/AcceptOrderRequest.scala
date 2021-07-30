@@ -10,6 +10,7 @@ import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable
 import com.gardenShare.gardenshare.SearchAcceptedStoreOrderRequestTableByID
 import cats.implicits._
 import com.gardenShare.gardenshare.SearchStoreOrderRequestTable
+import StoreOrderRequestStatus._
 
 abstract class AcceptOrderRequest[F[_]] {
   def accept(storeOrderIdToAccept: Int, sellerEmail: Email)(
@@ -20,8 +21,7 @@ abstract class AcceptOrderRequest[F[_]] {
 object AcceptOrderRequest {
   implicit def createIOAcceptOrderRequest(
       implicit in: InsertIntoAcceptedStoreOrderRequestTableByID[IO],
-      searchOrders: SearchStoreOrderRequestTable[IO],
-      pd: Parser[ZonedDateTime]
+      searchOrders: SearchStoreOrderRequestTable[IO]
   ) = new AcceptOrderRequest[IO] {
     def accept(storeOrderIdToAccept: Int, sellerEmail: Email)(
         implicit cs: ContextShift[IO]
@@ -54,8 +54,7 @@ abstract class DeniedOrderRequests[F[_]] {
 object DeniedOrderRequests {
   implicit def createIODeniedOrderRequests(
       implicit in: InsertIntoDeniedStoreOrderRequestTableByID[IO],
-      searchOrders: SearchStoreOrderRequestTable[IO],
-      pd: Parser[ZonedDateTime]
+      searchOrders: SearchStoreOrderRequestTable[IO]
   ) = new DeniedOrderRequests[IO] {
     def deny(storeOrderToDeny: Int, sellerEmail: Email)(
         implicit cs: ContextShift[IO]
@@ -88,7 +87,6 @@ object StatusOfStoreOrderRequest {
   implicit def createIOStatusOfStoreOrderRequest(
       implicit sa: SearchAcceptedStoreOrderRequestTableByID[IO],
       sd: SearchDeniedStoreOrderRequestTable[IO],
-      parseDate: Parser[ZonedDateTime],
       se: SearchStoreOrderRequestTable[IO],
       getTime: GetCurrentDate[IO],
       orderIdIsPaidFor: OrderIdIsPaidFor[IO],

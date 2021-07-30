@@ -34,12 +34,12 @@ object GetProductById {
 
       IO.fromFuture(IO(client.run(query.result)))
         .map(_.headOption)
-        .map(_.flatMap{f =>
-          pp.parse(f._3).flatMap{produce =>
-            e.parse(f._5).map{currencyType =>
+        .map(_.flatMap{f =>          
+          Produce.unapply(f._3).flatMap{produce =>
+            Currency.unapply(f._5).map{currencyType =>
               ProductWithId(f._1, Product(f._2, produce, Amount(Price(f._4), currencyType)))
             }            
-          }.toOption          
+          }
         })
     }
   }

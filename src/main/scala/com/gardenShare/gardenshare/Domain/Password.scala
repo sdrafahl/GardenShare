@@ -6,7 +6,6 @@ import io.circe.generic.extras.semiauto._
 final case class Password(underlying: String) extends AnyVal
 
 object Password {
-  def unapply(passStr: String): Option[Password] = Some(Password(passStr))
-
+  def unapply(string: String) = Some(Password(string))
   implicit lazy final val passwordCodec: Codec[Password] = deriveUnwrappedCodec
 }
