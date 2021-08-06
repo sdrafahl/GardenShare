@@ -5,12 +5,11 @@ import utest.TestSuite
 import utest.test
 import utest.Tests
 import com.gardenShare.gardenshare.UserInfo
-import com.gardenShare.gardenshare.Sellers
 import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.IA
 import java.net.URL
 import eu.timepit.refined.auto._
-import ParsingDecodingImplicits._
+import UserType.Sellers
 
 object UserTestSpec extends TestSuite {  
 
@@ -65,7 +64,7 @@ object UserTestSpec extends TestSuite {
           val address = Address("500 hickman Rd", "Waukee", "50263", IA)
           val responseForApplication = UserTestsHelper.applyUserToBecomeSeller(jwtToken,ApplyUserToBecomeSellerData(address,testRefreshURL, testReturnURL ))
           UserTestsHelper.verifyUserAsSeller(jwtToken, address)
-          assert(!responseForApplication.head.url.toString().isEmpty())          
+          assert(!responseForApplication.url.toString().isEmpty())          
         }
       }
       test("/user/verify-user-as-seller") {

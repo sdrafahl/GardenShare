@@ -7,7 +7,6 @@ import cats.implicits._
 import cats.effect.Async
 import com.gardenShare.gardenshare.Helpers._
 import io.circe.generic.auto._, io.circe.syntax._
-import com.gardenShare.gardenshare.AuthUser
 import com.gardenShare.gardenshare.AuthJWT
 import com.gardenShare.gardenshare.CreateStoreOrderRequest
 import cats.effect.ContextShift
@@ -16,7 +15,6 @@ import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import scala.concurrent.ExecutionContext
 import com.gardenShare.gardenshare.SellerCompleteOrder._
-import org.http4s.circe._
 
 object StoreOrderRoutes {
   def storeOrderRoutes[
@@ -24,14 +22,12 @@ object StoreOrderRoutes {
         Async:
         ContextShift:
         CreateStoreOrderRequest:
-        AuthUser:
         AuthJWT:
         GetCurrentDate:
         GetStoreOrderRequestsWithinTimeRangeOfSeller:
         StatusOfStoreOrderRequest:
         AcceptOrderRequest:
         DeniedOrderRequests:
-        JoseProcessJwt:
         InitiatePaymentForOrder:
         VerifyPaymentOfOrder:
         SellerCompleteOrder

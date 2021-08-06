@@ -11,9 +11,8 @@ import com.typesafe.config.ConfigFactory
 import eu.timepit.refined.auto._
 import PaymentID._
 import Currency.USD
-import StoreOrderRequestStatus.{AcceptedRequest, DeniedRequest, ExpiredRequest, RequestToBeDetermined, RequestPaidFor, SellerComplete}
-import PaymentVerificationStatus.{PaymentComplete}
-
+import StoreOrderRequestStatus.AcceptedRequest
+import PaymentVerificationStatus.PaymentComplete
 
 object StoreOrderRequestsTest extends TestSuite {
 
@@ -56,7 +55,7 @@ object StoreOrderRequestsTest extends TestSuite {
         val orders = UserTestsHelper.getListOfOrdersFromSellers(jwtTokenOfTheSeller, yesterday, now)
         val orderID = orders.body.head.id
         val orderStatusAfterCreating = UserTestsHelper.getOrderStatus(orderID)
-        val expectedOrderStatusAfterCreating = StoreOrderRequestStatusBody(RequestToBeDetermined)
+        val expectedOrderStatusAfterCreating = StoreOrderRequestStatusBody(StoreOrderRequestStatus.RequestToBeDetermined)
         assert(orderStatusAfterCreating.equals(expectedOrderStatusAfterCreating))
         assert(orders.body.head.storeOrderRequest.buyer.equals(testBuyerEmail))
         assert(responseFromCreatingArequest.storeOrderRequest.seller.equals(testSellerEmail))

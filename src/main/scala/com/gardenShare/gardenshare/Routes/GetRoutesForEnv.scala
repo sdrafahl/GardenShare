@@ -3,7 +3,6 @@ package com.gardenShare.gardenshare
 import org.http4s.HttpRoutes
 import com.gardenShare.gardenshare.SystemEnvionment
 import cats.effect.IO
-import com.gardenShare.gardenshare.GetTypeSafeConfig
 import SystemEnvionment._
 
 abstract class GetRoutesForEnv[F[_]] {

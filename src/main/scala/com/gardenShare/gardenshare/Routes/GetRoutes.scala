@@ -4,11 +4,8 @@ import org.http4s.HttpRoutes
 import cats.effect.IO
 import cats.implicits._
 import com.gardenShare.gardenshare.GetStore
-import io.circe.Decoder
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.GetStoresStream
-import com.gardenShare.gardenshare.Address
-import io.circe.Encoder
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.effect.Timer
 import scala.concurrent.ExecutionContext
@@ -30,7 +27,6 @@ object GetRoutes {
     signUpUser: SignupUser[IO],
     cognitoClient: CogitoClient[IO],
     deleteStore: DeleteStore[IO],
-    insertProduct: InsertProduct[IO],
     addProductToStore: AddProductToStore[IO],
     getProductsByStore:GetProductsByStore[IO],
     timer: Timer[IO],
@@ -55,7 +51,6 @@ object GetRoutes {
     tsc: GetTypeSafeConfig[IO],
     signUpUser: SignupUser[IO],
     cognitoClient: CogitoClient[IO],
-    insertProduct: InsertProduct[IO],
     addProductToStore: AddProductToStore[IO],
     getProductsByStore:GetProductsByStore[IO],
     timer: Timer[IO],

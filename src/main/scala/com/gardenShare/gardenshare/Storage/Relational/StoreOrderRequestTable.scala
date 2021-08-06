@@ -11,7 +11,6 @@ import com.gardenShare.gardenshare.StoreOrderRequestWithId
 import com.gardenShare.gardenshare.ProductAndQuantity
 import slick.jdbc.PostgresProfile
 import scala.concurrent.ExecutionContext
-import java.time.ZonedDateTime
 
 object StoreOrderRequestTableSchemas {
   type StoreOrderRequestTableSchema = (Int, String, String, String)

@@ -3,7 +3,6 @@ package com.gardenShare.gardenshare
 import eu.timepit.refined.api.Refined
 import eu.timepit.refined.numeric._
 import io.circe.Codec
-import io.circe.generic.extras.semiauto._
 import eu.timepit.refined.api.RefType
 import io.circe.Decoder
 import io.circe.Encoder
@@ -18,6 +17,4 @@ object Rating {
   private[this] lazy val ratingScoreDecoder: Decoder[RatingScore] = Decoder.decodeInt.emap(parseRatingScore)
   private[this] lazy val ratingScoreEncoder: Encoder[RatingScore] = Encoder.encodeInt.contramap(_.value)
   implicit lazy val ratingScoreCodec: Codec[RatingScore] = Codec.from(ratingScoreDecoder, ratingScoreEncoder)
-
-  //implicit lazy final val ratingCodec: Codec[Rating] = deriveCodec
 }

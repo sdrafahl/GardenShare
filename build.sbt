@@ -68,6 +68,7 @@ lazy val commonDependencies = Seq(
 lazy val root = (project in file("."))
   .enablePlugins(DockerPlugin)
   .settings(
+    scalacOptions += "-Ywarn-unused",
     organization := "com.gardenShare",
     name := "gardenshare",
     version := "0.0.1-SNAPSHOT",

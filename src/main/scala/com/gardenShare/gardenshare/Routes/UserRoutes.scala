@@ -5,13 +5,8 @@ import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Helpers._
 import com.gardenShare.gardenshare.CogitoClient
 import com.gardenShare.gardenshare.GetUserPoolName
-import com.gardenShare.gardenshare.GetTypeSafeConfig
-import com.gardenShare.gardenshare.GetUserPoolSecret
 import com.gardenShare.gardenshare.GetUserPoolId
 import com.gardenShare.gardenshare.AuthJWT
-import com.gardenShare.gardenshare.GetRegion
-import com.gardenShare.gardenshare.HttpsJwksBuilder
-import com.gardenShare.gardenshare.GetDistance
 import org.http4s.dsl.Http4sDsl
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.Password
@@ -39,26 +34,22 @@ import com.gardenShare.gardenshare.UserResponse._
 import AuthenticateJWTOnRequest.AuthenticateJWTOnRequestOps
 import org.http4s.circe.CirceEntityCodec._
 import ProcessPolymorphicType.ProcessPolymorphicTypeOps
+import com.gardenShare.gardenshare.SignupUser
 
 object UserRoutes {
   def userRoutes[F[_]:
       Async:
-      GetTypeSafeConfig:
       GetUserInfo:
-      com.gardenShare.gardenshare.SignupUser:
-      GetUserPoolSecret:
+      SignupUser:
       AuthUser:
       GetUserPoolId:
       AuthJWT:
-      GetRegion:
-      HttpsJwksBuilder:
-      GetDistance:
       GetUserPoolName:
       CogitoClient:
       ApplyUserToBecomeSeller:
       ContextShift:
       VerifyUserAsSeller:
-      JoseProcessJwt
+      ProcessPolymorphicType
   ]()(
     implicit ec: ExecutionContext
   )
@@ -120,7 +111,8 @@ object UserRoutes {
         for {
           emailOfUser <- req.authJWT
           applyUserToBecomeSeller <- req.as[ApplyUserToBecomeSellerData]
-          applyUserToBecomeSellerResponse <- implicitly[ApplyUserToBecomeSeller[F]].applyUser(emailOfUser, applyUserToBecomeSeller.address, applyUserToBecomeSeller.refreshUrl ,applyUserToBecomeSeller.returnUrl).asJsonF
+          applyUserToBecomeSellerResponse <- implicitly[ApplyUserToBecomeSeller[F]]
+          .applyUser(emailOfUser, applyUserToBecomeSeller.address, applyUserToBecomeSeller.refreshUrl ,applyUserToBecomeSeller.returnUrl).asJsonF
         } yield applyUserToBecomeSellerResponse
       }
       case req @ POST -> Root / "user" / "verify-user-as-seller" => {

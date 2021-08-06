@@ -1,8 +1,6 @@
 package com.gardenShare.gardenshare
 
 import io.circe._
-import io.circe.Json
-import io.circe.syntax._
 
 sealed abstract class PaymentVerificationStatus
 

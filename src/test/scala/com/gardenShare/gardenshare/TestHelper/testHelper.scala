@@ -15,6 +15,7 @@ import java.time.ZonedDateTime
 import PaymentCommandEvaluator._
 import com.stripe.model.Account
 import cats.implicits._
+import org.http4s.circe.CirceEntityCodec._
 
 object UserTestsHelper {
   lazy implicit val config = ConfigFactory.load()
@@ -339,7 +340,7 @@ object UserTestsHelper {
   def deleteSlickEmailReference(email: Email) = implicitly[DeleteAccountEmailReferences[IO]].delete(email)
 
   def initiatePayment(buyerJwt: String, orderId: Int, receiptEmail: Email, paymentType: PaymentType) = {    
-    val uri = Uri.fromString(s"storeOrderRequest/initiate-payment/${orderId}/${receiptEmail.underlying.value}/${implicitly[EncodeToString[PaymentType]].encode(paymentType)}").toOption.get
+    val uri = Uri.fromString(s"storeOrderRequest/initiate-payment/${orderId}/${receiptEmail.underlying.value}/${paymentType.show}").toOption.get
     val headers = Headers.of(Header("authentication", buyerJwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
 

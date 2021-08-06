@@ -1,9 +1,6 @@
 package com.gardenShare.gardenshare
 
 import cats.Monoid
-import cats.Show
-import cats.kernel.Hash
-import cats.kernel.Order
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import com.gardenShare.gardenshare.Currency.USD

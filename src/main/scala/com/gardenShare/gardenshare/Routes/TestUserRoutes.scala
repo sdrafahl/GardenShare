@@ -9,7 +9,6 @@ import org.http4s.dsl.Http4sDsl
 import com.gardenShare.gardenshare.GetUserPoolName
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.GetTypeSafeConfig
-import cats.FlatMap
 import cats.implicits._
 import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.Password
@@ -20,8 +19,15 @@ import cats.effect.ContextShift
 Please do not use in production
   */
 object TestUserRoutes {
-  def userRoutes[F[_]: Async: GetUserPoolId: CogitoClient: GetTypeSafeConfig: FlatMap:GetUserPoolName:DeleteStore:ContextShift]()
-      : HttpRoutes[F] = {
+  def userRoutes[F[_]:
+      Async:
+      GetUserPoolId:
+      CogitoClient:
+      GetTypeSafeConfig:
+      DeleteStore:
+      GetUserPoolName:
+      ContextShift
+  ](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {

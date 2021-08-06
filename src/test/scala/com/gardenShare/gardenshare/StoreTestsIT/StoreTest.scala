@@ -1,29 +1,14 @@
 package com.gardenShare.gardenshare
 
-import cats.effect.IO
-import org.http4s._
-import org.http4s.implicits._
-import munit.CatsEffectSuite
 import com.gardenShare.gardenshare.Email
-import com.gardenShare.gardenshare.Password
-import fs2.text
-import io.circe.fs2._
-import io.circe.generic.auto._, io.circe.syntax._
+import io.circe.generic.auto._
 import utest.TestSuite
 import utest.test
 import utest.Tests
-import com.gardenShare.gardenshare.UserInfo
-import com.gardenShare.gardenshare.DeleteStore
-import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.IA
-import com.gardenShare.gardenshare.Store._
 import com.typesafe.config.ConfigFactory
-import eu.timepit.refined._
-import eu.timepit.refined.api.Refined
 import eu.timepit.refined.auto._
-import eu.timepit.refined.string.MatchesRegex
-import eu.timepit.refined.api.RefType
 
 object StoreTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()

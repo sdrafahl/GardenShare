@@ -6,8 +6,6 @@ import com.gardenShare.gardenshare.GetDistance
 import com.gardenShare.gardenshare.GetStoresStream
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-import com.gardenShare.gardenshare.AuthUser
-import io.circe._
 import io.circe.generic.auto._, io.circe.syntax._
 import com.gardenShare.gardenshare.Address
 import scala.util.Try
@@ -21,15 +19,13 @@ import cats.effect.Timer
 object StoreRoutes {
   def storeRoutes[F[_]:
       Async:
-      AuthUser:
       AuthJWT:
       GetNearestStores:
       GetStoresStream:
       GetDistance:
       ContextShift:
       Timer:
-      GetThreadCountForFindingNearestStores:
-      JoseProcessJwt
+      GetThreadCountForFindingNearestStores
   ]: HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._      

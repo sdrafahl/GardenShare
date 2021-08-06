@@ -26,6 +26,6 @@ object SignupUser {
   }
    
   implicit class SignupUserOps(underlying : User) {
-    def signUp[F[_]: SignupUser:GetUserPoolName:CogitoClient]() = SignupUser[F]().signupUser(underlying.email, underlying.password)
+    def signUp[F[_]: SignupUser]() = SignupUser[F]().signupUser(underlying.email, underlying.password)
   }
 }

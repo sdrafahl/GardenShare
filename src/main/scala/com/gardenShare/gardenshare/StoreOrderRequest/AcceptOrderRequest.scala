@@ -1,6 +1,5 @@
 package com.gardenShare.gardenshare
 
-import java.time.ZonedDateTime
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Email
 import cats.effect.IO

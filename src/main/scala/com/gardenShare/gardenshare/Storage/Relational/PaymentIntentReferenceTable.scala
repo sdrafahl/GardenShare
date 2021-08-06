@@ -30,7 +30,7 @@ object InsertPaymentIntentReference {
     def insert(storeRequestId: String, paymentIntentId: String)(implicit cs: ContextShift[IO]): IO[Unit] = {
       val tableQuery = PaymentIntentReferenceTable.paymentIntentReferenceTable
       val query = tableQuery.insertOrUpdate((storeRequestId, paymentIntentId))
-      IO.fromFuture(IO(client.run(query.transactionally))).flatMap(a => IO.unit)
+      IO.fromFuture(IO(client.run(query.transactionally))).flatMap(_ => IO.unit)
     }
   }
 }
