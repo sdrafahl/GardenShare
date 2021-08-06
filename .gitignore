@@ -6,3 +6,4 @@
 *application.conf
 *.class
 *.cache
+application.conf
