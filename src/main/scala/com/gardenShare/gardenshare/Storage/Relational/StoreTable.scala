@@ -4,7 +4,6 @@ import cats.effect.IO._
 import com.gardenShare.gardenshare._
 import cats.implicits._
 import fs2.Stream
-import cats.effect.Async
 import cats.effect.{ContextShift, IO}
 import fs2.interop.reactivestreams._
 import _root_.io.circe.Encoder
@@ -73,7 +72,7 @@ object GetStoreByID {
     }
   }
 
-abstract class GetStore[F[_]: Async] {
+abstract class GetStore[F[_]] {
   def getStoresByUserEmail(email: Email)(implicit cs: ContextShift[F]): F[List[Store]]
 }
 

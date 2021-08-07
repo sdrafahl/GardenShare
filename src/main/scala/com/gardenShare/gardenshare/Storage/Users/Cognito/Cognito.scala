@@ -13,8 +13,6 @@ import cats.effect.Async
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
-import com.gardenShare.gardenshare.GetUserPoolName
-import com.gardenShare.gardenshare.GetTypeSafeConfig
 import com.gardenShare.gardenshare.UserPoolName
 import com.gardenShare.gardenshare.User
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminInitiateAuthRequest
@@ -29,56 +27,53 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDelete
 import com.gardenShare.gardenshare.UserPoolID
 import com.gardenShare.gardenshare.Password
 import cats.implicits._
-import cats.FlatMap
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRespondToAuthChallengeResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserResponse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserRequest
-
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRemoveUserFromGroupRequest
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRemoveUserFromGroupResponse
 
-abstract class CogitoClient[F[_]: GetUserPoolName: Async: FlatMap] {
+abstract class CogitoClient[F[_]] {
   def createUserPool(userPoolName: String): F[CreateUserPoolResponse]
   def createUserPoolClient(
-      clientName: String,
-      userPoolId: String
+    clientName: String,
+    userPoolId: String
   ): F[UserPoolClientType]
   def adminCreateUser(
-      userName: Email,
-      password: Password,
-      userPoolId: UserPoolID,
-      clientId: String
+    userName: Email,
+    password: Password,
+    userPoolId: UserPoolID,
+    clientId: String
   ): F[AdminRespondToAuthChallengeResponse]
   def createUser(
-      password: String,
-      email: String,
-      userPoolName: UserPoolName
+    password: String,
+    email: String,
+    userPoolName: UserPoolName
   ): SignUpResponse
   def authUserAdmin(
-      user: User,
-      userPoolId: String,
-
+    user: User,
+    userPoolId: String,
     clientId: String
   ): F[AdminInitiateAuthResponse]
   def adminDeleteUser(
-      email: Email,
-      userPoolId: UserPoolID
+    email: Email,
+    userPoolId: UserPoolID
   ): F[AdminDeleteUserResponse]
   def addUserToGroup(
-      email: String,
-      userPoolId: UserPoolID,
-      usertype: String
+    email: String,
+    userPoolId: UserPoolID,
+    usertype: String
   ): F[AdminAddUserToGroupResponse]
   def listGroupsForUser(
-      email: String,
-      userPoolId: UserPoolID
+    email: String,
+    userPoolId: UserPoolID
   ): F[AdminListGroupsForUserResponse]
 }
 
 object CogitoClient {
 
-  implicit def apply[F[_]: GetUserPoolName: GetTypeSafeConfig: Async: FlatMap](
+  implicit def apply[F[_]: Async](
       implicit client: CognitoIdentityProviderClient = CognitoIdentityProviderClient.builder().build()
   ): CogitoClient[F] = new CogitoClient[F] {
     def createUserPool(userPoolName: String) = {
@@ -144,7 +139,7 @@ object CogitoClient {
             case Failure(error) => cb(Left(error))
           }
       }
-      userCreated.flatMap { adminResp =>
+      userCreated.flatMap {_ =>
         authUserAdmin(
           User(userName, Password(tempPassword)),
           userPoolId.id,

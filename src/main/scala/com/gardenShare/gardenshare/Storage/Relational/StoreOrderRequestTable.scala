@@ -60,8 +60,7 @@ abstract class SearchStoreOrderRequestTable[F[_]] {
 
 object SearchStoreOrderRequestTable {
   implicit def createIOSearchStoreOrderRequestTable(
-    implicit searchProductRefs: SearchProductReferences[IO],
-    gpid: GetProductById[IO],
+    implicit gpid: GetProductById[IO],
     client: PostgresProfile.backend.DatabaseDef
   ) = new SearchStoreOrderRequestTable[IO] {
     def search(id: Int)(implicit cs: ContextShift[IO]): IO[Option[StoreOrderRequestWithId]] = GetStoreOrderRequestHelper.getStoreOrderWithId(id)
