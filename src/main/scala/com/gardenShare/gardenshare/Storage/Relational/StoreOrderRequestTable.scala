@@ -55,7 +55,7 @@ object SearchProductReferences {
 }
 
 abstract class SearchStoreOrderRequestTable[F[_]] {
-  def search(id: Int)(implicit cs: ContextShift[F]): F[Option[StoreOrderRequestWithId]]
+  def search(id: OrderId)(implicit cs: ContextShift[F]): F[Option[StoreOrderRequestWithId]]
 }
 
 object SearchStoreOrderRequestTable {
@@ -63,7 +63,7 @@ object SearchStoreOrderRequestTable {
     implicit gpid: GetProductById[IO],
     client: PostgresProfile.backend.DatabaseDef
   ) = new SearchStoreOrderRequestTable[IO] {
-    def search(id: Int)(implicit cs: ContextShift[IO]): IO[Option[StoreOrderRequestWithId]] = GetStoreOrderRequestHelper.getStoreOrderWithId(id)
+    def search(id: OrderId)(implicit cs: ContextShift[IO]): IO[Option[StoreOrderRequestWithId]] = GetStoreOrderRequestHelper.getStoreOrderWithId(id)
   }
 }
 
@@ -172,13 +172,13 @@ object GetStoreOrderRequestHelper {
     getStoreOrdersWithOrderRequestQuery(query)      
   }
 
-  def getStoreOrderWithId(id: Int)(
+  def getStoreOrderWithId(id: OrderId)(
     implicit cs: ContextShift[IO],
     g: GetProductById[IO],
     client: PostgresProfile.backend.DatabaseDef
   ) = {
     val query = for {
-      re <- StoreOrderRequestTable.storeOrderRequests if re.storeRequestId === id
+      re <- StoreOrderRequestTable.storeOrderRequests if re.storeRequestId === id.id
     } yield re
     getStoreOrdersWithOrderRequestQuery(query).map(_.headOption)
   }

@@ -38,15 +38,15 @@ object OrderIdIsPaidFor {
 }
 
 abstract class SetOrderIsPaid[F[_]] {
-  def setOrder(orderId: Int)(implicit cs: ContextShift[F]): F[Unit]
+  def setOrder(orderId: OrderId)(implicit cs: ContextShift[F]): F[Unit]
 }
 
 object SetOrderIsPaid {
   implicit def createIOSetOrderIsPaid(implicit client: PostgresProfile.backend.DatabaseDef) = new SetOrderIsPaid[IO] {
-    def setOrder(orderId: Int)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    def setOrder(orderId: OrderId)(implicit cs: ContextShift[IO]): IO[Unit] = {
       val table = OrdersPaidForTable.ordersPaidForTable
       val baseQuery = OrdersPaidForTable.ordersPaidForTable.returning(table)
-      val query = (baseQuery += (orderId)).transactionally
+      val query = (baseQuery += (orderId.id)).transactionally
       IO.fromFuture(IO(client.run(query))).map(_ => ())
     }
   }

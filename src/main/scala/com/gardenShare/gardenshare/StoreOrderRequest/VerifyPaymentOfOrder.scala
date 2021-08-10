@@ -11,7 +11,7 @@ import PaymentVerificationStatus.RequiresFurtherAction
 import scala.util._
 
 abstract class VerifyPaymentOfOrder[F[_]] {
-  def verifyOrder(orderId: Int, buyerEmail: Email)(
+  def verifyOrder(orderId: OrderId, buyerEmail: Email)(
       implicit cs: ContextShift[F]
   ): F[PaymentVerification]
 }
@@ -23,7 +23,7 @@ object VerifyPaymentOfOrder {
       getPaymentIntent: GetPaymentIntentFromStoreRequest[IO],
       setPayment: SetOrderIsPaid[IO]
   ) = new VerifyPaymentOfOrder[IO] {
-    def verifyOrder(orderId: Int, buyerEmail: Email)(
+    def verifyOrder(orderId: OrderId, buyerEmail: Email)(
         implicit cs: ContextShift[IO]
     ): IO[PaymentVerification] = {
       searchForOrder.search(orderId).flatMap {

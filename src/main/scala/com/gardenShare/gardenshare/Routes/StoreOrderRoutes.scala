@@ -6,7 +6,7 @@ import org.http4s.dsl.Http4sDsl
 import cats.implicits._
 import cats.effect.Async
 import com.gardenShare.gardenshare.Helpers._
-import io.circe.generic.auto._, io.circe.syntax._
+import io.circe.generic.auto._
 import com.gardenShare.gardenshare.AuthJWT
 import com.gardenShare.gardenshare.CreateStoreOrderRequest
 import cats.effect.ContextShift
@@ -15,6 +15,8 @@ import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import scala.concurrent.ExecutionContext
 import com.gardenShare.gardenshare.SellerCompleteOrder._
+import AuthenticateJWTOnRequest.AuthenticateJWTOnRequestOps
+import ProcessPolymorphicType.ProcessPolymorphicTypeOps
 
 object StoreOrderRoutes {
   def storeOrderRoutes[
@@ -30,11 +32,11 @@ object StoreOrderRoutes {
         DeniedOrderRequests:
         InitiatePaymentForOrder:
         VerifyPaymentOfOrder:
-        SellerCompleteOrder
+        SellerCompleteOrder:
+        ProcessPolymorphicType
   ]
     (
-      implicit zoneDateparser: ParseBase64EncodedZoneDateTime,
-      ec: ExecutionContext
+      implicit ec: ExecutionContext
     ): HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
@@ -49,100 +51,58 @@ object StoreOrderRoutes {
           ).process
         })
       }
-      case req @ GET -> Root / "storeOrderRequest" / "seller" / from / to => {
-        (zoneDateparser.parseZoneDateTime(from), zoneDateparser.parseZoneDateTime(to)) match {
-          case (Left(_), _) => Ok(ResponseBody("From date is not valid zone date format", false).asJson.toString())
-          case (_, Left(_)) => Ok(ResponseBody("To date is not valid zone date format", false).asJson.toString())
-          case (Right(fromDateZone), Right(toDateZone)) => {
-            parseRequestAndValidateUserResponse[F](req, {email =>
-              ProcessData(
-                implicitly[GetStoreOrderRequestsWithinTimeRangeOfSeller[F]].getStoreOrdersWithin(fromDateZone, toDateZone, email),
-                (l: List[StoreOrderRequestWithId]) => StoreOrderRequestsBelongingToSellerBody(l),
-                (err: Throwable) => ResponseBody(s"Error getting list of store order requests: ${err.getMessage()}", false)
-              ).process
-            })
-          }
-        }      
+      case req @ GET -> Root / "storeOrderRequest" / "seller" / ZoneDateTimeValue(from) / ZoneDateTimeValue(to) => {
+        for {
+          email <- req.authJWT
+          responseToUser <- implicitly[GetStoreOrderRequestsWithinTimeRangeOfSeller[F]]
+          .getStoreOrdersWithin(from.zoneDateTime, to.zoneDateTime, email)
+          .map(StoreOrderRequestsBelongingToSellerBody(_))
+          .asJsonF
+        } yield responseToUser
       }
-      case GET -> Root / "storeOrderRequest" / "status" / orderId => {
-        orderId.toIntOption match {
-          case None => Ok(ResponseBody("Order Id is not a integer", false).asJson.toString())
-          case Some(id) => {            
-            ProcessData(
-                implicitly[StatusOfStoreOrderRequest[F]].get(id),
-                (s => StoreOrderRequestStatusBody(s)),
-                (err: Throwable) => ResponseBody(s"Error getting status of request ${err.getMessage()}", false)
-            )
-              .process
-              .flatMap(a => Ok(a.toString()))
-          }
-        }
+      case GET -> Root / "storeOrderRequest" / "status" / OrderId(orderId) => {
+        for {
+          statusOfStoreOrder <- implicitly[StatusOfStoreOrderRequest[F]]
+          .get(orderId)
+          .map(StoreOrderRequestStatusBody(_))
+          .asJsonF
+        } yield statusOfStoreOrder
       }
-      case req @ POST -> Root / "storeOrderRequest" / "accept" / orderId => {
-        orderId.toIntOption match {
-          case None => Ok(ResponseBody("Order Id is not a integer", false).asJson.toString())
-          case Some(id) => {
-            parseRequestAndValidateUserResponse[F](req, {email =>
-              ProcessData(
-                implicitly[AcceptOrderRequest[F]].accept(id, email),
-                (_:Unit) => ResponseBody("Store order request was accepted", true),
-                (err: Throwable) => ResponseBody(s"Store order request failed to be accepted, error: ${err.getMessage()}", false)
-              ).process
-            })
-          }
-        }
+
+      case req @ POST -> Root / "storeOrderRequest" / "accept" / OrderId(id) => {
+        (for {
+          userEmail <- req.authJWT
+          _ <- implicitly[AcceptOrderRequest[F]].accept(id, userEmail)
+        } yield ResponseBody("Store order request was accepted", true))
+          .asJsonF        
       }
-      case req @ POST -> Root / "storeOrderRequest" / "deny" / orderId => {
-        orderId.toIntOption match {
-          case None => Ok(ResponseBody("Order Id is not a integer", false).asJson.toString())
-          case Some(id) => {
-            parseRequestAndValidateUserResponse[F](req, {email =>
-              ProcessData(
-                implicitly[DeniedOrderRequests[F]].deny(id, email),
-                (_:Unit) => ResponseBody("Store order request was denied", true),
-                (err: Throwable) => ResponseBody(s"Store order request failed to be denied, error: ${err.getMessage()}", false)
-              ).process
-            })
-          }
-        }
+      case req @ POST -> Root / "storeOrderRequest" / "deny" / OrderId(id) => {
+        (for {
+          userEmail <- req.authJWT
+          _ <- implicitly[DeniedOrderRequests[F]].deny(id, userEmail)
+        } yield ResponseBody("Store order request was denied", true))
+          .asJsonF        
       }
-      case req @ POST -> Root / "storeOrderRequest" / "initiate-payment" / IntVar(orderId) / Email(receiptEmail) / PaymentType(paymentType) => {
-        parseRequestAndValidateUserResponse[F](req, {buyerEmail =>
-          ProcessData(
-            implicitly[InitiatePaymentForOrder[F]].payOrder(orderId, buyerEmail, receiptEmail, paymentType),
-            (tkn: PaymentIntentToken) => tkn,
-            (err: Throwable) => ResponseBody(s"There was a problem initiating a payment message: ${err.getMessage()}", false)
-          ).process
-        })
+      case req @ POST -> Root / "storeOrderRequest" / "initiate-payment" / OrderId(orderId) / Email(receiptEmail) / PaymentType(paymentType) => {
+        for {
+          buyerEmail <- req.authJWT
+          response <- implicitly[InitiatePaymentForOrder[F]]
+          .payOrder(orderId, buyerEmail, receiptEmail, paymentType)
+          .asJsonF
+        } yield response
       }
-      case req @ POST -> Root / "storeOrderRequest" / "verify-payment" / orderId => {
-        orderId.toIntOption match {
-          case None => Ok(ResponseBody(s"Order ID: ${orderId} is not a valid order ID", false).asJson.toString())
-          case Some(order_id) => {
-            parseRequestAndValidateUserResponse[F](req, {buyerEmail =>
-              ProcessData(
-                implicitly[VerifyPaymentOfOrder[F]].verifyOrder(order_id, buyerEmail),
-                (x: PaymentVerification) => x,
-                (err: Throwable) => ResponseBody(s"Error in verification error: ${err.getMessage()}", false)
-              ).process
-            })
-          }
-        }
+      case req @ POST -> Root / "storeOrderRequest" / "verify-payment" / OrderId(orderId) => {
+        for {
+          buyerEmail <- req.authJWT
+          paymentVerification <- implicitly[VerifyPaymentOfOrder[F]].verifyOrder(orderId, buyerEmail).asJsonF
+        } yield paymentVerification
       }
-      case req @ POST -> Root / "storeOrderRequest" / "seller-complete-order" / orderId => {
-        orderId.toIntOption match {
-          case None => Ok(ResponseBody(s"Order ID: ${orderId} is not a valid order ID", false).asJson.toString())
-          case Some(order_id) => {
-            parseRequestAndValidateUserResponse[F](req, {sellerEmail =>
-              
-              ProcessData(
-                SellerCompleteOrderRequest(order_id, sellerEmail).complete[F],
-                (_: Unit) => ResponseBody(s"Order: ${orderId} is confirmed to be complete by seller", true),
-                (err: Throwable) => ResponseBody(s"Error in confirmation: ${err.getMessage()}", false)
-              ).process
-            })
-          }
-        }
+      case req @ POST -> Root / "storeOrderRequest" / "seller-complete-order" / OrderId(orderId) => {
+        (for {
+          sellerEmail <- req.authJWT
+          _ <- SellerCompleteOrderRequest(orderId, sellerEmail).complete[F]
+        } yield ResponseBody(s"Order: ${orderId} is confirmed to be complete by seller", true))
+          .asJsonF        
       }
     }
   }

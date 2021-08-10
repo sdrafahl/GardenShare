@@ -1,3 +1,3 @@
 package com.gardenShare.gardenshare
 
-case class SellerCompleteOrderRequest(orderID: Int, seller: Email)
+case class SellerCompleteOrderRequest(orderID: OrderId, seller: Email)

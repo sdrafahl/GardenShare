@@ -6,7 +6,7 @@ import cats.implicits._
 import StoreOrderRequestStatus._
 
 abstract class InitiatePaymentForOrder[F[_]] {
-  def payOrder(orderId: Int, buyerEmail: Email, receiptEmail: Email, paymentType: PaymentType)(implicit cs: ContextShift[F]): F[PaymentIntentToken]
+  def payOrder(orderId: OrderId, buyerEmail: Email, receiptEmail: Email, paymentType: PaymentType)(implicit cs: ContextShift[F]): F[PaymentIntentToken]
 }
 
 object InitiatePaymentForOrder {
@@ -19,7 +19,7 @@ object InitiatePaymentForOrder {
     initiatePayment: InitiatePayment[IO],
     insertRef: InsertPaymentIntentReference[IO]
   ) = new InitiatePaymentForOrder[IO] {
-    def payOrder(orderId: Int, buyerEmail: Email, receiptEmail: Email, paymentType: PaymentType)(implicit cs: ContextShift[IO]): IO[PaymentIntentToken] = {
+    def payOrder(orderId: OrderId, buyerEmail: Email, receiptEmail: Email, paymentType: PaymentType)(implicit cs: ContextShift[IO]): IO[PaymentIntentToken] = {
       (searchForOrder.search(orderId), getStatusOfOrder.get(orderId))
         .parBisequence
         .flatMap{
