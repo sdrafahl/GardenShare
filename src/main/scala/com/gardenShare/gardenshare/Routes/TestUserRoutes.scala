@@ -10,10 +10,11 @@ import com.gardenShare.gardenshare.GetUserPoolName
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.implicits._
-import io.circe.generic.auto._, io.circe.syntax._
+import io.circe.generic.auto._
 import com.gardenShare.gardenshare.Password
 import com.gardenShare.gardenshare.DeleteStore
 import cats.effect.ContextShift
+import ProcessPolymorphicType.ProcessPolymorphicTypeOps
 
 /**
 Please do not use in production
@@ -26,26 +27,27 @@ object TestUserRoutes {
       GetTypeSafeConfig:
       DeleteStore:
       GetUserPoolName:
-      ContextShift
+      ContextShift:
+      ProcessPolymorphicType
   ](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] {
       case DELETE -> Root / "user" / "delete" / Email(email) => {
-        val pgm = for {
+        (for {
            id <- implicitly[GetUserPoolId[F]].exec()
            resp <- implicitly[CogitoClient[F]].adminDeleteUser(email ,id)
            _ <- implicitly[DeleteStore[F]].delete(email)
-         } yield resp
-        pgm.flatMap(re => Ok(ResponseBody(re.toString(), true).asJson.toString()))
+        } yield ResponseBody(resp.toString(), true))
+          .asJsonF
       }
       case POST -> Root / "user" / Email(email) / Password(password) => {
-        val pgm = for {
+        (for {
           id <- implicitly[GetUserPoolId[F]].exec()
           poolName <- implicitly[GetUserPoolName[F]].exec()
           res <- implicitly[CogitoClient[F]].adminCreateUser(email, password, id, poolName.name)              
-        } yield res
-        pgm.flatMap(re => Ok(ResponseBody(re.toString(), true).asJson.toString()))
+        } yield ResponseBody(res.toString(), true))
+          .asJsonF
       }
     }
   }

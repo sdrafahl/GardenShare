@@ -11,7 +11,7 @@ import com.gardenShare.gardenshare.IsWithinRange.Ops
 import cats.effect.ContextShift
 
 abstract class GetNearestStores[F[_]] {
-  def getNearest(n: DistanceInMiles, limit: Int, fromLocation: Address)(
+  def getNearest(n: DistanceInMiles, limit: Limit, fromLocation: Address)(
     implicit getDist: GetDistance[F],
     getStores: GetStoresStream[F],
     cs: ContextShift[F],
@@ -28,7 +28,7 @@ object GetNearestStores {
     } yield (dist.inRange(range), dist)
   }
   implicit object IOGetNearestStore extends GetNearestStores[IO] {
-    def getNearest(n: DistanceInMiles, limit: Int, fromLocation: Address)(
+    def getNearest(n: DistanceInMiles, limit: Limit, fromLocation: Address)(
       implicit getDist: GetDistance[IO],
       getStores: GetStoresStream[IO],
       cs: ContextShift[IO],
@@ -37,7 +37,7 @@ object GetNearestStores {
     ): IO[List[RelativeDistanceAndStore]] = {
       val stores = getStores.getLazyStores
       for {
-        queue <- InspectableQueue.bounded[IO, RelativeDistanceAndStore](limit)
+        queue <- InspectableQueue.bounded[IO, RelativeDistanceAndStore](limit.l)
         threads <- threadCount.get
         _ <- for {
           processQueue <- stores.parEvalMap(threads) {
@@ -45,7 +45,7 @@ object GetNearestStores {
                 isWithinRange[IO](n, fromLocation, store.address, getDist).flatMap {
                   case (true, dist) => {
                     queue.getSize.flatMap{ depth =>
-                      if(depth < limit) {
+                      if(depth < limit.l) {
                         queue.enqueue1(RelativeDistanceAndStore(store, dist))
                       } else {
                         IO.raiseError(new Throwable("Done adding to queue"))

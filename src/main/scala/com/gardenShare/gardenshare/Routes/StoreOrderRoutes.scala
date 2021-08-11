@@ -2,21 +2,18 @@ package com.gardenShare.gardenshare
 
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-
 import cats.implicits._
 import cats.effect.Async
-import com.gardenShare.gardenshare.Helpers._
 import io.circe.generic.auto._
 import com.gardenShare.gardenshare.AuthJWT
 import com.gardenShare.gardenshare.CreateStoreOrderRequest
 import cats.effect.ContextShift
-import com.gardenShare.gardenshare.ProcessData
 import com.gardenShare.gardenshare.Email
-import com.gardenShare.gardenshare.ProcessAndJsonResponse.ProcessAndJsonResponseOps
 import scala.concurrent.ExecutionContext
 import com.gardenShare.gardenshare.SellerCompleteOrder._
 import AuthenticateJWTOnRequest.AuthenticateJWTOnRequestOps
 import ProcessPolymorphicType.ProcessPolymorphicTypeOps
+import org.http4s.circe.CirceEntityCodec._
 
 object StoreOrderRoutes {
   def storeOrderRoutes[
@@ -43,13 +40,11 @@ object StoreOrderRoutes {
 
     HttpRoutes.of {
       case req @ POST -> Root / "storeOrderRequest" / Email(sellerEmail) => {
-        parseREquestAndValidateUserAndParseBodyResponse[StoreOrderRequestBody, F](req, {(email, products) =>
-          ProcessData(
-            implicitly[CreateStoreOrderRequest[F]].createOrder(sellerEmail, email, products.body),
-            (l: StoreOrderRequestWithId) => l,
-            (err: Throwable) => ResponseBody(s"Error creating store order request: ${err.getMessage()}", false)
-          ).process
-        })
+        for {
+          email <- req.authJWT
+          products <- req.as[StoreOrderRequestBody]
+          response <- implicitly[CreateStoreOrderRequest[F]].createOrder(sellerEmail, email, products.body).asJsonF
+        } yield response        
       }
       case req @ GET -> Root / "storeOrderRequest" / "seller" / ZoneDateTimeValue(from) / ZoneDateTimeValue(to) => {
         for {

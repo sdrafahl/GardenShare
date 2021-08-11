@@ -12,5 +12,4 @@ object Address {
   }
 
   implicit lazy final val addressCodec: Codec[Address] = deriveCodec
-
 }
