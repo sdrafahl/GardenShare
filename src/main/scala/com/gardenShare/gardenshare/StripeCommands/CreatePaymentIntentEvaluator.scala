@@ -4,6 +4,7 @@ import cats.effect.IO
 import com.stripe.Stripe
 import com.stripe.model.PaymentIntent
 import com.stripe.param.PaymentIntentCreateParams
+import cats.implicits._
 
 abstract class CreatePaymentIntentEvaluator[F[_]] {
   def eval(c: CreatePaymentIntentEvaluatorCommand): F[PaymentIntent]
@@ -12,13 +13,13 @@ abstract class CreatePaymentIntentEvaluator[F[_]] {
 object CreatePaymentIntentEvaluator {
   def apply[F[_]: CreatePaymentIntentEvaluator]() = implicitly[CreatePaymentIntentEvaluator[F]]
 
-  implicit def createIOCreatePaymentIntentEvaluator(implicit getStripeKey: GetStripePrivateKey[IO], decodeCurrency: DecodeCurrency, decodePaymentType: EncodeToString[PaymentType]) = new CreatePaymentIntentEvaluator[IO] {
+  implicit def createIOCreatePaymentIntentEvaluator(implicit getStripeKey: GetStripePrivateKey[IO]) = new CreatePaymentIntentEvaluator[IO] {
     def eval(c: CreatePaymentIntentEvaluatorCommand): IO[PaymentIntent] = {      
       for {
         stripeApiKey <- getStripeKey.getKey
         _ <- IO(Stripe.apiKey = stripeApiKey.n)
-        curr = decodeCurrency.decode(c.currency)
-        paymentType = decodePaymentType.encode(c.paymentType)
+        curr = Currency.encodeCurrency(c.currency)
+        paymentType = c.paymentType.show
         transerData = PaymentIntentCreateParams.TransferData
         .builder()
         .setDestination(c.sellerConnectedAccountId)

@@ -5,6 +5,7 @@ import com.gardenShare.gardenshare.CogitoClient
 import com.gardenShare.gardenshare.GetUserPoolName
 import com.gardenShare.gardenshare.GetUserPoolId
 import com.gardenShare.gardenshare.GetTypeSafeConfig
+import UserResponse._
 
 abstract class AuthUser[F[_]] {
   def authTheUser(user: User)(implicit client: CogitoClient[F], getUserPoolName:GetUserPoolName[F], getUserPoolId: GetUserPoolId[F]): F[UserResponse]

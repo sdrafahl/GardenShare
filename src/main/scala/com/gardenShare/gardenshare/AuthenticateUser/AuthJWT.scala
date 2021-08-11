@@ -9,13 +9,14 @@ import org.jose4j.jwt.consumer.JwtConsumer
 import com.gardenShare.gardenshare.GetUserPoolId
 import cats.MonadError
 import cats.implicits._
+import JWTValidationResult._
 
 abstract class AuthJWT[F[_]] {
   def authJWT(jwt:JWTValidationTokens): F[JWTValidationResult]
 }
 
 object AuthJWT {
-  implicit def apply[F[_]: AuthJWT]() = implicitly[AuthJWT[F]]
+  def apply[F[_]: AuthJWT]() = implicitly[AuthJWT[F]]
 
   implicit def createAuthJWT[F[_]](
     implicit getUserPoolId: GetUserPoolId[F],
@@ -57,16 +58,16 @@ abstract class JoseProcessJwt[F[_]] {
 
 object JoseProcessJwt {
   implicit def apply[F[_]](implicit x:JoseProcessJwt[F]) = x
-  implicit def createJoseProcessJwt(implicit parseEmail: com.gardenShare.gardenshare.Parser[Email]) = new JoseProcessJwt[IO] {
+  implicit object IOJoseProcessJwt extends JoseProcessJwt[IO] {
     def processJwt(c: JwtConsumer, jwt:JWTValidationTokens): IO[JWTValidationResult] = {
       IO(c.processToClaims(jwt.idToken))
         .attempt
         .map{
           case Left(_) => InvalidToken("Invalid token")
-          case Right(tokn) => {
-            parseEmail.parse(tokn.getClaimValueAsString("email")) match {                
-                case Right(email) => ValidToken(Some(email))
-                case Left(_) => InvalidToken("Invalid email")
+          case Right(tokn) => {            
+            Email.unapply(tokn.getClaimValueAsString("email")) match {                
+                case Some(email) => ValidToken(Some(email))
+                case None => InvalidToken("Invalid email")
               }
           }
         }

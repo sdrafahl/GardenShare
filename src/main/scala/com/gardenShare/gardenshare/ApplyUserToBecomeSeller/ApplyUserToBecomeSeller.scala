@@ -13,8 +13,6 @@ import scala.util.Failure
 import cats.effect.ContextShift
 import scala.concurrent.ExecutionContext
 
-case class ApplyUserToBecomeSellerResponse(url: URL)
-
 abstract class ApplyUserToBecomeSeller[F[_]] {
   def applyUser(userName: Email, address: Address,refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[F], ec: ExecutionContext): F[ApplyUserToBecomeSellerResponse]
 }

@@ -11,7 +11,7 @@ abstract class GetStripeAccountStatusEvaluator[F[_]] {
 }
 
 object GetStripeAccountStatusEvaluator {
-  implicit def createIOGetStripeAccountStatusEvaluator(implicit getStripeKey: GetStripePrivateKey[IO], searchStripeIdWithEmail: SearchAccountIdsByEmail[IO]) = new GetStripeAccountStatusEvaluator[IO] {
+  implicit def createIOGetStripeAccountStatusEvaluator(implicit getStripeKey: GetStripePrivateKey[IO]) = new GetStripeAccountStatusEvaluator[IO] {
     def eval(x: GetStripeAccountStatus)(implicit cs: ContextShift[IO]): IO[Account] = {
       for {
         stripeApiKey <- getStripeKey.getKey

@@ -13,7 +13,7 @@ abstract class CreateStoreOrderRequest[F[_]] {
 object CreateStoreOrderRequest {
   def apply[F[_]: CreateStoreOrderRequest]() = implicitly[CreateStoreOrderRequest[F]]
 
-  implicit def createIOCreateStoreOrderRequest(implicit i:InsertStoreOrderRequest[IO], g: GetCurrentDate[IO], gs: GetStoreOrderRequestsWithinTimeRangeOfBuyer[IO]) = new CreateStoreOrderRequest[IO] {
+  implicit def createIOCreateStoreOrderRequest(implicit i:InsertStoreOrderRequest[IO], gs: GetStoreOrderRequestsWithinTimeRangeOfBuyer[IO]) = new CreateStoreOrderRequest[IO] {
     def createOrder(seller: Email, buyer: Email, products: List[ProductAndQuantity])(implicit cs: ContextShift[IO],ec: ExecutionContext, gd: GetCurrentDate[IO]): IO[StoreOrderRequestWithId] = {
       val waitTimeInMinutes = 1
       for {

@@ -5,10 +5,9 @@ import cats.effect.IO
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.GetUserPoolId
 import scala.jdk.CollectionConverters._
-import com.gardenShare.gardenshare.Sellers
-import com.gardenShare.gardenshare.Requester
 import com.gardenShare.gardenshare.GetStore
 import cats.effect.ContextShift
+import UserType._
 
 abstract class GetUserInfo[F[_]] {
   def getInfo(userName: Email)(implicit cs: ContextShift[F]): F[UserInfo]

@@ -1,15 +1,19 @@
 package com.gardenShare.gardenshare
 
 import cats.Monoid
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
+import com.gardenShare.gardenshare.Currency.USD
 
-
-case class Amount(quantityOfCurrency: Int, currencyType: Currency)
+case class Amount(quantityOfCurrency: Price, currencyType: Currency)
 
 object Amount {
   implicit object MonoidGroupAmount extends Monoid[Amount] {
-    def empty = Amount(0, USD)
+    def empty = Amount(Price(0), USD)
     def combine(x: Amount, y: Amount) = (x.currencyType, y.currencyType) match {
-      case (USD, USD) => Amount(x.quantityOfCurrency + y.quantityOfCurrency, USD)
+      case (USD, USD) => Amount(Price(x.quantityOfCurrency.value + y.quantityOfCurrency.value), USD)
     }
   }
+
+  implicit lazy final val amountCodec: Codec[Amount] = deriveCodec
 }

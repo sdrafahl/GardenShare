@@ -6,7 +6,6 @@ import cats.effect.IO
 import org.http4s.Uri
 import org.http4s._
 import org.http4s.implicits._
-import ParsingDecodingImplicits._
 import eu.timepit.refined.auto._
 import fs2.text
 import io.circe.fs2._
@@ -15,6 +14,8 @@ import io.circe.syntax._
 import java.time.ZonedDateTime
 import PaymentCommandEvaluator._
 import com.stripe.model.Account
+import cats.implicits._
+import org.http4s.circe.CirceEntityCodec._
 
 object UserTestsHelper {
   lazy implicit val config = ConfigFactory.load()
@@ -119,20 +120,14 @@ object UserTestsHelper {
   def applyUserToBecomeSeller(jwt: String, a: ApplyUserToBecomeSellerData) = {
     val uriArg = Uri.fromString(s"/user/apply-to-become-seller").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
-
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a.asJson.toString())
 
     UserRoutes
         .userRoutes[IO]()
         .orNotFound(request)
         .unsafeRunSync()
-        .body
-        .through(text.utf8Decode)
-        .through(stringArrayParser)
-        .through(decoder[IO, ApplyUserToBecomeSellerResponse])
-        .compile
-        .toList
-        .unsafeRunSync()    
+        .as[ApplyUserToBecomeSellerResponse]
+        .unsafeRunSync()
   }
 
   def verifyUserAsSeller(jwt: String, address: Address) = {
@@ -217,9 +212,7 @@ object UserTestsHelper {
 
   def addProductToStore(produce: String, jwt: String, am: Amount) = {
 
-    val currencyEncoder = implicitly[EncodeToString[Currency]]
-
-    val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${currencyEncoder.encode(am.currencyType)}").toOption.get
+    val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${am.currencyType.show}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
     
@@ -347,7 +340,7 @@ object UserTestsHelper {
   def deleteSlickEmailReference(email: Email) = implicitly[DeleteAccountEmailReferences[IO]].delete(email)
 
   def initiatePayment(buyerJwt: String, orderId: Int, receiptEmail: Email, paymentType: PaymentType) = {    
-    val uri = Uri.fromString(s"storeOrderRequest/initiate-payment/${orderId}/${receiptEmail.underlying.value}/${implicitly[EncodeToString[PaymentType]].encode(paymentType)}").toOption.get
+    val uri = Uri.fromString(s"storeOrderRequest/initiate-payment/${orderId}/${receiptEmail.underlying.value}/${paymentType.show}").toOption.get
     val headers = Headers.of(Header("authentication", buyerJwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
 

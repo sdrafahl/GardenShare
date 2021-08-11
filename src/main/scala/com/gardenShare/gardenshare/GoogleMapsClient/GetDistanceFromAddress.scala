@@ -7,28 +7,12 @@ import cats.Show
 import cats.implicits._
 import cats.effect.IO
 
-case class DistanceInMiles(distance: Double)
-
-abstract class IsWithinRange {
-  def isInRange(range: DistanceInMiles, dist: DistanceInMiles): Boolean
-}
-
-object IsWithinRange {
-  def apply() = default
-  implicit object default extends IsWithinRange {
-    def isInRange(range: DistanceInMiles, dist: DistanceInMiles): Boolean = dist.distance < range.distance
-  }
-  implicit class Ops(underlying: DistanceInMiles) {
-    def inRange(range: DistanceInMiles)(implicit isWith: IsWithinRange) = isWith.isInRange(range, underlying)
-  }
-}
-
 abstract class GetDistance[F[_]] {
   def getDistanceFromAddress(from: Address, to: Address): F[DistanceInMiles]
 }
 
 object GetDistance {
-  def apply[F[_]: GetDistance: GetGoogleMapsApiKey]() = implicitly[GetDistance[F]]
+  def apply[F[_]: GetDistance]() = implicitly[GetDistance[F]]
   implicit def IOGetDistance(implicit s: Show[Address], getKey: GetGoogleMapsApiKey[IO]) = new GetDistance[IO] {
     def getDistanceFromAddress(from: Address, to: Address): IO[DistanceInMiles] = {
       val maybeDistancepgm = for {

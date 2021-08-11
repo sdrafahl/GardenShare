@@ -4,7 +4,6 @@ import cats.effect.IO._
 import com.gardenShare.gardenshare._
 import cats.implicits._
 import fs2.Stream
-import cats.effect.Async
 import cats.effect.{ContextShift, IO}
 import fs2.interop.reactivestreams._
 import _root_.io.circe.Encoder
@@ -26,7 +25,7 @@ object StoreTable {
 }
 
 object StoreTableHelpers {
-  def parseResponseForStores(response: IO[List[com.gardenShare.gardenshare.StoreTable.StoreTable#TableElementType]])(implicit d:Decoder[State], emailParser: com.gardenShare.gardenshare.Parser[Email], cs: ContextShift[IO]) = {
+  def parseResponseForStores(response: IO[List[com.gardenShare.gardenshare.StoreTable.StoreTable#TableElementType]])(implicit d:Decoder[State], cs: ContextShift[IO]) = {
     response.map{lst =>
           lst
             .map(l => (l._1, l._2, l._3, l._4, decode[State](l._5), l._6))
@@ -34,9 +33,9 @@ object StoreTableHelpers {
               case (aa, bb, cc, dd, Right(ee), ff) => (aa, bb, cc, dd, ee, ff)
             }
             .map{(l: (Int, String, String, String, State, String)) =>
-              emailParser.parse(l._6) match {
-                case Left(err) => IO.raiseError(new Throwable(s"Error getting email from database msg: ${err}"))
-                case Right(email) => IO.pure(Store(l._1, Address(l._2, l._3, l._4, l._5), email))
+             Email.unapply(l._6) match {
+                case None => IO.raiseError(new Throwable(s"Error getting email from database msg parsed"))
+                case Some(email) => IO.pure(Store(l._1, Address(l._2, l._3, l._4, l._5), email))
               }              
             }
     }
@@ -51,7 +50,7 @@ abstract class GetStoreByID[F[_]] {
 }
 
 object GetStoreByID {
-  implicit def getStoreByIDIO(implicit e: Decoder[State], client: PostgresProfile.backend.DatabaseDef, emailParser: com.gardenShare.gardenshare.Parser[Email]) = new GetStoreByID[IO] {
+  implicit def getStoreByIDIO(implicit e: Decoder[State], client: PostgresProfile.backend.DatabaseDef) = new GetStoreByID[IO] {
     def getStore(id: Int)(
       implicit cs: ContextShift[IO]      
     ): IO[Option[Store]] = {
@@ -62,10 +61,10 @@ object GetStoreByID {
         .map(_.toList)
         .map(_.headOption)
         .flatMap{
-          case Some(r) => (decode[State](r._5), emailParser.parse(r._6)) match {
-            case (Right(st), Right(email)) => IO(Some(Store(r._1, Address(r._2, r._3, r._4, st), email)))
+          case Some(r) => (decode[State](r._5), Email.unapply(r._6)) match {
+            case (Right(st), Some(email)) => IO(Some(Store(r._1, Address(r._2, r._3, r._4, st), email)))
             case (Left(_), _) => IO.raiseError(new Throwable(s"The state that is stored is invalid. The id of the store is ${id}"))
-            case (_, Left(_)) => IO.raiseError(new Throwable(s"Error parsing email: ${r._6}"))
+            case (_, None) => IO.raiseError(new Throwable(s"Error parsing email: ${r._6}"))
           }
           case None => IO.pure(None)          
         }
@@ -73,14 +72,14 @@ object GetStoreByID {
     }
   }
 
-abstract class GetStore[F[_]: Async] {
+abstract class GetStore[F[_]] {
   def getStoresByUserEmail(email: Email)(implicit cs: ContextShift[F]): F[List[Store]]
 }
 
 object GetStore {
   def apply[F[_]: GetStore]() = implicitly[GetStore[F]]
 
-  implicit def iOGetStore(implicit e: Decoder[State], client: PostgresProfile.backend.DatabaseDef, emailParser: com.gardenShare.gardenshare.Parser[Email]) = new GetStore[IO]{
+  implicit def iOGetStore(implicit e: Decoder[State], client: PostgresProfile.backend.DatabaseDef) = new GetStore[IO]{
     def getStoresByUserEmail(email: Email)(
       implicit cs: ContextShift[IO]      
     ): IO[List[Store]] = {
@@ -103,8 +102,7 @@ object InsertStore {
   implicit def iOInsertStore(
     implicit e: Encoder[State],
     d:Decoder[State],
-    client: PostgresProfile.backend.DatabaseDef,
-    emailParser: com.gardenShare.gardenshare.Parser[Email]
+    client: PostgresProfile.backend.DatabaseDef
   ) = new InsertStore[IO] {
     def add(data: List[CreateStoreRequest])(implicit cs: ContextShift[IO]): IO[List[Store]] = {
       val query = StoreTable.stores
@@ -145,8 +143,7 @@ object GetStoresStream {
   
   implicit def Fs2GetStoresStream(
     implicit d: Decoder[State],
-    client: PostgresProfile.backend.DatabaseDef,
-    parserEmail: com.gardenShare.gardenshare.Parser[Email]
+    client: PostgresProfile.backend.DatabaseDef    
   ) = new GetStoresStream[IO] {
     def getLazyStores(implicit cs: ContextShift[IO]): Stream[IO, Store] = {
       val query = for {
@@ -155,10 +152,10 @@ object GetStoresStream {
       val reactiveStream = client.stream(query.result)
       fromPublisher(reactiveStream).map {
         case (id, street, city, zipcode, state, email) => {
-          (id, street, city, zipcode, decode[State](state),parserEmail.parse(email))
+          (id, street, city, zipcode, decode[State](state),Email.unapply(email))
         }
       }.collect{
-        case (aa, bb, cc, dd, Right(ee), Right(ff)) => (aa, bb, cc, dd, ee, ff)
+        case (aa, bb, cc, dd, Right(ee), Some(ff)) => (aa, bb, cc, dd, ee, ff)
       }
         .map{(l: (Int, String, String, String, State, Email)) =>
           Store(l._1, Address(l._2, l._3, l._4, l._5), l._6)          

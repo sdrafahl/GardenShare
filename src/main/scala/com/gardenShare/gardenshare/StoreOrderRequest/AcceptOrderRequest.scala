@@ -1,6 +1,5 @@
 package com.gardenShare.gardenshare
 
-import java.time.ZonedDateTime
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Email
 import cats.effect.IO
@@ -10,9 +9,10 @@ import com.gardenShare.gardenshare.SearchDeniedStoreOrderRequestTable
 import com.gardenShare.gardenshare.SearchAcceptedStoreOrderRequestTableByID
 import cats.implicits._
 import com.gardenShare.gardenshare.SearchStoreOrderRequestTable
+import StoreOrderRequestStatus._
 
 abstract class AcceptOrderRequest[F[_]] {
-  def accept(storeOrderIdToAccept: Int, sellerEmail: Email)(
+  def accept(storeOrderIdToAccept: OrderId, sellerEmail: Email)(
       implicit cs: ContextShift[F]
   ): F[Unit]
 }
@@ -20,10 +20,9 @@ abstract class AcceptOrderRequest[F[_]] {
 object AcceptOrderRequest {
   implicit def createIOAcceptOrderRequest(
       implicit in: InsertIntoAcceptedStoreOrderRequestTableByID[IO],
-      searchOrders: SearchStoreOrderRequestTable[IO],
-      pd: Parser[ZonedDateTime]
+      searchOrders: SearchStoreOrderRequestTable[IO]
   ) = new AcceptOrderRequest[IO] {
-    def accept(storeOrderIdToAccept: Int, sellerEmail: Email)(
+    def accept(storeOrderIdToAccept: OrderId, sellerEmail: Email)(
         implicit cs: ContextShift[IO]
     ): IO[Unit] = {
       for {
@@ -36,7 +35,7 @@ object AcceptOrderRequest {
                 IO.raiseError(
                   new Throwable("Order does not belong to that seller")
                 )
-              case true => in.insert(storeOrderIdToAccept).map(_ => ())
+              case true => in.insert(storeOrderIdToAccept.id).map(_ => ())
             }
           }
         }
@@ -46,7 +45,7 @@ object AcceptOrderRequest {
 }
 
 abstract class DeniedOrderRequests[F[_]] {
-  def deny(storeOrderToDeny: Int, sellerEmail: Email)(
+  def deny(storeOrderToDeny: OrderId, sellerEmail: Email)(
       implicit cs: ContextShift[F]
   ): F[Unit]
 }
@@ -54,10 +53,9 @@ abstract class DeniedOrderRequests[F[_]] {
 object DeniedOrderRequests {
   implicit def createIODeniedOrderRequests(
       implicit in: InsertIntoDeniedStoreOrderRequestTableByID[IO],
-      searchOrders: SearchStoreOrderRequestTable[IO],
-      pd: Parser[ZonedDateTime]
+      searchOrders: SearchStoreOrderRequestTable[IO]
   ) = new DeniedOrderRequests[IO] {
-    def deny(storeOrderToDeny: Int, sellerEmail: Email)(
+    def deny(storeOrderToDeny: OrderId, sellerEmail: Email)(
         implicit cs: ContextShift[IO]
     ): IO[Unit] = {
       for {
@@ -70,7 +68,7 @@ object DeniedOrderRequests {
                 IO.raiseError(
                   new Throwable("Order does not belong to that seller")
                 )
-              case true => in.insert(storeOrderToDeny).map(_ => ())
+              case true => in.insert(storeOrderToDeny.id).map(_ => ())
             }
           }
         }
@@ -80,7 +78,7 @@ object DeniedOrderRequests {
 }
 
 abstract class StatusOfStoreOrderRequest[F[_]] {
-  def get(id: Int)(implicit cs: ContextShift[F]): F[StoreOrderRequestStatus]
+  def get(id: OrderId)(implicit cs: ContextShift[F]): F[StoreOrderRequestStatus]
 }
 
 object StatusOfStoreOrderRequest {
@@ -88,16 +86,15 @@ object StatusOfStoreOrderRequest {
   implicit def createIOStatusOfStoreOrderRequest(
       implicit sa: SearchAcceptedStoreOrderRequestTableByID[IO],
       sd: SearchDeniedStoreOrderRequestTable[IO],
-      parseDate: Parser[ZonedDateTime],
       se: SearchStoreOrderRequestTable[IO],
       getTime: GetCurrentDate[IO],
       orderIdIsPaidFor: OrderIdIsPaidFor[IO],
       searchCompletedOrders: SearchCompletedOrders[IO]
   ) = new StatusOfStoreOrderRequest[IO] {
     def get(
-        id: Int
+        id: OrderId
     )(implicit cs: ContextShift[IO]): IO[StoreOrderRequestStatus] = {
-      (sa.search(id), sd.search(id), orderIdIsPaidFor.isPaidFor(id), searchCompletedOrders.search(id)).parMapN {
+      (sa.search(id.id), sd.search(id.id), orderIdIsPaidFor.isPaidFor(id.id), searchCompletedOrders.search(id.id)).parMapN {
         (acceptedOrders, denied, isPaidFor, ordersComplete) =>
         for {
           status <- (acceptedOrders.headOption, denied.headOption, isPaidFor, ordersComplete) match {

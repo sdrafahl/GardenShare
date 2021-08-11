@@ -10,6 +10,9 @@ import com.gardenShare.gardenshare.IA
 import com.typesafe.config.ConfigFactory
 import eu.timepit.refined.auto._
 import PaymentID._
+import Currency.USD
+import StoreOrderRequestStatus.AcceptedRequest
+import PaymentVerificationStatus.PaymentComplete
 
 object StoreOrderRequestsTest extends TestSuite {
 
@@ -40,7 +43,7 @@ object StoreOrderRequestsTest extends TestSuite {
 
         val address = Address("500 hickman Rd", "Waukee", "50263", IA)
         UserTestsHelper.verifyUserAsSeller(jwtTokenOfTheSeller, address)
-        UserTestsHelper.addProductToStore("BrownOysterMushrooms", jwtTokenOfTheSeller, Amount(100, USD))
+        UserTestsHelper.addProductToStore("BrownOysterMushrooms", jwtTokenOfTheSeller, Amount(Price(100), USD))
         val products = UserTestsHelper.getProductsFromStore(jwtTokenOfTheSeller)
         val productsWithQuantity = products.listOfProduce.map(prd => ProductAndQuantity(prd, 1))
         val storeOrderRequestBody = StoreOrderRequestBody(productsWithQuantity)
@@ -52,7 +55,7 @@ object StoreOrderRequestsTest extends TestSuite {
         val orders = UserTestsHelper.getListOfOrdersFromSellers(jwtTokenOfTheSeller, yesterday, now)
         val orderID = orders.body.head.id
         val orderStatusAfterCreating = UserTestsHelper.getOrderStatus(orderID)
-        val expectedOrderStatusAfterCreating = StoreOrderRequestStatusBody(RequestToBeDetermined)
+        val expectedOrderStatusAfterCreating = StoreOrderRequestStatusBody(StoreOrderRequestStatus.RequestToBeDetermined)
         assert(orderStatusAfterCreating.equals(expectedOrderStatusAfterCreating))
         assert(orders.body.head.storeOrderRequest.buyer.equals(testBuyerEmail))
         assert(responseFromCreatingArequest.storeOrderRequest.seller.equals(testSellerEmail))
@@ -66,7 +69,7 @@ object StoreOrderRequestsTest extends TestSuite {
         assert(statusAfterAcceptingTheOrder.equals(exceptedOrderStatusAfterAccepting))
         
         val secretId = UserTestsHelper.getPaymentIntentID(orderID).get       
-        val intentId = secretId.parsePublicKey
+        val intentId = secretId.parsePublicKey.get
         val testCard = CreditCard("4242424242424242", 1, 2030, 333)
         
         UserTestsHelper.confirmOrder(intentId, testCard)

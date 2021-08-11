@@ -14,7 +14,7 @@ abstract class ConfirmPaymentIntentEvaluator[F[_]] {
 }
 
 object ConfirmPaymentIntentEvaluator {
-  implicit def createIOConfirmPaymentIntentEvaluator(implicit getStripeKey: GetStripePrivateKey[IO], pymEncoder:EncodeToString[PaymentType]) = new ConfirmPaymentIntentEvaluator[IO] {
+  implicit def createIOConfirmPaymentIntentEvaluator(implicit getStripeKey: GetStripePrivateKey[IO]) = new ConfirmPaymentIntentEvaluator[IO] {
     def eval(c: ConfirmPaymentIntentCard)(implicit cs: ContextShift[IO]): IO[Unit] = {      
       for {
         stripeApiKey <- getStripeKey.getKey        

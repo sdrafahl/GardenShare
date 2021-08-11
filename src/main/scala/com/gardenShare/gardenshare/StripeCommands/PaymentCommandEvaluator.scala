@@ -1,7 +1,6 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.IO
-import com.gardenShare.gardenshare.CreateStripeConnectedAccountEvaluator.CreateStripeConnectedAccountEvaluatorOps
 import cats.effect.ContextShift
 import com.gardenShare.gardenshare.ClearStripeAccountsEvaluator.ClearStripeAccountsEvaluatorOps
 import com.gardenShare.gardenshare.CreatePaymentIntentEvaluator.CreatePaymentIntentEvaluatorOps
