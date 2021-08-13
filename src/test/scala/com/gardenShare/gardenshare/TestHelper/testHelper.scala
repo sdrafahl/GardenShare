@@ -9,7 +9,6 @@ import org.http4s.implicits._
 import eu.timepit.refined.auto._
 import fs2.text
 import io.circe.fs2._
-import io.circe.generic.auto._
 import io.circe.syntax._
 import java.time.ZonedDateTime
 import PaymentCommandEvaluator._
@@ -200,14 +199,8 @@ object UserTestsHelper {
       .productDescriptionRoutes[IO]
       .orNotFound(request)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, ProductDescription])
-      .compile
-      .toList
+      .as[ProductDescription]
       .unsafeRunSync()
-      .head
   }
 
   def addProductToStore(produce: String, jwt: String, am: Amount) = {

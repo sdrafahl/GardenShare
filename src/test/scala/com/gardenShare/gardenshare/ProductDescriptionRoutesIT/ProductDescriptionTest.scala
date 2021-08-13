@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigFactory
 import java.net.URI
 import PriceUnit.Pound
 import Produce.BrownOysterMushrooms
+import scala.util.Try
 
 object ProductDescriptionTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()
@@ -22,8 +23,12 @@ object ProductDescriptionTest extends TestSuite {
   val tests = Tests {
     test("Product Description Routes") {
       test("productDescription/BrownOysterMushrooms") {
+        println("0.000000000000000000000000000000000000000000000")
+        println(Try(UserTestsHelper.makeRequestToGetProductDescription("BrownOysterMushrooms")))
         val descriptionOfMushrooms = UserTestsHelper.makeRequestToGetProductDescription("BrownOysterMushrooms")
+        println("1.000000000000000000000000000000000000000000000")
         val expectedProductDescription = ProductDescription("BrownOysterMushrooms",Pound, BrownOysterMushrooms)
+        println("2.000000000000000000000000000000000000000000000")
         assert(descriptionOfMushrooms equals expectedProductDescription)
       }
     }    
