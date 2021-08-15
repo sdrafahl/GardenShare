@@ -6,5 +6,5 @@ import io.circe.generic.semiauto.deriveCodec
 case class StoreOrderRequestBody(body: List[ProductAndQuantity])
 
 object StoreOrderRequestBody {
-  implicit lazy final val storeOrderRequestCodec: Codec[ProductAndQuantity] = deriveCodec
+  implicit lazy final val storeOrderRequestCodec: Codec[StoreOrderRequestBody] = deriveCodec
 }

@@ -40,10 +40,12 @@ object StoreTest extends TestSuite {
         UserTestsHelper.deletestore(email3)
 
         UserTestsHelper.deleteUserAdmin(email)
+
         UserTestsHelper.adminCreateUser(email, password)
-        
+
         val r = UserTestsHelper.authUser(email, password)
         val jwtToken = r.auth.get.jwt
+
         UserTestsHelper.addStore(CreateStoreRequest(address0, email0)).unsafeRunSync()
         UserTestsHelper.addStore(CreateStoreRequest(address1, email1)).unsafeRunSync()
         UserTestsHelper.addStore(CreateStoreRequest(address2, email2)).unsafeRunSync()
@@ -55,16 +57,13 @@ object StoreTest extends TestSuite {
 
         val result = UserTestsHelper.getStores(limit, range, jwtToken, addressFrom)
         val stores = result.store.map(s => Store(0, s.store.address, s.store.sellerEmail))
-
         val expectedStores = List(
           Store(0,Address("907 58th St","Des Moines","50312",IA),Email("shane1@gmail.com")),
           Store(0,Address("902 24th St","Des Moines","50312",IA),Email("shane0@gmail.com")),
           Store(0,Address("911 Crocker St","Des Moines","50312",IA),Email("shane2@gmail.com")),
           Store(0,Address("912 14th St","West Des Moines","50265",IA),Email("shane3@gmail.com"))
         )
-
         val correct = stores.map(a => expectedStores.contains(a))
-
         assert(correct.reduce((a,b) => a || b))
       }
     }

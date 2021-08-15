@@ -87,15 +87,18 @@ abstract class InsertProduct[F[_]] {
 object InsertProduct {
   def apply[F[_]: InsertProduct]() = implicitly[InsertProduct[F]]
 
-  implicit def IOInsertProduct(implicit g:GetproductDescription[Produce], client: PostgresProfile.backend.DatabaseDef) = new InsertProduct[IO] {
+  implicit def IOInsertProduct(implicit g:GetProduceDescription[IO], client: PostgresProfile.backend.DatabaseDef) = new InsertProduct[IO] {
     def add(l: List[CreateProductRequest])(
       implicit cs: ContextShift[IO]      
     ): IO[Unit] = {
       val table = ProductTable.products
       val qu = ProductTable.products.returning(table)
-      val res = (qu ++= l.map(da => (0, da.storeId,g.gestDesc(da.product).name, da.am.quantityOfCurrency.value, da.am.currencyType.show))).transactionally
-
-      IO.fromFuture(IO(client.run(res))).flatMap(_ => IO.unit)
+      for {
+        names <- l.map(da => g.get(da.product)).sequence
+        creatProductRequestsWithProductDescriptions = l.zip(names)
+        res = (qu ++= creatProductRequestsWithProductDescriptions.map(da => (0, da._1.storeId, da._2.name, da._1.am.quantityOfCurrency.value, da._1.am.currencyType.show))).transactionally
+        _ <- IO.fromFuture(IO(client.run(res))).flatMap(_ => IO.unit)
+      }  yield ()      
     }
   }
   implicit class InsertProductOps(underlying: List[CreateProductRequest]) {

@@ -51,14 +51,8 @@ object UserTestsHelper {
       .userRoutes[IO]()
       .orNotFound(regTestReq)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, UserCreationRespose])
-      .compile
-      .toList
-      .unsafeRunSync()
-      .head
+      .as[UserCreationRespose]
+      .unsafeRunSync()    
   }
 
   def adminCreateUser(email: Email, password: String) = {
@@ -170,24 +164,18 @@ object UserTestsHelper {
   def addStore(s: CreateStoreRequest)(implicit i:InsertStore[IO]) = i.add(List(s))
   def getStore(email: Email)(implicit d:GetStore[IO]) = d.getStoresByUserEmail(email).unsafeRunSync().head
 
-  def getStores(limit: Int, rangeInSeconds: Int, jwt: String, address: Address) = {
-    val uriArg = Uri.fromString(s"/store/${limit}/${rangeInSeconds}").toOption.get
+  def getStores(limit: Int, rangeInMiles: Int, jwt: String, address: Address) = {
+    val uriArg = Uri.fromString(s"/store/${limit}/${rangeInMiles}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
     
-    val storeRequest = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address.asJson.toString())
+    val storeRequest = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address)
 
     StoreRoutes
       .storeRoutes[IO]
       .orNotFound(storeRequest)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, NearestStores])
-      .compile
-      .toList
+      .as[NearestStores]
       .unsafeRunSync()
-      .head     
   }
 
   def makeRequestToGetProductDescription(key: String) = {
@@ -245,7 +233,7 @@ object UserTestsHelper {
   def createStoreOrderRequest(jwtOfTheBuyer: String ,emailOfTheSeller: Email, s: StoreOrderRequestBody) = {
     val uri = Uri.fromString(s"storeOrderRequest/${emailOfTheSeller.underlying.value}").toOption.get
     val headers = Headers.of(Header("authentication", jwtOfTheBuyer))
-    val request = Request[IO](Method.POST, uri, headers = headers).withEntity(s.asJson.toString())
+    val request = Request[IO](Method.POST, uri, headers = headers).withEntity(s)
 
     StoreOrderRoutes
       .storeOrderRoutes[IO]

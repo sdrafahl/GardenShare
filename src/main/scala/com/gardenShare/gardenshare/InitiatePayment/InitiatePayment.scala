@@ -4,7 +4,6 @@ import cats.effect.IO
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
 import cats.effect.ContextShift
 
-case class PaymentIntentToken(token: String)
 
 abstract class InitiatePayment[F[_]] {
   def initiatePayment(amount: Amount, receiptEmail: Email, sellerEmail: Email, paymentType: PaymentType)(implicit cs: ContextShift[IO]): F[PaymentIntentToken]
