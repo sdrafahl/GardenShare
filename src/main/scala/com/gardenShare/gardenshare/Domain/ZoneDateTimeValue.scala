@@ -8,8 +8,12 @@ import cats.Show
 case class ZoneDateTimeValue(zoneDateTime: ZonedDateTime) extends AnyVal
 
 object ZoneDateTimeValue {
-
-  def unapply(zdtv: String): Option[ZoneDateTimeValue] = parse(zdtv).toOption
+  def unapply(zdtv: String): Option[ZoneDateTimeValue] = {
+    parse(zdtv).toOption match {
+      case None => implicitly[ParseBase64EncodedZoneDateTime].parseZoneDateTime(zdtv).toOption.map(ZoneDateTimeValue(_))
+      case Some(dateTime) => Some(dateTime)
+    }       
+  }
 
   private lazy val currencyDecoder: Decoder[ZoneDateTimeValue] = Decoder.decodeString.emap(parse)
 

@@ -11,12 +11,13 @@ abstract class GetStoreOrderRequestsWithinTimeRangeOfSeller[F[_]] {
 object GetStoreOrderRequestsWithinTimeRangeOfSeller {
   implicit def createIOGetStoreOrderRequestsWithinTimeRangeOfSeller(implicit getSellerOrders: GetStoreOrderRequestsWithSellerEmail[IO]) = new GetStoreOrderRequestsWithinTimeRangeOfSeller[IO] {
     def getStoreOrdersWithin(from: ZonedDateTime, to: ZonedDateTime, email: Email)(implicit cs: ContextShift[IO]) = {
-      getSellerOrders
-        .getWithEmail(email)
-        .map(_.filter{ab =>
-          val submitted = ab.storeOrderRequest.dateSubmitted
+      for {
+        allOrders <- getSellerOrders.getWithEmail(email)
+        ordersWithinRanges = allOrders.filter{order =>
+          val submitted = order.storeOrderRequest.dateSubmitted
           (from.isBefore(submitted) || from.equals(submitted)) && (to.isAfter(submitted) || to.equals(submitted))
-        })
+        }
+      } yield ordersWithinRanges
     }
   }
 }

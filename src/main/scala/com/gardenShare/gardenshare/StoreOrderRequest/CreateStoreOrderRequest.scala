@@ -15,7 +15,7 @@ object CreateStoreOrderRequest {
 
   implicit def createIOCreateStoreOrderRequest(implicit i:InsertStoreOrderRequest[IO], gs: GetStoreOrderRequestsWithinTimeRangeOfBuyer[IO]) = new CreateStoreOrderRequest[IO] {
     def createOrder(seller: Email, buyer: Email, products: List[ProductAndQuantity])(implicit cs: ContextShift[IO],ec: ExecutionContext, gd: GetCurrentDate[IO]): IO[StoreOrderRequestWithId] = {
-      val waitTimeInMinutes = 1
+      val waitTimeInMinutes = 0
       for {
         currentDate <- gd.get        
         past = currentDate.minusMinutes(waitTimeInMinutes)

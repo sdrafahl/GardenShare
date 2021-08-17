@@ -58,7 +58,7 @@ object UserTestSpec extends TestSuite {
           UserTestsHelper.clearSlickAccounts(List(testEmail))
           UserTestsHelper.deleteUserAdmin(testEmail)
           UserTestsHelper.deletestore(testEmail)
-          UserTestsHelper.adminCreateUser(testEmail, testPassword)          
+          UserTestsHelper.adminCreateUser(testEmail, testPassword)
           val r = UserTestsHelper.authUser(testEmail, testPassword)
           val jwtToken = r.auth.get.jwt
           val address = Address("500 hickman Rd", "Waukee", "50263", IA)
@@ -85,7 +85,7 @@ object UserTestSpec extends TestSuite {
           val jwtToken = r.auth.get.jwt
           val address = Address("501 hickman Rd", "Waukee", "50263", IA)
 
-          val response = UserTestsHelper.verifyUserAsSeller(jwtToken, address).head
+          val response = UserTestsHelper.verifyUserAsSeller(jwtToken, address)
           val expectedResponse = ResponseBody("User is now a seller and address was set", true)
           assert(response.equals(expectedResponse))
 

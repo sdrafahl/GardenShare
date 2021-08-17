@@ -11,7 +11,7 @@ abstract class AddProductToStoreForSeller[F[_]] {
 
 object AddProductToStoreForSeller {
   implicit object IOAddProductToStoreForSeller extends AddProductToStoreForSeller[IO] {
-    def add(s: Email, produce: Produce, am:Amount)(implicit g: GetUserInfo[IO],a:AddProductToStore[IO], cs: ContextShift[IO]): IO[Unit] = {
+    def add(s: Email, produce: Produce, am:Amount)(implicit g: GetUserInfo[IO],a:AddProductToStore[IO], cs: ContextShift[IO]): IO[Unit] = {      
       g.getInfo(s).flatMap{(ui: UserInfo) =>
         ui.store match {
           case Some(store) => {

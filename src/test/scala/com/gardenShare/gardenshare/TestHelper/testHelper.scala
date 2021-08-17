@@ -113,7 +113,7 @@ object UserTestsHelper {
   def applyUserToBecomeSeller(jwt: String, a: ApplyUserToBecomeSellerData) = {
     val uriArg = Uri.fromString(s"/user/apply-to-become-seller").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
-    val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a.asJson.toString())
+    val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a)
 
     UserRoutes
         .userRoutes[IO]()
@@ -126,18 +126,13 @@ object UserTestsHelper {
   def verifyUserAsSeller(jwt: String, address: Address) = {
     val uriArg = Uri.fromString(s"/user/verify-user-as-seller").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
-    val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address.asJson.toString())
+    val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address)
 
     UserRoutes
       .userRoutes[IO]()
       .orNotFound(request)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, ResponseBody])
-      .compile
-      .toList
+      .as[ResponseBody]
       .unsafeRunSync()
   }
 
@@ -193,7 +188,7 @@ object UserTestsHelper {
 
   def addProductToStore(produce: String, jwt: String, am: Amount) = {
 
-    val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency}/${am.currencyType.show}").toOption.get
+    val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency.value}/${am.currencyType.show}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
     
@@ -201,13 +196,8 @@ object UserTestsHelper {
       .productRoutes[IO]
       .orNotFound(request)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .compile
-      .toList
+      .as[ResponseBody]
       .unsafeRunSync()
-      .head
-
   }
 
   def getProductsFromStore(jwt: String) = {
@@ -215,19 +205,12 @@ object UserTestsHelper {
     val headers = Headers.of(Header("authentication", jwt))
 
     val request = Request[IO](Method.GET, uri, headers = headers)
-
     ProductRoutes
       .productRoutes[IO]
       .orNotFound(request)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, ListOfProduce])
-      .compile
-      .toList
+      .as[ListOfProduce]
       .unsafeRunSync()
-      .head
   }
 
   def createStoreOrderRequest(jwtOfTheBuyer: String ,emailOfTheSeller: Email, s: StoreOrderRequestBody) = {
@@ -239,19 +222,12 @@ object UserTestsHelper {
       .storeOrderRoutes[IO]
       .orNotFound(request)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, StoreOrderRequestWithId])
-      .compile
-      .toList
+      .as[StoreOrderRequestWithId]
       .unsafeRunSync()
-      .head
   }
 
   def getListOfOrdersFromSellers(jwtOfSeller: String, from: ZonedDateTime, to: ZonedDateTime) = {
-    val fromForURL = Base64EncoderDecoder().encode(from.toString()).get
-      
+    val fromForURL = Base64EncoderDecoder().encode(from.toString()).get      
     val toForURL = Base64EncoderDecoder().encode(to.toString()).get
 
     val uri = Uri.fromString(s"storeOrderRequest/seller/${fromForURL}/${toForURL}").toOption.get
@@ -262,14 +238,8 @@ object UserTestsHelper {
       .storeOrderRoutes[IO]
       .orNotFound(request)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, StoreOrderRequestsBelongingToSellerBody])
-      .compile
-      .toList
+      .as[StoreOrderRequestsBelongingToSellerBody]
       .unsafeRunSync()
-      .head
   }
 
   def getOrderStatus(orderId: Int) = {

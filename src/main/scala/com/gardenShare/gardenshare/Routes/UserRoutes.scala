@@ -82,7 +82,7 @@ object UserRoutes {
           .applyUser(emailOfUser, applyUserToBecomeSeller.address, applyUserToBecomeSeller.refreshUrl ,applyUserToBecomeSeller.returnUrl).asJsonF
         } yield applyUserToBecomeSellerResponse
       }
-      case req @ POST -> Root / "user" / "verify-user-as-seller" => {
+      case req @ POST -> Root / "user" / "verify-user-as-seller" => {        
         (for {
           email <- req.authJWT
           address <- req.as[Address]

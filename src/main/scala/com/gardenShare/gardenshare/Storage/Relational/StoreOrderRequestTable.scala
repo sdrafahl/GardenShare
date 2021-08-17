@@ -114,8 +114,7 @@ object InsertStoreOrderRequest {
       val prodRefRequest = ProductReferenceTable.productReferenceTable.returning(prodRefTable)
       val query = (for {
         product <- res
-        productReferencesToAdd = req.products.map{f => (product._1, f.product.id, f.quantity)}
-        
+        productReferencesToAdd = req.products.map{f => (product._1, f.product.id, f.quantity)}        
         _ <- prodRefRequest ++= productReferencesToAdd
       } yield product).transactionally
       IO.fromFuture(IO(client.run(query))).map{a => StoreOrderRequestWithId(a._1, req)}      
