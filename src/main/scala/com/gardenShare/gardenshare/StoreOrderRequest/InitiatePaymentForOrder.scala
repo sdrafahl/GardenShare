@@ -34,7 +34,7 @@ object InitiatePaymentForOrder {
               val amountToCharge = order.storeOrderRequest.products.map(_.product.product.am).combineAll
               for {
                 intent <- initiatePayment.initiatePayment(amountToCharge, receiptEmail, order.storeOrderRequest.seller, paymentType)
-                _ <- insertRef.insert(order.id.toString(), intent.token)
+                _ <- insertRef.insert(order.id, intent.token)
               } yield intent              
             } else {
               IO.raiseError(new Throwable(s"You cannot purchase an order that does not belong to you"))

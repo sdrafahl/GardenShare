@@ -13,14 +13,14 @@ import slick.jdbc.PostgresProfile
 import scala.concurrent.ExecutionContext
 
 object StoreOrderRequestTableSchemas {
-  type StoreOrderRequestTableSchema = (Int, String, String, String)
-  type ProductReferenceTableSchema = (Int, Int, Int)
+  type StoreOrderRequestTableSchema = (OrderId, String, String, String)
+  type ProductReferenceTableSchema = (OrderId, ProductId, Int)
 }
 import StoreOrderRequestTableSchemas._
 
 object StoreOrderRequestTable {
   class StoreOrderRequestTable(tag: Tag) extends Table[StoreOrderRequestTableSchema](tag, "storeorderrequest") {
-    def storeRequestId = column[Int]("storeorderrequestid", O.PrimaryKey, O.AutoInc)
+    def storeRequestId = column[OrderId]("storeorderrequestid", O.PrimaryKey, O.AutoInc)
     def sellerEmail = column[String]("selleremail")
     def buyerEmail = column[String]("buyeremail")
     def datesubmited = column[String]("datesubmited")    
@@ -31,23 +31,23 @@ object StoreOrderRequestTable {
 
 object ProductReferenceTable {
   class ProductReferenceTable(tag: Tag) extends Table[ProductReferenceTableSchema](tag, "productreferencetable") {
-    def productReferenceTableId = column[Int]("productreferencetableid")    
-    def productId = column[Int]("productid")
+    def storeRequestId = column[OrderId]("storeorderrequestid")    
+    def productId = column[ProductId]("productid")
     def productQuantity = column[Int]("quantity")
-    def * = (productReferenceTableId, productId, productQuantity)
+    def * = (storeRequestId, productId, productQuantity)
   }
   val productReferenceTable = TableQuery[ProductReferenceTable]
 }
 
 abstract class SearchProductReferences[F[_]] {
-  def search(productReferenceTableId: Int)(implicit cs: ContextShift[F]): F[List[ProductReferenceTableSchema]]
+  def search(storeRequestId: OrderId)(implicit cs: ContextShift[F]): F[List[ProductReferenceTableSchema]]
 }
 
 object SearchProductReferences {
   implicit def createIOInsertProductReferences(implicit client: PostgresProfile.backend.DatabaseDef) = new SearchProductReferences[IO] {
-    def search(productReferenceTableId: Int)(implicit cs: ContextShift[IO]): IO[List[ProductReferenceTableSchema]] = {
+    def search(storeRequestId: OrderId)(implicit cs: ContextShift[IO]): IO[List[ProductReferenceTableSchema]] = {
       val query = for {
-        res <- ProductReferenceTable.productReferenceTable if res.productReferenceTableId === productReferenceTableId
+        res <- ProductReferenceTable.productReferenceTable if res.storeRequestId === storeRequestId
       } yield res
       IO.fromFuture(IO(client.run(query.result))).map(_.toList)
     }
@@ -68,32 +68,25 @@ object SearchStoreOrderRequestTable {
 }
 
 abstract class DeleteStoreOrderRequestsForSeller[F[_]] {
-  def delete(e: Email)(implicit cs: ContextShift[F]): F[Unit]
+  def delete(e: Email)(implicit cs: ContextShift[F], ec: ExecutionContext): F[Unit]
 }
 
 object DeleteStoreOrderRequestsForSeller {
   implicit def createIODeleteStoreOrderRequestsForSeller(implicit getter: GetStoreOrderRequestsWithSellerEmail[IO], client: PostgresProfile.backend.DatabaseDef) = new DeleteStoreOrderRequestsForSeller[IO] {
-    def delete(e: Email)(implicit cs: ContextShift[IO]): IO[Unit] = {
-
-      def createDeleteOrdersByIdQuery(id: Int) = {
-        for {
-          a <- StoreOrderRequestTable.storeOrderRequests if a.storeRequestId === id
-        } yield a
-      }
-
-      def createQueryFoProductReferences(prodctReferenceTableId: Int) = {
-        for {
-          a <- ProductReferenceTable.productReferenceTable if a.productReferenceTableId === prodctReferenceTableId
-        } yield a
-      }
+    def delete(e: Email)(implicit cs: ContextShift[IO], ec: ExecutionContext): IO[Unit] = {
 
       for {
         orders <- getter.getWithEmail(e)
-        _ <- orders.map{order =>
-          val pgmToDeleteProductReferences = order.storeOrderRequest.products.map(prod => (IO.fromFuture(IO(client.run(createQueryFoProductReferences(prod.product.id).delete))))).parSequence
-          val pgmToDeleteOrderRequests =  IO.fromFuture(IO(client.run(createDeleteOrdersByIdQuery(order.id).delete)))
-          pgmToDeleteProductReferences &> pgmToDeleteOrderRequests
-        }.parSequence
+        _ <- (for {
+          order <- orders
+          deleteStoreOrderRequests = (for {
+            a <- StoreOrderRequestTable.storeOrderRequests if a.storeRequestId === order.id
+          } yield a).delete
+
+          deleteProductReferences = (for {
+            a <- ProductReferenceTable.productReferenceTable if a.storeRequestId === order.id
+          } yield a).delete         
+        } yield (IO.fromFuture(IO(client.run(deleteStoreOrderRequests))), IO.fromFuture(IO(client.run(deleteProductReferences)))).sequence).sequence
       } yield ()
     }
   }
@@ -108,7 +101,7 @@ object InsertStoreOrderRequest {
     def insertStoreOrderRequest(req: StoreOrderRequest)(implicit cs: ContextShift[IO], ec: ExecutionContext): IO[StoreOrderRequestWithId] = {
       val storeOrderRequestTable = StoreOrderRequestTable.storeOrderRequests
       val qu = StoreOrderRequestTable.storeOrderRequests.returning(storeOrderRequestTable)
-      val res = qu += (0, req.seller.underlying.value, req.buyer.underlying.value, req.dateSubmitted.toString())
+      val res = qu += (OrderId(0), req.seller.underlying.value, req.buyer.underlying.value, req.dateSubmitted.toString())
 
       val prodRefTable = ProductReferenceTable.productReferenceTable
       val prodRefRequest = ProductReferenceTable.productReferenceTable.returning(prodRefTable)
@@ -131,7 +124,7 @@ object GetStoreOrderRequestHelper {
     ) = {
     IO.fromFuture(IO(client.run(query.result))).map(_.map{f =>
       val productReferenceQuery = for {
-        pre <- ProductReferenceTable.productReferenceTable if pre.productReferenceTableId === f._1
+        pre <- ProductReferenceTable.productReferenceTable if pre.storeRequestId === f._1
       } yield pre
 
       IO.fromFuture(IO(client.run(productReferenceQuery.result))).flatMap{abb =>
@@ -177,7 +170,7 @@ object GetStoreOrderRequestHelper {
     client: PostgresProfile.backend.DatabaseDef
   ) = {
     val query = for {
-      re <- StoreOrderRequestTable.storeOrderRequests if re.storeRequestId === id.id
+      re <- StoreOrderRequestTable.storeOrderRequests if re.storeRequestId === id
     } yield re
     getStoreOrdersWithOrderRequestQuery(query).map(_.headOption)
   }
@@ -203,7 +196,7 @@ object GetStoreOrderRequestsWithSellerEmail {
   ) = new GetStoreOrderRequestsWithSellerEmail[IO] {
     def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = {
       val abc = for {
-        resultsWithSellerEmail <- StoreOrderRequestTable.storeOrderRequests join ProductReferenceTable.productReferenceTable on (_.storeRequestId === _.productReferenceTableId) if resultsWithSellerEmail._1.sellerEmail === e.underlying.value
+        resultsWithSellerEmail <- StoreOrderRequestTable.storeOrderRequests join ProductReferenceTable.productReferenceTable on (_.storeRequestId === _.storeRequestId) if resultsWithSellerEmail._1.sellerEmail === e.underlying.value
       } yield resultsWithSellerEmail
       for {
         queryResult <- IO.fromFuture(IO(client.run(abc.result)))

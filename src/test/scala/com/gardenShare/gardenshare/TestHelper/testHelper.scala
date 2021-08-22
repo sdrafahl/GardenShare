@@ -9,7 +9,6 @@ import org.http4s.implicits._
 import eu.timepit.refined.auto._
 import fs2.text
 import io.circe.fs2._
-import io.circe.syntax._
 import java.time.ZonedDateTime
 import PaymentCommandEvaluator._
 import com.stripe.model.Account
@@ -242,8 +241,8 @@ object UserTestsHelper {
       .unsafeRunSync()
   }
 
-  def getOrderStatus(orderId: Int) = {
-    val uri = Uri.fromString(s"storeOrderRequest/status/${orderId}").toOption.get
+  def getOrderStatus(orderId: OrderId) = {
+    val uri = Uri.fromString(s"storeOrderRequest/status/${orderId.id}").toOption.get
     val request = Request[IO](Method.GET, uri)
 
     StoreOrderRoutes
@@ -260,8 +259,8 @@ object UserTestsHelper {
       .head
   }
 
-  def acceptOrder(orderId:Int, jwt: String) = {
-    val uri = Uri.fromString(s"storeOrderRequest/accept/${orderId}").toOption.get
+  def acceptOrder(orderId:OrderId, jwt: String) = {
+    val uri = Uri.fromString(s"storeOrderRequest/accept/${orderId.id}").toOption.get
     val headers = Headers.of(Header("authentication", jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)  
 
@@ -290,8 +289,8 @@ object UserTestsHelper {
 
   def deleteSlickEmailReference(email: Email) = implicitly[DeleteAccountEmailReferences[IO]].delete(email)
 
-  def initiatePayment(buyerJwt: String, orderId: Int, receiptEmail: Email, paymentType: PaymentType) = {    
-    val uri = Uri.fromString(s"storeOrderRequest/initiate-payment/${orderId}/${receiptEmail.underlying.value}/${paymentType.show}").toOption.get
+  def initiatePayment(buyerJwt: String, orderId: OrderId, receiptEmail: Email, paymentType: PaymentType) = {    
+    val uri = Uri.fromString(s"storeOrderRequest/initiate-payment/${orderId.id}/${receiptEmail.underlying.value}/${paymentType.show}").toOption.get
     val headers = Headers.of(Header("authentication", buyerJwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
 
@@ -309,8 +308,8 @@ object UserTestsHelper {
       .head
   }
 
-  def verifyPayment(orderId: Int, buyerJwt: String) = {
-    val uri = Uri.fromString(s"storeOrderRequest/verify-payment/${orderId}").toOption.get
+  def verifyPayment(orderId: OrderId, buyerJwt: String) = {
+    val uri = Uri.fromString(s"storeOrderRequest/verify-payment/${orderId.id}").toOption.get
     val headers = Headers.of(Header("authentication", buyerJwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
 
@@ -318,14 +317,8 @@ object UserTestsHelper {
       .storeOrderRoutes[IO]
       .orNotFound(request)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, PaymentVerification])
-      .compile
-      .toList
+      .as[PaymentVerification]
       .unsafeRunSync()
-      .head
   }
 
   def createCustomAccount() = CreateCustomAccountCommand().evaluate[IO].unsafeRunSync()
@@ -336,7 +329,7 @@ object UserTestsHelper {
 
   def getStatusOfIntent(intentId: String) = GetPaymentIntentCommand(intentId).evaluate.unsafeRunSync()
 
-  def getPaymentIntentID(orderId: Int) = implicitly[GetPaymentIntentFromStoreRequest[IO]].search(orderId.toString()).unsafeRunSync()
+  def getPaymentIntentID(orderId: OrderId) = implicitly[GetPaymentIntentFromStoreRequest[IO]].search(orderId).unsafeRunSync()
 
   def getTestStripeAccount = "acct_1IV66N2R0KHt4WIV"
 

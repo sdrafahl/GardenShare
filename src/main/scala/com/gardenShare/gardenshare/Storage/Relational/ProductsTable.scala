@@ -8,8 +8,8 @@ import slick.jdbc.PostgresProfile
 import cats.implicits._
 
 object ProductTable {
-  class ProductTable(tag: Tag) extends Table[(Int, Int, String, Int, String)](tag, "products") {
-    def productId = column[Int]("productId", O.PrimaryKey, O.AutoInc)
+  class ProductTable(tag: Tag) extends Table[(ProductId, Int, String, Int, String)](tag, "products") {
+    def productId = column[ProductId]("productId", O.PrimaryKey, O.AutoInc)
     def storeId = column[Int]("storeId")
     def productName = column[String]("productName")
     def productPrice = column[Int]("productPrice")
@@ -20,12 +20,12 @@ object ProductTable {
 }
 
 abstract class GetProductById[F[_]] {
-  def get(id: Int)(implicit cs: ContextShift[F]): F[Option[ProductWithId]]
+  def get(id: ProductId)(implicit cs: ContextShift[F]): F[Option[ProductWithId]]
 }
 
 object GetProductById {
   implicit def createIOGetProductById(implicit client: PostgresProfile.backend.DatabaseDef) = new GetProductById[IO] {
-    def get(id: Int)(
+    def get(id: ProductId)(
       implicit cs: ContextShift[IO]      
     ): IO[Option[ProductWithId]] = {
       val query = for {
@@ -96,7 +96,7 @@ object InsertProduct {
       for {
         names <- l.map(da => g.get(da.product)).sequence
         creatProductRequestsWithProductDescriptions = l.zip(names)
-        res = (qu ++= creatProductRequestsWithProductDescriptions.map(da => (0, da._1.storeId, da._2.name, da._1.am.quantityOfCurrency.value, da._1.am.currencyType.show))).transactionally
+        res = (qu ++= creatProductRequestsWithProductDescriptions.map(da => (ProductId(0), da._1.storeId, da._2.name, da._1.am.quantityOfCurrency.value, da._1.am.currencyType.show))).transactionally
         _ <- IO.fromFuture(IO(client.run(res))).flatMap(_ => IO.unit)
       }  yield ()      
     }

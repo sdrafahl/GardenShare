@@ -6,26 +6,26 @@ import slick.jdbc.PostgresProfile
 import cats.effect.ContextShift
 
 object OrdersPaidForTableSchemas {
-  type OrdersPaidForTableSchema = (Int)
+  type OrdersPaidForTableSchema = (OrderId)
 }
 
 import OrdersPaidForTableSchemas._
 
 object OrdersPaidForTable {
   class OrdersPaidForTable(tag: Tag) extends Table[OrdersPaidForTableSchema](tag, "orderspaidfortable") {
-    def orderId = column[Int]("orderid", O.PrimaryKey)
+    def orderId = column[OrderId]("orderid", O.PrimaryKey)
     def * = (orderId)
   }
   val ordersPaidForTable = TableQuery[OrdersPaidForTable]
 }
 
 abstract class OrderIdIsPaidFor[F[_]] {
-  def isPaidFor(order: Int)(implicit cs: ContextShift[F]): F[Boolean]
+  def isPaidFor(order: OrderId)(implicit cs: ContextShift[F]): F[Boolean]
 }
 
 object OrderIdIsPaidFor {
   implicit def createIOOrderIdIsPaidFor(implicit client: PostgresProfile.backend.DatabaseDef) = new OrderIdIsPaidFor[IO] {
-    def isPaidFor(order: Int)(implicit cs: ContextShift[IO]): IO[Boolean] = {
+    def isPaidFor(order: OrderId)(implicit cs: ContextShift[IO]): IO[Boolean] = {
       val query = for {
         res <- OrdersPaidForTable.ordersPaidForTable if res.orderId === order
       } yield res
@@ -46,7 +46,7 @@ object SetOrderIsPaid {
     def setOrder(orderId: OrderId)(implicit cs: ContextShift[IO]): IO[Unit] = {
       val table = OrdersPaidForTable.ordersPaidForTable
       val baseQuery = OrdersPaidForTable.ordersPaidForTable.returning(table)
-      val query = (baseQuery += (orderId.id)).transactionally
+      val query = (baseQuery += (orderId)).transactionally
       IO.fromFuture(IO(client.run(query))).map(_ => ())
     }
   }

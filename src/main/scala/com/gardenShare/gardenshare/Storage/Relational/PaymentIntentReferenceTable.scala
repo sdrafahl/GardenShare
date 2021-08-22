@@ -8,13 +8,13 @@ import cats.effect.ContextShift
 package object PaymentIntentReferenceTableSchemas {
   type StoreRequestId = String
   type PaymentIntentId = String
-  type PaymentIntentReferenceTableSchema = (String, String)
+  type PaymentIntentReferenceTableSchema = (OrderId, String)
 }
 import PaymentIntentReferenceTableSchemas._
 
 object PaymentIntentReferenceTable {
   class PaymentIntentReferenceTable(tag: Tag) extends Table[PaymentIntentReferenceTableSchema](tag, "paymentintentreferencetable") {
-    def storeRequestId = column[String]("storeorderrequestid", O.PrimaryKey)
+    def storeRequestId = column[OrderId]("storeorderrequestid", O.PrimaryKey)
     def paymentIntentId = column[String]("paymentintentid")
     def * = (storeRequestId, paymentIntentId)
   }
@@ -22,12 +22,12 @@ object PaymentIntentReferenceTable {
 }
 
 abstract class InsertPaymentIntentReference[F[_]] {
-  def insert(storeRequestId: String, paymentIntentId: String)(implicit cs: ContextShift[F]): F[Unit]
+  def insert(storeRequestId: OrderId, paymentIntentId: String)(implicit cs: ContextShift[F]): F[Unit]
 }
 
 object InsertPaymentIntentReference {
   implicit def createIOInsertPaymentIntentReference(implicit client: PostgresProfile.backend.DatabaseDef) = new InsertPaymentIntentReference[IO] {
-    def insert(storeRequestId: String, paymentIntentId: String)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    def insert(storeRequestId: OrderId, paymentIntentId: String)(implicit cs: ContextShift[IO]): IO[Unit] = {
       val tableQuery = PaymentIntentReferenceTable.paymentIntentReferenceTable
       val query = tableQuery.insertOrUpdate((storeRequestId, paymentIntentId))
       IO.fromFuture(IO(client.run(query.transactionally))).flatMap(_ => IO.unit)
@@ -36,12 +36,12 @@ object InsertPaymentIntentReference {
 }
 
 abstract class GetPaymentIntentFromStoreRequest[F[_]] {
-  def search(id: String)(implicit cs: ContextShift[F]): F[Option[PaymentID]]
+  def search(id: OrderId)(implicit cs: ContextShift[F]): F[Option[PaymentID]]
 }
 
 object GetPaymentIntentFromStoreRequest {
   implicit def createIOGetPaymentIntentFromStoreRequest(implicit client: PostgresProfile.backend.DatabaseDef) = new GetPaymentIntentFromStoreRequest[IO] {
-    def search(id: String)(implicit cs: ContextShift[IO]): IO[Option[PaymentID]] = {
+    def search(id: OrderId)(implicit cs: ContextShift[IO]): IO[Option[PaymentID]] = {
       val query = for {
         res <- PaymentIntentReferenceTable.paymentIntentReferenceTable if res.storeRequestId === id
       } yield res.paymentIntentId

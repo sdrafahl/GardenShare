@@ -30,7 +30,7 @@ object VerifyPaymentOfOrder {
         case None => IO.raiseError(new Throwable("Order does not exist"))
         case Some(order) => {
           if (order.storeOrderRequest.buyer.equals(buyerEmail)) {
-            getPaymentIntent.search(order.id.toString()).map(maybeIntId => maybeIntId.map(intId => intId.parsePublicKey)).flatMap {
+            getPaymentIntent.search(order.id).map(maybeIntId => maybeIntId.map(intId => intId.parsePublicKey)).flatMap {
               case None =>
                 IO.raiseError(
                     new Throwable(

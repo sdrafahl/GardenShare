@@ -8,14 +8,14 @@ import cats.implicits._
 import slick.jdbc.PostgresProfile
 
 object Schemas {
-  type AcceptedStoreOrderRequestTableSchema = (Int)
-  type DeniedStoreOrderRequestTableSchema = (Int)
+  type AcceptedStoreOrderRequestTableSchema = (OrderId)
+  type DeniedStoreOrderRequestTableSchema = (OrderId)
 }
 import Schemas._
 
 object AcceptedStoreOrderRequestTable {
   class AcceptedStoreOrderRequestTable(tag: Tag) extends Table[AcceptedStoreOrderRequestTableSchema](tag, "acceptedstoreorderrequest") {
-    def storeOrderRequest = column[Int]("storeorderrequest")
+    def storeOrderRequest = column[OrderId]("storeorderrequest")
     def * = (storeOrderRequest)
   }
   val acceptedStoreOrderRequestTable = TableQuery[AcceptedStoreOrderRequestTable]
@@ -23,19 +23,19 @@ object AcceptedStoreOrderRequestTable {
 
 object DeniedStoreOrderRequestTable {
   class DeniedStoreOrderRequestTable(tag: Tag) extends Table[DeniedStoreOrderRequestTableSchema](tag, "deniedstoreorderrequest") {
-    def storeOrderRequest = column[Int]("storeorderrequest")
+    def storeOrderRequest = column[OrderId]("storeorderrequest")
     def * = (storeOrderRequest)
   }
   val deniedStoreOrderRequestTable = TableQuery[DeniedStoreOrderRequestTable]
 }
 
 abstract class SearchAcceptedStoreOrderRequestTableByID[F[_]] {
-  def search(id: Int)(implicit cs: ContextShift[F]): F[List[Int]]
+  def search(id: OrderId)(implicit cs: ContextShift[F]): F[List[OrderId]]
 }
 
 object SearchAcceptedStoreOrderRequestTableByID {
   implicit def createIOSearchAcceptedStoreOrderRequestTableByID(implicit client: PostgresProfile.backend.DatabaseDef) = new SearchAcceptedStoreOrderRequestTableByID[IO] {
-    def search(id: Int)(implicit cs: ContextShift[IO]): IO[List[Int]] = {
+    def search(id: OrderId)(implicit cs: ContextShift[IO]): IO[List[OrderId]] = {
       val query = for {
         res <- AcceptedStoreOrderRequestTable.acceptedStoreOrderRequestTable if res.storeOrderRequest === id
       } yield res.storeOrderRequest
@@ -45,12 +45,12 @@ object SearchAcceptedStoreOrderRequestTableByID {
 }
 
 abstract class SearchDeniedStoreOrderRequestTable[F[_]] {
-  def search(id: Int)(implicit cs: ContextShift[F]): F[List[Int]]
+  def search(id: OrderId)(implicit cs: ContextShift[F]): F[List[OrderId]]
 }
 
 object SearchDeniedStoreOrderRequestTable {
   implicit def createIOSearchDeniedStoreOrderRequestTable(implicit client: PostgresProfile.backend.DatabaseDef) = new SearchDeniedStoreOrderRequestTable[IO] {
-    def search(id: Int)(implicit cs: ContextShift[IO]): IO[List[Int]] = {
+    def search(id: OrderId)(implicit cs: ContextShift[IO]): IO[List[OrderId]] = {
       val query = for {
         res <- DeniedStoreOrderRequestTable.deniedStoreOrderRequestTable if res.storeOrderRequest === id
       } yield res.storeOrderRequest

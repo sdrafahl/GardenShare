@@ -63,7 +63,6 @@ object StoreOrderRoutes {
           .asJsonF
         } yield statusOfStoreOrder
       }
-
       case req @ POST -> Root / "storeOrderRequest" / "accept" / OrderId(id) => {
         (for {
           userEmail <- req.authJWT

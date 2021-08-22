@@ -29,6 +29,7 @@ object Migrator1 {
     val dropOrdersPaidForTable = sqlu"DROP TABLE IF EXISTS orderspaidfortable"
     val dropPaymentIntentReferenceTable = sqlu"DROP TABLE IF EXISTS paymentintentreferencetable"
     val dropSellerCompleteTable = sqlu"DROP TABLE IF EXISTS sellercompletetable"
+    val dropBuyerOrderCompleteTable = sqlu"DROP TABLE IF EXISTS buyerordercompletetable"
 
     val dropCommands: DBIOAction[Unit, NoStream, Nothing] = DBIO.seq(
       dropProducts,
@@ -40,7 +41,8 @@ object Migrator1 {
       dropSlickEmailRefRequest,
       dropOrdersPaidForTable,
       dropPaymentIntentReferenceTable,
-      dropSellerCompleteTable
+      dropSellerCompleteTable,
+      dropBuyerOrderCompleteTable
     )
 
     val createProductTable = com.gardenShare.gardenshare.ProductTable.products.schema.create
@@ -53,6 +55,7 @@ object Migrator1 {
     val ordersPaidForTable = com.gardenShare.gardenshare.OrdersPaidForTable.ordersPaidForTable.schema.create
     val paymentIntentReferenceTableScheme = com.gardenShare.gardenshare.PaymentIntentReferenceTable.paymentIntentReferenceTable.schema.create
     val createSellerCompleteTable = com.gardenShare.gardenshare.SellerCompleteTable.sellerCompleteTable.schema.create
+    val createBuyerOrderCompleteTable = com.gardenShare.gardenshare.BuyerOrderCompleteTable.buyerOrderCompleteTable.schema.create
    
     val createTables: DBIOAction[Unit, NoStream, Nothing] =  DBIO.seq(
       createProductTable,
@@ -64,7 +67,8 @@ object Migrator1 {
       slickAccountEmailRef,
       ordersPaidForTable,
       paymentIntentReferenceTableScheme,
-      createSellerCompleteTable
+      createSellerCompleteTable,
+      createBuyerOrderCompleteTable
     )
 
     MigrateDB.createIOMigrator(CreateMigrator[IO](

@@ -35,7 +35,7 @@ object AcceptOrderRequest {
                 IO.raiseError(
                   new Throwable("Order does not belong to that seller")
                 )
-              case true => in.insert(storeOrderIdToAccept.id).map(_ => ())
+              case true => in.insert(storeOrderIdToAccept).map(_ => ())
             }
           }
         }
@@ -68,7 +68,7 @@ object DeniedOrderRequests {
                 IO.raiseError(
                   new Throwable("Order does not belong to that seller")
                 )
-              case true => in.insert(storeOrderToDeny.id).map(_ => ())
+              case true => in.insert(storeOrderToDeny).map(_ => ())
             }
           }
         }
@@ -82,56 +82,51 @@ abstract class StatusOfStoreOrderRequest[F[_]] {
 }
 
 object StatusOfStoreOrderRequest {
-  val timeTillExperiationInHours = 1
+  private[this] val timeTillExperiationInHours = 1
   implicit def createIOStatusOfStoreOrderRequest(
-      implicit sa: SearchAcceptedStoreOrderRequestTableByID[IO],
-      sd: SearchDeniedStoreOrderRequestTable[IO],
-      se: SearchStoreOrderRequestTable[IO],
+      implicit searchAcceptedStoreOrderRequestTableByID: SearchAcceptedStoreOrderRequestTableByID[IO], // sa
+      searchDeniedStoreOrderRequestTable: SearchDeniedStoreOrderRequestTable[IO], // sd
+      searchStoreOrderRequestTable: SearchStoreOrderRequestTable[IO], // se
       getTime: GetCurrentDate[IO],
       orderIdIsPaidFor: OrderIdIsPaidFor[IO],
-      searchCompletedOrders: SearchCompletedOrders[IO]
+      searchSellerCompletedOrders: SellerCompleteOrders[IO]
   ) = new StatusOfStoreOrderRequest[IO] {
     def get(
         id: OrderId
-    )(implicit cs: ContextShift[IO]): IO[StoreOrderRequestStatus] = {
-      (sa.search(id.id), sd.search(id.id), orderIdIsPaidFor.isPaidFor(id.id), searchCompletedOrders.search(id.id)).parMapN {
-        (acceptedOrders, denied, isPaidFor, ordersComplete) =>
-        for {
-          status <- (acceptedOrders.headOption, denied.headOption, isPaidFor, ordersComplete) match {
-              case (_, _, _, Some(_))    => IO.pure(SellerComplete)
-              case (_, _, true, None)    => IO.pure(RequestPaidFor)
-              case (_, Some(_), _, None)    => IO.pure(DeniedRequest)
-              case (Some(_), None, _, None) => IO.pure(AcceptedRequest)
-              case (None, None, _, None) => {
-                se.search(id)
-                  .flatMap {
-                    case None =>
-                      IO.raiseError[StoreOrderRequestWithId](
-                        new Throwable("Order does not exist")
-                      )
-                    case Some(a) => IO.pure(a)
-                  }
-                  .flatMap { storOrderWithId =>
-                    getTime.get
-                      .map { now =>
-                        val dateSub =
-                          storOrderWithId.storeOrderRequest.dateSubmitted
-                        val hourAfterSubmitting =
-                          dateSub.plusHours(timeTillExperiationInHours)
-                        if ((dateSub.isBefore(now) && (hourAfterSubmitting
-                              .isAfter(now) || hourAfterSubmitting
-                              .equals(now))) || dateSub.isAfter(now) || dateSub
-                              .equals(now)) {
-                          RequestToBeDetermined
-                        } else {
-                          ExpiredRequest
-                        }                        
-                      }
-                  }
-              }
-            }
-        } yield status
-      }.flatten
+    )(implicit cs: ContextShift[IO]): IO[StoreOrderRequestStatus] = {      
+      for {
+        _ <- searchAcceptedStoreOrderRequestTableByID.search(id)
+        (acceptedOrders, denied, isPaidFor, sellerComplete) <- (
+          searchAcceptedStoreOrderRequestTableByID.search(id),
+          searchDeniedStoreOrderRequestTable.search(id),
+          orderIdIsPaidFor.isPaidFor(id),
+          searchSellerCompletedOrders.search(id)
+        ).parMapN((a, b, c, d) => (a, b, c, d))
+        status <- (acceptedOrders.headOption, denied.headOption, isPaidFor, sellerComplete) match {
+          case (_, _, _, Some(_))    => IO.pure(SellerComplete)
+          case (_, _, true, None)    => IO.pure(RequestPaidFor)
+          case (_, Some(_), _, None)    => IO.pure(DeniedRequest)
+          case (Some(_), None, _, None) => IO.pure(AcceptedRequest)
+          case (None, None, _, None) => {
+            for {
+              maybeStoreOrderRequestWithId <- searchStoreOrderRequestTable.search(id)
+              storeOrderRequestWithId <- IO.fromOption(maybeStoreOrderRequestWithId)(new Throwable("Order does not exist"))
+              currentTime <- getTime.get
+              dateSubmitted = storeOrderRequestWithId.storeOrderRequest.dateSubmitted
+              hourAfterSubmitted = dateSubmitted.plusHours(timeTillExperiationInHours)              
+            } yield if(
+              dateSubmitted.isBefore(currentTime) &&
+              hourAfterSubmitted.isAfter(currentTime) ||
+              hourAfterSubmitted.equals(currentTime) ||
+              dateSubmitted.isAfter(currentTime) ||
+                dateSubmitted.equals(currentTime)) {
+              RequestToBeDetermined
+            } else {
+              ExpiredRequest
+            }            
+          }
+        }
+      } yield status
     }
   }
 }
