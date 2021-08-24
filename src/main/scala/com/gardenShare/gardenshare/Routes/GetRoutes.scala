@@ -9,6 +9,7 @@ import com.gardenShare.gardenshare.GetStoresStream
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import cats.effect.Timer
 import scala.concurrent.ExecutionContext
+import org.http4s.server.AuthMiddleware
 
 abstract class GetRoutes[F[_], T <: RoutesTypes] {
   def getRoutes: HttpRoutes[F]
@@ -31,7 +32,8 @@ object GetRoutes {
     getProductsByStore:GetProductsByStore[IO],
     timer: Timer[IO],
     verifyUserAsSeller: VerifyUserAsSeller[IO],
-    ec: ExecutionContext
+    ec: ExecutionContext,
+    authMiddleWear: AuthMiddleware[IO, Email]
   ) = new GetRoutes[IO, TestingAndProductionRoutes]{
     def getRoutes: HttpRoutes[IO] = (
       UserRoutes.userRoutes[IO]() <+>
@@ -55,7 +57,8 @@ object GetRoutes {
     getProductsByStore:GetProductsByStore[IO],
     timer: Timer[IO],
     verifyUserAsSeller: VerifyUserAsSeller[IO],
-    ec: ExecutionContext
+    ec: ExecutionContext,
+    authMiddleWear: AuthMiddleware[IO, Email]
   ) = new GetRoutes[IO, OnlyProductionRoutes] {
     def getRoutes: HttpRoutes[IO] = UserRoutes.userRoutes[IO]() <+> ProductRoutes.productRoutes[IO] <+> StoreRoutes.storeRoutes[IO]
   }

@@ -8,6 +8,7 @@ import io.circe.generic.auto._
 import com.typesafe.config.ConfigFactory
 import com.gardenShare.gardenshare.GetTypeSafeConfig
 import slick.jdbc.PostgresProfile
+import AuthMiddleWear._
 
 object Main extends IOApp {
   val confPgm: IO[GetTypeSafeConfig[IO]] = IO(ConfigFactory.load()).map(conf => GetTypeSafeConfig.ioGetTypeSafeConfig(conf))

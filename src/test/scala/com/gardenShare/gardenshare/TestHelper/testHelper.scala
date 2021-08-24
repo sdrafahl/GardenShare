@@ -14,6 +14,7 @@ import PaymentCommandEvaluator._
 import com.stripe.model.Account
 import cats.implicits._
 import org.http4s.circe.CirceEntityCodec._
+import AuthMiddleWear._
 
 object UserTestsHelper {
   lazy implicit val config = ConfigFactory.load()

@@ -28,6 +28,8 @@ import AuthenticateJWTOnRequest.AuthenticateJWTOnRequestOps
 import org.http4s.circe.CirceEntityCodec._
 import ProcessPolymorphicType.ProcessPolymorphicTypeOps
 import com.gardenShare.gardenshare.SignupUser
+import org.http4s.AuthedRoutes
+import org.http4s.server.AuthMiddleware
 
 object UserRoutes {
   def userRoutes[F[_]:
@@ -44,12 +46,13 @@ object UserRoutes {
       VerifyUserAsSeller:
       ProcessPolymorphicType
   ]()(
-    implicit ec: ExecutionContext
+    implicit ec: ExecutionContext,
+    authMiddleWear: AuthMiddleware[F, Email]
   )
       : HttpRoutes[F] = {
     implicit val dsl = new Http4sDsl[F] {}
     import dsl._
-    HttpRoutes.of[F] {
+    val unAuthedRoutes = HttpRoutes.of[F] {
       case POST -> Root / "user" / "signup" / Email(emailToPass) / Password(passwordToPass) => {
         val user = User(emailToPass, passwordToPass)
         (for {
@@ -73,31 +76,30 @@ object UserRoutes {
           case ValidToken(_) => IsJwtValidResponse("Token is valid", true)
           case InvalidToken(_) => IsJwtValidResponse("Token is not valid", false)
         }).asJsonF        
-      }
-      case req @ POST -> Root / "user" / "apply-to-become-seller" => {
-        for {
-          emailOfUser <- req.authJWT
-          applyUserToBecomeSeller <- req.as[ApplyUserToBecomeSellerData]
-          applyUserToBecomeSellerResponse <- implicitly[ApplyUserToBecomeSeller[F]]
-          .applyUser(emailOfUser, applyUserToBecomeSeller.address, applyUserToBecomeSeller.refreshUrl ,applyUserToBecomeSeller.returnUrl).asJsonF
-        } yield applyUserToBecomeSellerResponse
-      }
-      case req @ POST -> Root / "user" / "verify-user-as-seller" => {        
-        (for {
-          email <- req.authJWT
-          address <- req.as[Address]
+      }                  
+    }
+
+    val authedRoutes = AuthedRoutes.of[Email, F] {
+      case req @ POST -> Root / "user" / "apply-to-become-seller" as emailOfUser => for {
+        applyUserToBecomeSeller <- req.req.as[ApplyUserToBecomeSellerData]
+        applyUserToBecomeSellerResponse <- implicitly[ApplyUserToBecomeSeller[F]]
+        .applyUser(emailOfUser, applyUserToBecomeSeller.address, applyUserToBecomeSeller.refreshUrl ,applyUserToBecomeSeller.returnUrl).asJsonF
+      } yield applyUserToBecomeSellerResponse
+
+      case req @ POST -> Root / "user" / "verify-user-as-seller" as _ => (for {
+          email <- req.req.authJWT
+          address <- req.req.as[Address]
           isValidated <- VerifyUserAsSeller[F]().verify(email, address)          
         } yield isValidated match {
           case true => ResponseBody("User is now a seller and address was set", true)
           case false => ResponseBody("User has not created completed flow and is not a user", false)
-        }).asJsonF        
-      }
-      case req @ GET -> Root / "user" / "info" => {
-        for {
-          email <- req.authJWT
-          response <- email.getUserInfo.asJsonF
-        } yield response        
-      }            
+      }).asJsonF
+
+      case GET -> Root / "user" / "info" as email => for {
+        response <- email.getUserInfo.asJsonF
+      } yield response
     }
+
+     unAuthedRoutes <+> authMiddleWear(authedRoutes)
   }
 }

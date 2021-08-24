@@ -38,6 +38,8 @@ object AuthenticateJWTOnRequest {
     }
   }
 
+
+
   implicit class AuthenticateJWTOnRequestOps[F[_]](underlying: Request[F]) {
     def authJWT(implicit authJwtReq: AuthenticateJWTOnRequest[F], me: MonadError[F, Throwable]) = authJwtReq.authenticateRequest(underlying)
   }
