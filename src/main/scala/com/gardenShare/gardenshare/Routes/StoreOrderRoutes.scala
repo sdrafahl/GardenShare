@@ -14,6 +14,7 @@ import ProcessPolymorphicType.ProcessPolymorphicTypeOps
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.AuthedRoutes
 import org.http4s.server.AuthMiddleware
+import BuyerCompleteOrder.BuyerCompleteOrderOps
 
 object StoreOrderRoutes {
   def storeOrderRoutes[
@@ -23,13 +24,14 @@ object StoreOrderRoutes {
         CreateStoreOrderRequest:
         GetCurrentDate:
         GetStoreOrderRequestsWithinTimeRangeOfSeller:
-        StatusOfStoreOrderRequest:
+        GetStatusOfStoreOrderRequest:
         AcceptOrderRequest:
         DeniedOrderRequests:
         InitiatePaymentForOrder:
         VerifyPaymentOfOrder:
         SellerCompleteOrder:
-        ProcessPolymorphicType
+        ProcessPolymorphicType:
+        BuyerCompleteOrder
   ]
     (
       implicit ec: ExecutionContext,
@@ -74,12 +76,17 @@ object StoreOrderRoutes {
         _ <- SellerCompleteOrderRequest(orderId, sellerEmail).complete[F]
       } yield ResponseBody(s"Order: ${orderId} is confirmed to be complete by seller", true))
           .asJsonF
+
+      case POST -> Root / "storeOrderRequest" / "buyer-complete-order" / OrderId(orderId) as buyerEmail => (for {
+        _ <- BuyerCompleteOrderRequest(orderId, buyerEmail).completeOrder[F]
+      } yield ResponseBody(s"Order: ${orderId} is confirmed to be complete by buyer", true))
+        .asJsonF
     }
 
     val unAuthedRoutes = HttpRoutes.of[F] {
       case GET -> Root / "storeOrderRequest" / "status" / OrderId(orderId) => {
         for {
-          statusOfStoreOrder <- implicitly[StatusOfStoreOrderRequest[F]]
+          statusOfStoreOrder <- implicitly[GetStatusOfStoreOrderRequest[F]]
           .get(orderId)
           .map(StoreOrderRequestStatusBody(_))
           .asJsonF

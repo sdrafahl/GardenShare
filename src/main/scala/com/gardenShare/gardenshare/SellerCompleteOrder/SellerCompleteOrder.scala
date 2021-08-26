@@ -13,7 +13,7 @@ object SellerCompleteOrder {
   def apply[F[_]: SellerCompleteOrder]() = implicitly[SellerCompleteOrder[F]]
 
   implicit def createIOSellerCompleteOrder(
-    implicit getStatusOfOrder: StatusOfStoreOrderRequest[IO],
+    implicit getStatusOfOrder: GetStatusOfStoreOrderRequest[IO],
     searchForOrder: SearchStoreOrderRequestTable[IO],
     insertOrderIntoAcceptedTable: InsertOrderIntoCompleteTable[IO]
   ) = new SellerCompleteOrder[IO] {

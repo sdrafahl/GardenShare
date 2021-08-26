@@ -13,6 +13,7 @@ object StoreOrderRequestStatus {
   case object RequestToBeDetermined extends StoreOrderRequestStatus
   case object RequestPaidFor extends StoreOrderRequestStatus
   case object SellerComplete extends StoreOrderRequestStatus
+  case object BuyerComplete extends StoreOrderRequestStatus
 
   def unapply(s: String): Option[StoreOrderRequestStatus] = parse(s).toOption
 
@@ -27,6 +28,7 @@ object StoreOrderRequestStatus {
     case "RequestToBeDetermined" => Right(RequestToBeDetermined)
     case "RequestPaidFor" => Right(RequestPaidFor)
     case "SellerComplete" => Right(SellerComplete)
+    case "BuyerComplete" => Right(BuyerComplete)
     case _ => Left("Invalid string for order status")
   }
 
@@ -37,6 +39,7 @@ object StoreOrderRequestStatus {
     case RequestToBeDetermined => "RequestToBeDetermined"
     case RequestPaidFor => "RequestPaidFor"
     case SellerComplete => "SellerComplete"
+    case BuyerComplete => "BuyerComplete"
   }
 
   implicit object StoreOrderRequestStatusShow extends Show[StoreOrderRequestStatus] {
