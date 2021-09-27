@@ -8,13 +8,12 @@ import org.http4s.dsl.Http4sDsl
 import io.circe.generic.auto._
 import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.GetNearestStores.GetNearestOps
-import cats.effect.ContextShift
-import cats.effect.Timer
 import cats.implicits._
 import org.http4s.circe.CirceEntityCodec._
 import ProcessPolymorphicType.ProcessPolymorphicTypeOps
 import org.http4s.AuthedRoutes
 import org.http4s.server.AuthMiddleware
+import cats.effect.Temporal
 
 object StoreRoutes {
   def storeRoutes[F[_]:
@@ -22,8 +21,7 @@ object StoreRoutes {
       GetNearestStores:
       GetStoresStream:
       GetDistance:
-      ContextShift:
-      Timer:
+      Temporal:
       GetThreadCountForFindingNearestStores:
       ProcessPolymorphicType
   ](implicit authMiddleWear: AuthMiddleware[F, Email]): HttpRoutes[F] = {

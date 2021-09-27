@@ -20,14 +20,12 @@ object ProductTable {
 }
 
 abstract class GetProductById[F[_]] {
-  def get(id: ProductId)(implicit cs: ContextShift[F]): F[Option[ProductWithId]]
+  def get(id: ProductId): F[Option[ProductWithId]]
 }
 
 object GetProductById {
   implicit def createIOGetProductById(implicit client: PostgresProfile.backend.DatabaseDef) = new GetProductById[IO] {
-    def get(id: ProductId)(
-      implicit cs: ContextShift[IO]      
-    ): IO[Option[ProductWithId]] = {
+    def get(id: ProductId): IO[Option[ProductWithId]] = {
       val query = for {
         re <- ProductTable.products if re.productId === id
       } yield re
@@ -46,16 +44,14 @@ object GetProductById {
 }
 
 abstract class GetProductsByStore[F[_]] {
-  def getProductsByStore(storeid: Int)(implicit cs:ContextShift[F]): F[List[ProductWithId]]
+  def getProductsByStore(storeid: Int): F[List[ProductWithId]]
 }
 
 object GetProductsByStore {
   def apply[F[_]: GetProductsByStore]() = implicitly[GetProductsByStore[F]]
 
   implicit def IOGetProductsByStore(implicit client: PostgresProfile.backend.DatabaseDef) = new GetProductsByStore[IO]{
-    def getProductsByStore(storeid: Int)(
-      implicit cs:ContextShift[IO]      
-    ): IO[List[ProductWithId]] = {
+    def getProductsByStore(storeid: Int): IO[List[ProductWithId]] = {
       val query = for {
         products <- ProductTable.products if products.storeId === storeid
       } yield (products.productId, products.storeId, products.productName, products.productPrice, products.productPriceType)
@@ -81,16 +77,14 @@ object GetProductsByStore {
 
 
 abstract class InsertProduct[F[_]] {
-  def add(l: List[CreateProductRequest])(implicit cs: ContextShift[F]): F[Unit]
+  def add(l: List[CreateProductRequest]): F[Unit]
 }
 
 object InsertProduct {
   def apply[F[_]: InsertProduct]() = implicitly[InsertProduct[F]]
 
   implicit def IOInsertProduct(implicit g:GetProduceDescription[IO], client: PostgresProfile.backend.DatabaseDef) = new InsertProduct[IO] {
-    def add(l: List[CreateProductRequest])(
-      implicit cs: ContextShift[IO]      
-    ): IO[Unit] = {
+    def add(l: List[CreateProductRequest]): IO[Unit] = {
       val table = ProductTable.products
       val qu = ProductTable.products.returning(table)
       for {

@@ -3,7 +3,6 @@ package com.gardenShare.gardenshare
 import slick.jdbc.PostgresProfile.api._
 import cats.effect.IO
 import slick.jdbc.PostgresProfile
-import cats.effect.ContextShift
 
 object OrdersPaidForTableSchemas {
   type OrdersPaidForTableSchema = (OrderId)
@@ -25,7 +24,7 @@ abstract class OrderIdIsPaidFor[F[_]] {
 
 object OrderIdIsPaidFor {
   implicit def createIOOrderIdIsPaidFor(implicit client: PostgresProfile.backend.DatabaseDef) = new OrderIdIsPaidFor[IO] {
-    def isPaidFor(order: OrderId)(implicit cs: ContextShift[IO]): IO[Boolean] = {
+    def isPaidFor(order: OrderId): IO[Boolean] = {
       val query = for {
         res <- OrdersPaidForTable.ordersPaidForTable if res.orderId === order
       } yield res
@@ -43,7 +42,7 @@ abstract class SetOrderIsPaid[F[_]] {
 
 object SetOrderIsPaid {
   implicit def createIOSetOrderIsPaid(implicit client: PostgresProfile.backend.DatabaseDef) = new SetOrderIsPaid[IO] {
-    def setOrder(orderId: OrderId)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    def setOrder(orderId: OrderId): IO[Unit] = {
       val table = OrdersPaidForTable.ordersPaidForTable
       val baseQuery = OrdersPaidForTable.ordersPaidForTable.returning(table)
       val query = (baseQuery += (orderId)).transactionally

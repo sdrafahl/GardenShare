@@ -3,7 +3,6 @@ package com.gardenShare.gardenshare
 import slick.jdbc.PostgresProfile.api._
 
 import cats.effect.IO
-import cats.effect.ContextShift
 import cats.implicits._
 import slick.jdbc.PostgresProfile
 
@@ -35,7 +34,7 @@ abstract class SearchAcceptedStoreOrderRequestTableByID[F[_]] {
 
 object SearchAcceptedStoreOrderRequestTableByID {
   implicit def createIOSearchAcceptedStoreOrderRequestTableByID(implicit client: PostgresProfile.backend.DatabaseDef) = new SearchAcceptedStoreOrderRequestTableByID[IO] {
-    def search(id: OrderId)(implicit cs: ContextShift[IO]): IO[List[OrderId]] = {
+    def search(id: OrderId): IO[List[OrderId]] = {
       val query = for {
         res <- AcceptedStoreOrderRequestTable.acceptedStoreOrderRequestTable if res.storeOrderRequest === id
       } yield res.storeOrderRequest
@@ -50,7 +49,7 @@ abstract class SearchDeniedStoreOrderRequestTable[F[_]] {
 
 object SearchDeniedStoreOrderRequestTable {
   implicit def createIOSearchDeniedStoreOrderRequestTable(implicit client: PostgresProfile.backend.DatabaseDef) = new SearchDeniedStoreOrderRequestTable[IO] {
-    def search(id: OrderId)(implicit cs: ContextShift[IO]): IO[List[OrderId]] = {
+    def search(id: OrderId): IO[List[OrderId]] = {
       val query = for {
         res <- DeniedStoreOrderRequestTable.deniedStoreOrderRequestTable if res.storeOrderRequest === id
       } yield res.storeOrderRequest
@@ -65,7 +64,7 @@ abstract class InsertIntoAcceptedStoreOrderRequestTableByID[F[_]] {
 
 object InsertIntoAcceptedStoreOrderRequestTableByID {
   implicit def createIOInsertIntoAcceptedStoreOrderRequestTableByID(implicit client: PostgresProfile.backend.DatabaseDef) = new InsertIntoAcceptedStoreOrderRequestTableByID[IO] {
-    def insert(a: AcceptedStoreOrderRequestTableSchema)(implicit cs: ContextShift[IO]): IO[AcceptedStoreOrderRequestTableSchema] = {
+    def insert(a: AcceptedStoreOrderRequestTableSchema): IO[AcceptedStoreOrderRequestTableSchema] = {
       val table = AcceptedStoreOrderRequestTable.acceptedStoreOrderRequestTable
       val query = AcceptedStoreOrderRequestTable.acceptedStoreOrderRequestTable.returning(table)
       val queryWithData = query +=  a
@@ -80,7 +79,7 @@ abstract class InsertIntoDeniedStoreOrderRequestTableByID[F[_]] {
 
 object InsertIntoDeniedStoreOrderRequestTableByID {
   implicit def createIOInsertIntoDeniedStoreOrderRequestTableByID(implicit client: PostgresProfile.backend.DatabaseDef) = new InsertIntoDeniedStoreOrderRequestTableByID[IO] {
-    def insert(a: DeniedStoreOrderRequestTableSchema)(implicit cs: ContextShift[IO]): IO[DeniedStoreOrderRequestTableSchema] = {
+    def insert(a: DeniedStoreOrderRequestTableSchema): IO[DeniedStoreOrderRequestTableSchema] = {
       val table = DeniedStoreOrderRequestTable.deniedStoreOrderRequestTable
       val query = DeniedStoreOrderRequestTable.deniedStoreOrderRequestTable.returning(table)
       val queryWithData = query += a

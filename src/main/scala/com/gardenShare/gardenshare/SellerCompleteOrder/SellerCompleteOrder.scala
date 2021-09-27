@@ -1,7 +1,6 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.IO
-import cats.effect.ContextShift
 import cats.implicits._
 import com.gardenShare.gardenshare.StoreOrderRequestStatus._
 
@@ -17,7 +16,7 @@ object SellerCompleteOrder {
     searchForOrder: SearchStoreOrderRequestTable[IO],
     insertOrderIntoAcceptedTable: InsertOrderIntoCompleteTable[IO]
   ) = new SellerCompleteOrder[IO] {
-    def completeOrder(request: SellerCompleteOrderRequest)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    def completeOrder(request: SellerCompleteOrderRequest): IO[Unit] = {
       for {
         (statusOfOrder, order) <- (getStatusOfOrder.get(request.orderID), searchForOrder.search(request.orderID)).parBisequence
         _ <- (statusOfOrder, order) match {

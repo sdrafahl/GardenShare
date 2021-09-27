@@ -1,7 +1,6 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.Async
-import cats.effect.ContextShift
 import com.gardenShare.gardenshare.CogitoClient
 import com.gardenShare.gardenshare.GetUserPoolName
 import com.gardenShare.gardenshare.GetUserPoolId
@@ -42,7 +41,6 @@ object UserRoutes {
       GetUserPoolName:
       CogitoClient:
       ApplyUserToBecomeSeller:
-      ContextShift:
       VerifyUserAsSeller:
       ProcessPolymorphicType
   ]()(

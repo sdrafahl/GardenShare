@@ -6,7 +6,6 @@ import cats.implicits._
 import cats.effect.Async
 import io.circe.generic.auto._
 import com.gardenShare.gardenshare.CreateStoreOrderRequest
-import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Email
 import scala.concurrent.ExecutionContext
 import com.gardenShare.gardenshare.SellerCompleteOrder._

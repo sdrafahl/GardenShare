@@ -4,7 +4,6 @@ import slick.jdbc.PostgresProfile.api._
 
 import cats.effect.IO
 import com.gardenShare.gardenshare.StoreOrderRequest
-import cats.effect.ContextShift
 import cats.implicits._
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.StoreOrderRequestWithId
@@ -40,12 +39,12 @@ object ProductReferenceTable {
 }
 
 abstract class SearchProductReferences[F[_]] {
-  def search(storeRequestId: OrderId)(implicit cs: ContextShift[F]): F[List[ProductReferenceTableSchema]]
+  def search(storeRequestId: OrderId): F[List[ProductReferenceTableSchema]]
 }
 
 object SearchProductReferences {
   implicit def createIOInsertProductReferences(implicit client: PostgresProfile.backend.DatabaseDef) = new SearchProductReferences[IO] {
-    def search(storeRequestId: OrderId)(implicit cs: ContextShift[IO]): IO[List[ProductReferenceTableSchema]] = {
+    def search(storeRequestId: OrderId): IO[List[ProductReferenceTableSchema]] = {
       val query = for {
         res <- ProductReferenceTable.productReferenceTable if res.storeRequestId === storeRequestId
       } yield res
@@ -55,7 +54,7 @@ object SearchProductReferences {
 }
 
 abstract class SearchStoreOrderRequestTable[F[_]] {
-  def search(id: OrderId)(implicit cs: ContextShift[F]): F[Option[StoreOrderRequestWithId]]
+  def search(id: OrderId): F[Option[StoreOrderRequestWithId]]
 }
 
 object SearchStoreOrderRequestTable {
@@ -63,17 +62,17 @@ object SearchStoreOrderRequestTable {
     implicit gpid: GetProductById[IO],
     client: PostgresProfile.backend.DatabaseDef
   ) = new SearchStoreOrderRequestTable[IO] {
-    def search(id: OrderId)(implicit cs: ContextShift[IO]): IO[Option[StoreOrderRequestWithId]] = GetStoreOrderRequestHelper.getStoreOrderWithId(id)
+    def search(id: OrderId): IO[Option[StoreOrderRequestWithId]] = GetStoreOrderRequestHelper.getStoreOrderWithId(id)
   }
 }
 
 abstract class DeleteStoreOrderRequestsForSeller[F[_]] {
-  def delete(e: Email)(implicit cs: ContextShift[F], ec: ExecutionContext): F[Unit]
+  def delete(e: Email): F[Unit]
 }
 
 object DeleteStoreOrderRequestsForSeller {
   implicit def createIODeleteStoreOrderRequestsForSeller(implicit getter: GetStoreOrderRequestsWithSellerEmail[IO], client: PostgresProfile.backend.DatabaseDef) = new DeleteStoreOrderRequestsForSeller[IO] {
-    def delete(e: Email)(implicit cs: ContextShift[IO], ec: ExecutionContext): IO[Unit] = {
+    def delete(e: Email): IO[Unit] = {
 
       for {
         orders <- getter.getWithEmail(e)
@@ -93,12 +92,12 @@ object DeleteStoreOrderRequestsForSeller {
 }
 
 abstract class InsertStoreOrderRequest[F[_]] {
-  def insertStoreOrderRequest(req: StoreOrderRequest)(implicit cs: ContextShift[F], ec: ExecutionContext): F[StoreOrderRequestWithId]
+  def insertStoreOrderRequest(req: StoreOrderRequest): F[StoreOrderRequestWithId]
 }
 
 object InsertStoreOrderRequest {
   implicit def createIOInsertStoreOrderRequest(implicit client: PostgresProfile.backend.DatabaseDef) = new InsertStoreOrderRequest[IO] {
-    def insertStoreOrderRequest(req: StoreOrderRequest)(implicit cs: ContextShift[IO], ec: ExecutionContext): IO[StoreOrderRequestWithId] = {
+    def insertStoreOrderRequest(req: StoreOrderRequest): IO[StoreOrderRequestWithId] = {
       val storeOrderRequestTable = StoreOrderRequestTable.storeOrderRequests
       val qu = StoreOrderRequestTable.storeOrderRequests.returning(storeOrderRequestTable)
       val res = qu += (OrderId(0), req.seller.underlying.value, req.buyer.underlying.value, req.dateSubmitted.toString())
@@ -118,7 +117,7 @@ object InsertStoreOrderRequest {
 object GetStoreOrderRequestHelper {
 
   def getStoreOrdersWithOrderRequestQuery(query: Query[com.gardenShare.gardenshare.StoreOrderRequestTable.StoreOrderRequestTable, StoreOrderRequestTableSchema, Seq])
-    (implicit cs: ContextShift[IO],
+    (implicit
       g: GetProductById[IO],
       client: PostgresProfile.backend.DatabaseDef
     ) = {
@@ -154,7 +153,7 @@ object GetStoreOrderRequestHelper {
   }
   
   def getStoreOrderWithEmail(e: Email, ge:com.gardenShare.gardenshare.StoreOrderRequestTable.StoreOrderRequestTable => Rep[String])
-    (implicit cs: ContextShift[IO],
+    (implicit
       g: GetProductById[IO],
       client: PostgresProfile.backend.DatabaseDef
     ): IO[List[StoreOrderRequestWithId]] = {
@@ -165,7 +164,7 @@ object GetStoreOrderRequestHelper {
   }
 
   def getStoreOrderWithId(id: OrderId)(
-    implicit cs: ContextShift[IO],
+    implicit
     g: GetProductById[IO],
     client: PostgresProfile.backend.DatabaseDef
   ) = {
@@ -179,7 +178,7 @@ object GetStoreOrderRequestHelper {
 import GetStoreOrderRequestHelper._
 
 abstract class GetStoreOrderRequestsWithSellerEmail[F[_]] {
-  def getWithEmail(e: Email)(implicit cs: ContextShift[F]): F[List[StoreOrderRequestWithId]]
+  def getWithEmail(e: Email): F[List[StoreOrderRequestWithId]]
 }
 
 object GetStoreOrderRequestsWithSellerEmail {
@@ -187,14 +186,14 @@ object GetStoreOrderRequestsWithSellerEmail {
     implicit g: GetProductById[IO],
     client: PostgresProfile.backend.DatabaseDef
   ) = new GetStoreOrderRequestsWithSellerEmail[IO] {
-    def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = getStoreOrderWithEmail(e, (x: StoreOrderRequestTable.StoreOrderRequestTable) => x.sellerEmail)
+    def getWithEmail(e: Email): IO[List[StoreOrderRequestWithId]] = getStoreOrderWithEmail(e, (x: StoreOrderRequestTable.StoreOrderRequestTable) => x.sellerEmail)
   }
 
   implicit def createIOGetStoreOrderRequestsWithSellerEmail_(
     implicit g: GetProductById[IO],
     client: PostgresProfile.backend.DatabaseDef
   ) = new GetStoreOrderRequestsWithSellerEmail[IO] {
-    def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = {
+    def getWithEmail(e: Email): IO[List[StoreOrderRequestWithId]] = {
       val abc = for {
         resultsWithSellerEmail <- StoreOrderRequestTable.storeOrderRequests join ProductReferenceTable.productReferenceTable on (_.storeRequestId === _.storeRequestId) if resultsWithSellerEmail._1.sellerEmail === e.underlying.value
       } yield resultsWithSellerEmail
@@ -231,14 +230,14 @@ object GetStoreOrderRequestsWithSellerEmail {
 }
 
 abstract class GetStoreOrderRequestsWithBuyerEmail[F[_]] {
-  def getWithEmail(e: Email)(implicit cs: ContextShift[F]): F[List[StoreOrderRequestWithId]]
+  def getWithEmail(e: Email): F[List[StoreOrderRequestWithId]]
 }
 
 object GetStoreOrderRequestsWithBuyerEmail {
   implicit def createGetStoreOrderRequestsWithBuyerEmailIO(
     implicit client: PostgresProfile.backend.DatabaseDef
   ) = new GetStoreOrderRequestsWithBuyerEmail[IO] {
-    def getWithEmail(e: Email)(implicit cs: ContextShift[IO]): IO[List[StoreOrderRequestWithId]] = {
+    def getWithEmail(e: Email): IO[List[StoreOrderRequestWithId]] = {
       getStoreOrderWithEmail(e, (x: StoreOrderRequestTable.StoreOrderRequestTable) => x.buyerEmail)
     }
   }

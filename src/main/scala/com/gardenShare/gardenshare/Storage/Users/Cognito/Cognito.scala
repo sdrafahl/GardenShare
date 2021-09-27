@@ -77,7 +77,7 @@ object CogitoClient {
       implicit client: CognitoIdentityProviderClient = CognitoIdentityProviderClient.builder().build()
   ): CogitoClient[F] = new CogitoClient[F] {
     def createUserPool(userPoolName: String) = {
-      Async[F].async {
+      Async[F].async_ {
         (cb: Either[Throwable, CreateUserPoolResponse] => Unit) =>
           val response = Try(
             client.createUserPool(
@@ -95,7 +95,7 @@ object CogitoClient {
     }
 
     def createUserPoolClient(clientName: String, userPoolId: String) = {
-      Async[F].async { (cb: Either[Throwable, UserPoolClientType] => Unit) =>
+      Async[F].async_ { (cb: Either[Throwable, UserPoolClientType] => Unit) =>
         val response = Try(
           client.createUserPoolClient(
             CreateUserPoolClientRequest
@@ -121,7 +121,7 @@ object CogitoClient {
 
       val tempPassword = "tempPassword123$$"
 
-      val userCreated = Async[F].async {
+      val userCreated = Async[F].async_ {
         (cb: Either[Throwable, AdminCreateUserResponse] => Unit) =>
           val maybeResponse = Try(
             client.adminCreateUser(
@@ -159,7 +159,7 @@ object CogitoClient {
             .session(authResp.session())
             .build()
 
-          Async[F].async {
+          Async[F].async_ {
             cb: (Either[Throwable, AdminRespondToAuthChallengeResponse] => Unit) =>
               cb(
                 Try(client.adminRespondToAuthChallenge(chngPassRequest)).toEither
@@ -189,7 +189,7 @@ object CogitoClient {
         userPoolId: UserPoolID,
         usertype: String
     ): F[AdminAddUserToGroupResponse] = {
-      Async[F].async { cb =>
+      Async[F].async_ { cb =>
         val req = AdminAddUserToGroupRequest
           .builder()
           .groupName(usertype)
@@ -219,7 +219,7 @@ object CogitoClient {
         .clientId(clientId)
         .build()
 
-      Async[F].async { cb =>
+      Async[F].async_ { cb =>
         cb(Try(client.adminInitiateAuth(request)).toEither)
       }
     }
@@ -242,10 +242,10 @@ object CogitoClient {
         .build()      
 
       val removeFromGroupPgm = Async[F]
-        .async[AdminRemoveUserFromGroupResponse]{ cb => cb(Try(client.adminRemoveUserFromGroup(removeUserFromGroup)).toEither)}        
+        .async_[AdminRemoveUserFromGroupResponse]{ cb => cb(Try(client.adminRemoveUserFromGroup(removeUserFromGroup)).toEither)}        
 
       val deleteUserPgm = Async[F]
-        .async[AdminDeleteUserResponse] { cb => cb(Try(client.adminDeleteUser(request)).toEither) }
+        .async_[AdminDeleteUserResponse] { cb => cb(Try(client.adminDeleteUser(request)).toEither) }
 
       removeFromGroupPgm >> deleteUserPgm
     }
@@ -260,7 +260,7 @@ object CogitoClient {
         .userPoolId(userPoolId.id)
         .build()
 
-      Async[F].async { cb =>
+      Async[F].async_ { cb =>
         cb(Try(client.adminListGroupsForUser(request)).toEither)
       }
     }

@@ -2,8 +2,8 @@ package com.gardenShare.gardenshare
 
 import org.http4s.Request
 import cats.MonadError
-import org.http4s.util.CaseInsensitiveString
 import cats.implicits._
+import org.typelevel.ci.CIString
 import AuthJWT.AuthJwtOps
 import JWTValidationResult.{InvalidToken, ValidToken}
 
@@ -32,8 +32,8 @@ object AuthenticateJWTOnRequest {
   private[this] def parseJWTokenFromRequest[F[_]](req: Request[F]) = {
     (req
       .headers
-      .get(CaseInsensitiveString("authentication"))) match {
-      case Some(jwtToken) => Right(JWTValidationTokens(jwtToken.value))
+      .get(CIString("authentication"))) match {
+      case Some(jwtToken) => Right(JWTValidationTokens(jwtToken.head.value))
       case None => Left(NoJWTTokenProvided())
     }
   }

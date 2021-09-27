@@ -10,11 +10,10 @@ import scala.jdk.CollectionConverters._
 import scala.util.Try
 import scala.util.Success
 import scala.util.Failure
-import cats.effect.ContextShift
 import scala.concurrent.ExecutionContext
 
 abstract class ApplyUserToBecomeSeller[F[_]] {
-  def applyUser(userName: Email, address: Address,refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[F], ec: ExecutionContext): F[ApplyUserToBecomeSellerResponse]
+  def applyUser(userName: Email, address: Address,refreshUrl: URL, returnUrl: URL): F[ApplyUserToBecomeSellerResponse]
 }
 
 object ApplyUserToBecomeSeller {
@@ -26,7 +25,7 @@ object ApplyUserToBecomeSeller {
     g:GetStore[IO],
     insertSlickEmailRef: InsertAccountEmailReference[IO],
     paymentCommandEvaluator: PaymentCommandEvaluator[IO]) = new ApplyUserToBecomeSeller[IO] {
-    def applyUser(userName: Email, address: Address, refreshUrl: URL, returnUrl: URL)(implicit cs: ContextShift[IO], ec: ExecutionContext): IO[ApplyUserToBecomeSellerResponse] = {      
+    def applyUser(userName: Email, address: Address, refreshUrl: URL, returnUrl: URL): IO[ApplyUserToBecomeSellerResponse] = {      
       for {
         stores <- g.getStoresByUserEmail(userName)
         _ <- stores match {
