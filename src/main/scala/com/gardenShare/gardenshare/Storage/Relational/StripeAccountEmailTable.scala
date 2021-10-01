@@ -35,7 +35,7 @@ object SearchAccountIdsByEmail {
 }
 
 abstract class InsertAccountEmailReference[F[_]] {
-  def insert(slickAccountId: String, accountEmail: Email): F[Unit]
+  def insert(slickAccountId: String, accountEmail: Email)(implicit ec: ExecutionContext): F[Unit]
 }
 
 object InsertAccountEmailReference {
@@ -57,7 +57,7 @@ object InsertAccountEmailReference {
 }
 
 abstract class DeleteAccountEmailReferences[F[_]] {
-  def delete(e: Email)(implicit cs: ContextShift[F]): F[Unit]
+  def delete(e: Email): F[Unit]
 }
 
 object DeleteAccountEmailReferences {

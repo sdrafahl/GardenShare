@@ -6,7 +6,7 @@ import slick.jdbc.PostgresProfile
 import scala.language.implicitConversions
 
 abstract class InsertOrderItIntoBuyerCompleteTable[F[_]] {
-  def completeOrder(orderid: OrderId)(implicit cs: ContextShift[F]): F[Unit]
+  def completeOrder(orderid: OrderId): F[Unit]
 }
 
 object InsertOrderItIntoBuyerCompleteTable {

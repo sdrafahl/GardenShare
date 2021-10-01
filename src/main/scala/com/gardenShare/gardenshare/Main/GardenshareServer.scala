@@ -25,15 +25,10 @@ object GardenshareServer {
 
       val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
-      val methodConfig = CORSConfig.default
-
-      val corsService = CORS(finalHttpApp, methodConfig)
-
       (for {
-
         exitCode <- BlazeServerBuilder[F]
         .bindHttp(8055, "0.0.0.0")
-        .withHttpApp(corsService)
+        .withHttpApp(finalHttpApp)
         .enableHttp2(true)
         .serve
       } yield exitCode).drain.compile.drain

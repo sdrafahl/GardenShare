@@ -16,7 +16,7 @@ object SellerCompleteTable {
 }
 
 abstract class InsertOrderIntoCompleteTable[F[_]] {
-  def insertOrder(orderId: OrderId)(implicit cs: ContextShift[F]): F[Unit]
+  def insertOrder(orderId: OrderId): F[Unit]
 }
 
 object InsertOrderIntoCompleteTable {
@@ -32,7 +32,7 @@ object InsertOrderIntoCompleteTable {
 }
 
 abstract class SellerCompleteOrders[F[_]] {
-  def search(orderId: OrderId)(implicit cs: ContextShift[F]): F[Option[SellerCompleteTableSchemas.CompleteTableScheme]] 
+  def search(orderId: OrderId): F[Option[SellerCompleteTableSchemas.CompleteTableScheme]] 
 }
 
 object SellerCompleteOrders {

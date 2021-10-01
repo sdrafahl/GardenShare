@@ -96,6 +96,6 @@ object InsertProduct {
     }
   }
   implicit class InsertProductOps(underlying: List[CreateProductRequest]) {
-    def addProduct[F[_]: InsertProduct:ContextShift] = implicitly[InsertProduct[F]].add(underlying)
+    def addProduct[F[_]: InsertProduct] = implicitly[InsertProduct[F]].add(underlying)
   }
 }

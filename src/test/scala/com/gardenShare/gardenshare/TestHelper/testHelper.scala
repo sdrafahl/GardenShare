@@ -8,21 +8,20 @@ import org.http4s._
 import org.http4s.implicits._
 import eu.timepit.refined.auto._
 import fs2.text
-import io.circe.fs2._
 import java.time.ZonedDateTime
 import PaymentCommandEvaluator._
 import com.stripe.model.Account
 import cats.implicits._
 import org.http4s.circe.CirceEntityCodec._
 import AuthMiddleWear._
+import cats.effect.unsafe.implicits.global
+import org.typelevel.ci.CIString
 
 object UserTestsHelper {
   lazy implicit val config = ConfigFactory.load()
   lazy implicit val dbClient = PostGresSetup.createPostgresClient
   val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
-  implicit val cs = executionStuff._3
   implicit val ec = executionStuff._2
-  implicit val timer = executionStuff._5
 
   /**
     Do Not Use in production
@@ -81,14 +80,8 @@ object UserTestsHelper {
       .userRoutes[IO]()
       .orNotFound(regTestReq)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, AuthUserResponse])
-      .compile
-      .toList
-      .unsafeRunSync()
-      .head
+      .as[AuthUserResponse]
+      .unsafeRunSync()    
   }
 
   def authToken(jwtToken: String) = {
@@ -100,19 +93,13 @@ object UserTestsHelper {
       .userRoutes[IO]()
       .orNotFound(authRequest)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, IsJwtValidResponse])
-      .compile
-      .toList
+      .as[IsJwtValidResponse]
       .unsafeRunSync()
-      .head
   }
 
   def applyUserToBecomeSeller(jwt: String, a: ApplyUserToBecomeSellerData) = {
     val uriArg = Uri.fromString(s"/user/apply-to-become-seller").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a)
 
     UserRoutes
@@ -125,7 +112,7 @@ object UserTestsHelper {
 
   def verifyUserAsSeller(jwt: String, address: Address) = {
     val uriArg = Uri.fromString(s"/user/verify-user-as-seller").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address)
 
     UserRoutes

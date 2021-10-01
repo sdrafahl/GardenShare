@@ -5,7 +5,7 @@ import slick.jdbc.PostgresProfile
 import slick.jdbc.PostgresProfile.api._
 
 abstract class QueryBuyerOrderComplete[F[_]] {
-  def search(id: OrderId)(implicit cs: ContextShift[F]): F[Option[OrderId]]
+  def search(id: OrderId): F[Option[OrderId]]
 }
 
 object QueryBuyerOrderComplete {

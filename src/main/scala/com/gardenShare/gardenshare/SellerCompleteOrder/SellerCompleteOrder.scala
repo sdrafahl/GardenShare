@@ -5,7 +5,7 @@ import cats.implicits._
 import com.gardenShare.gardenshare.StoreOrderRequestStatus._
 
 abstract class SellerCompleteOrder[F[_]] {
-  def completeOrder(request: SellerCompleteOrderRequest)(implicit cs: ContextShift[F]): F[Unit]
+  def completeOrder(request: SellerCompleteOrderRequest): F[Unit]
 }
 
 object SellerCompleteOrder {
@@ -33,6 +33,6 @@ object SellerCompleteOrder {
     }
   }
   implicit class SellerCompleteOrderOps(underlying: SellerCompleteOrderRequest) {
-    def complete[F[_]: SellerCompleteOrder:ContextShift] = implicitly[SellerCompleteOrder[F]].completeOrder(underlying)
+    def complete[F[_]: SellerCompleteOrder] = implicitly[SellerCompleteOrder[F]].completeOrder(underlying)
   }
 }

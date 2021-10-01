@@ -21,7 +21,7 @@ object PaymentIntentReferenceTable {
 }
 
 abstract class InsertPaymentIntentReference[F[_]] {
-  def insert(storeRequestId: OrderId, paymentIntentId: String)(implicit cs: ContextShift[F]): F[Unit]
+  def insert(storeRequestId: OrderId, paymentIntentId: String): F[Unit]
 }
 
 object InsertPaymentIntentReference {
@@ -35,7 +35,7 @@ object InsertPaymentIntentReference {
 }
 
 abstract class GetPaymentIntentFromStoreRequest[F[_]] {
-  def search(id: OrderId)(implicit cs: ContextShift[F]): F[Option[PaymentID]]
+  def search(id: OrderId): F[Option[PaymentID]]
 }
 
 object GetPaymentIntentFromStoreRequest {

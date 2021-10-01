@@ -5,7 +5,7 @@ import cats.implicits._
 import StoreOrderRequestStatus._
 
 abstract class InitiatePaymentForOrder[F[_]] {
-  def payOrder(orderId: OrderId, buyerEmail: Email, receiptEmail: Email, paymentType: PaymentType)(implicit cs: ContextShift[F]): F[PaymentIntentToken]
+  def payOrder(orderId: OrderId, buyerEmail: Email, receiptEmail: Email, paymentType: PaymentType): F[PaymentIntentToken]
 }
 
 object InitiatePaymentForOrder {

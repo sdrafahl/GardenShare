@@ -4,7 +4,7 @@ import java.time.ZonedDateTime
 import cats.effect.IO
 
 abstract class GetStoreOrderRequestsWithinTimeRangeOfSeller[F[_]] {
-  def getStoreOrdersWithin(from: ZonedDateTime, to: ZonedDateTime, email: Email)(implicit cs: ContextShift[F]): F[List[StoreOrderRequestWithId]]
+  def getStoreOrdersWithin(from: ZonedDateTime, to: ZonedDateTime, email: Email): F[List[StoreOrderRequestWithId]]
 }
 
 object GetStoreOrderRequestsWithinTimeRangeOfSeller {

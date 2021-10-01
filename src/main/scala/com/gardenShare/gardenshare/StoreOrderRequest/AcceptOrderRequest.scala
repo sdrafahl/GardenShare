@@ -7,9 +7,7 @@ import com.gardenShare.gardenshare.InsertIntoDeniedStoreOrderRequestTableByID
 import com.gardenShare.gardenshare.SearchStoreOrderRequestTable
 
 abstract class AcceptOrderRequest[F[_]] {
-  def accept(storeOrderIdToAccept: OrderId, sellerEmail: Email)(
-      implicit cs: ContextShift[F]
-  ): F[Unit]
+  def accept(storeOrderIdToAccept: OrderId, sellerEmail: Email): F[Unit]
 }
 
 object AcceptOrderRequest {
@@ -38,9 +36,7 @@ object AcceptOrderRequest {
 }
 
 abstract class DeniedOrderRequests[F[_]] {
-  def deny(storeOrderToDeny: OrderId, sellerEmail: Email)(
-      implicit cs: ContextShift[F]
-  ): F[Unit]
+  def deny(storeOrderToDeny: OrderId, sellerEmail: Email): F[Unit]
 }
 
 object DeniedOrderRequests {

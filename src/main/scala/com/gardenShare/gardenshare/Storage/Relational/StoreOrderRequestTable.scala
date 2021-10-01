@@ -92,12 +92,12 @@ object DeleteStoreOrderRequestsForSeller {
 }
 
 abstract class InsertStoreOrderRequest[F[_]] {
-  def insertStoreOrderRequest(req: StoreOrderRequest): F[StoreOrderRequestWithId]
+  def insertStoreOrderRequest(req: StoreOrderRequest)(implicit ec: ExecutionContext): F[StoreOrderRequestWithId]
 }
 
 object InsertStoreOrderRequest {
   implicit def createIOInsertStoreOrderRequest(implicit client: PostgresProfile.backend.DatabaseDef) = new InsertStoreOrderRequest[IO] {
-    def insertStoreOrderRequest(req: StoreOrderRequest): IO[StoreOrderRequestWithId] = {
+    def insertStoreOrderRequest(req: StoreOrderRequest)(implicit ec: ExecutionContext): IO[StoreOrderRequestWithId] = {
       val storeOrderRequestTable = StoreOrderRequestTable.storeOrderRequests
       val qu = StoreOrderRequestTable.storeOrderRequests.returning(storeOrderRequestTable)
       val res = qu += (OrderId(0), req.seller.underlying.value, req.buyer.underlying.value, req.dateSubmitted.toString())

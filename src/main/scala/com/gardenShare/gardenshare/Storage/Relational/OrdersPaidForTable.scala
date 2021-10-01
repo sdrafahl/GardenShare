@@ -19,7 +19,7 @@ object OrdersPaidForTable {
 }
 
 abstract class OrderIdIsPaidFor[F[_]] {
-  def isPaidFor(order: OrderId)(implicit cs: ContextShift[F]): F[Boolean]
+  def isPaidFor(order: OrderId): F[Boolean]
 }
 
 object OrderIdIsPaidFor {
@@ -37,7 +37,7 @@ object OrderIdIsPaidFor {
 }
 
 abstract class SetOrderIsPaid[F[_]] {
-  def setOrder(orderId: OrderId)(implicit cs: ContextShift[F]): F[Unit]
+  def setOrder(orderId: OrderId): F[Unit]
 }
 
 object SetOrderIsPaid {

@@ -19,7 +19,6 @@ object StoreOrderRoutes {
   def storeOrderRoutes[
     F[_]:
         Async:
-        ContextShift:
         CreateStoreOrderRequest:
         GetCurrentDate:
         GetStoreOrderRequestsWithinTimeRangeOfSeller:

@@ -19,7 +19,6 @@ object StoreOrderRequestsTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()
   lazy implicit val dbClient = PostGresSetup.createPostgresClient
   val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
-  implicit val cs = executionStuff._3
 
   val tests = Tests {
     test("Store Order Request") {

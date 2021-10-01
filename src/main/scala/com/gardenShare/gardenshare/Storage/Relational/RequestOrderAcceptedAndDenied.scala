@@ -29,7 +29,7 @@ object DeniedStoreOrderRequestTable {
 }
 
 abstract class SearchAcceptedStoreOrderRequestTableByID[F[_]] {
-  def search(id: OrderId)(implicit cs: ContextShift[F]): F[List[OrderId]]
+  def search(id: OrderId): F[List[OrderId]]
 }
 
 object SearchAcceptedStoreOrderRequestTableByID {
@@ -44,7 +44,7 @@ object SearchAcceptedStoreOrderRequestTableByID {
 }
 
 abstract class SearchDeniedStoreOrderRequestTable[F[_]] {
-  def search(id: OrderId)(implicit cs: ContextShift[F]): F[List[OrderId]]
+  def search(id: OrderId): F[List[OrderId]]
 }
 
 object SearchDeniedStoreOrderRequestTable {
@@ -59,7 +59,7 @@ object SearchDeniedStoreOrderRequestTable {
 }
 
 abstract class InsertIntoAcceptedStoreOrderRequestTableByID[F[_]] {
-  def insert(a: AcceptedStoreOrderRequestTableSchema)(implicit cs: ContextShift[F]): F[AcceptedStoreOrderRequestTableSchema]
+  def insert(a: AcceptedStoreOrderRequestTableSchema): F[AcceptedStoreOrderRequestTableSchema]
 }
 
 object InsertIntoAcceptedStoreOrderRequestTableByID {
@@ -74,7 +74,7 @@ object InsertIntoAcceptedStoreOrderRequestTableByID {
 }
 
 abstract class InsertIntoDeniedStoreOrderRequestTableByID[F[_]] {
-  def insert(a: AcceptedStoreOrderRequestTableSchema)(implicit cs: ContextShift[F]): F[AcceptedStoreOrderRequestTableSchema]
+  def insert(a: AcceptedStoreOrderRequestTableSchema): F[AcceptedStoreOrderRequestTableSchema]
 }
 
 object InsertIntoDeniedStoreOrderRequestTableByID {

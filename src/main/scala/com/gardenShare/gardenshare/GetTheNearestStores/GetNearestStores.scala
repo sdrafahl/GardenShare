@@ -12,6 +12,9 @@ import cats.effect.Temporal
 import cats.Monad
 import fs2.Chunk
 import fs2.Stream
+import fs2.concurrent.Signal
+import fs2.concurrent.SignallingRef
+import scala.annotation.tailrec
 
 abstract class GetNearestStores[F[_]] {
   def getNearest(n: DistanceInMiles, limit: Limit, fromLocation: Address)(
@@ -38,34 +41,21 @@ object GetNearestStores {
     ): IO[List[RelativeDistanceAndStore]] = {
       val stores: Stream[IO, Store] = getStores.getLazyStores
       for {
-        queue <- Dequeue.bounded[IO, RelativeDistanceAndStore](limit.l)
         threads <- threadCount.get
-        _ <- for {
-          processQueue <- stores.parEvalMap(threads) {
-            store => {
-                isWithinRange[IO](n, fromLocation, store.address, getDist).flatMap {
-                  case (true, dist) => {                    
-                    queue.size.flatMap{ depth =>
-                      if(depth < limit.l) {
-                        queue.offer(RelativeDistanceAndStore(store, dist))
-                      } else {
-                        IO.raiseError(new Throwable("Done adding to queue"))
-                      }
-                    }
-                    
-                  }
-                  case (false, _) => IO.unit
-                }
-             }
+        storesAndWithinRange = stores.parEvalMap(threads) {
+          store => {
+            for {
+              (isWithinRange, distance) <- isWithinRange[IO](n, fromLocation, store.address, getDist)              
+            } yield (isWithinRange, distance, store)
           }
-          .compile
-          .toList
-          .timeout(5 seconds)
-          .attempt
-        } yield processQueue
-        dep <- queue.size
-        listOfStores <- unloadQueue(dep, queue, List())
-       } yield listOfStores
+        }
+        storesWithinRange <- storesAndWithinRange
+        .filter(withinRangeAndStore => withinRangeAndStore._1)
+        .parEvalMap(threads)(withinRangeAndStore => IO.pure(RelativeDistanceAndStore(withinRangeAndStore._3, withinRangeAndStore._2)))
+        .take(limit.l)
+        .compile
+        .toList        
+      } yield storesWithinRange
     }
   }
 
@@ -78,8 +68,9 @@ object GetNearestStores {
         newAcc = acc ::: business.toList
         result <- unloadQueue(amountToUnload, queue, newAcc)
       } yield result
-    }    
-  }
+    }
+    
+ }
 
   implicit class GetNearestOps(underlying: GetNearestStore) {
     def nearest[F[_]:GetDistance:GetStoresStream:Temporal:GetThreadCountForFindingNearestStores](implicit getNearest: GetNearestStores[F]) =

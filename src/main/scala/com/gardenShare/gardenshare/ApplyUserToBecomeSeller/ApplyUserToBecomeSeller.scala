@@ -13,7 +13,7 @@ import scala.util.Failure
 import scala.concurrent.ExecutionContext
 
 abstract class ApplyUserToBecomeSeller[F[_]] {
-  def applyUser(userName: Email, address: Address,refreshUrl: URL, returnUrl: URL): F[ApplyUserToBecomeSellerResponse]
+  def applyUser(userName: Email, address: Address,refreshUrl: URL, returnUrl: URL)(implicit ec: ExecutionContext): F[ApplyUserToBecomeSellerResponse]
 }
 
 object ApplyUserToBecomeSeller {
@@ -25,7 +25,7 @@ object ApplyUserToBecomeSeller {
     g:GetStore[IO],
     insertSlickEmailRef: InsertAccountEmailReference[IO],
     paymentCommandEvaluator: PaymentCommandEvaluator[IO]) = new ApplyUserToBecomeSeller[IO] {
-    def applyUser(userName: Email, address: Address, refreshUrl: URL, returnUrl: URL): IO[ApplyUserToBecomeSellerResponse] = {      
+    def applyUser(userName: Email, address: Address, refreshUrl: URL, returnUrl: URL)(implicit ec: ExecutionContext): IO[ApplyUserToBecomeSellerResponse] = {      
       for {
         stores <- g.getStoresByUserEmail(userName)
         _ <- stores match {

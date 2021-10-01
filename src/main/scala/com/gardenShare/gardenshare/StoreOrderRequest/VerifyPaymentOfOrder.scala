@@ -10,9 +10,7 @@ import PaymentVerificationStatus.RequiresFurtherAction
 import scala.util._
 
 abstract class VerifyPaymentOfOrder[F[_]] {
-  def verifyOrder(orderId: OrderId, buyerEmail: Email)(
-      implicit cs: ContextShift[F]
-  ): F[PaymentVerification]
+  def verifyOrder(orderId: OrderId, buyerEmail: Email): F[PaymentVerification]
 }
 
 object VerifyPaymentOfOrder {
