@@ -13,6 +13,7 @@ import PaymentID._
 import Currency.USD
 import StoreOrderRequestStatus.AcceptedRequest
 import PaymentVerificationStatus.PaymentComplete
+import cats.effect.unsafe.implicits.global
 
 object StoreOrderRequestsTest extends TestSuite {
 

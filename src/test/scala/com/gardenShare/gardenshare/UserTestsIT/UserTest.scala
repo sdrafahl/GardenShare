@@ -10,6 +10,7 @@ import com.gardenShare.gardenshare.IA
 import java.net.URL
 import eu.timepit.refined.auto._
 import UserType.Sellers
+import cats.effect.unsafe.implicits.global
 
 object UserTestSpec extends TestSuite {  
 

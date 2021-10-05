@@ -9,12 +9,12 @@ import com.gardenShare.gardenshare.Address
 import com.gardenShare.gardenshare.IA
 import com.typesafe.config.ConfigFactory
 import eu.timepit.refined.auto._
+import cats.effect.unsafe.implicits.global
 
 object StoreTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()
   lazy implicit val dbClient = PostGresSetup.createPostgresClient
   val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
-  implicit val cs = executionStuff._3
 
   val email = Email("gardenshare@gmail.com")
   val password = "testPass12$"
