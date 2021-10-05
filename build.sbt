@@ -1,4 +1,4 @@
-val Http4sVersion = "0.21.3"
+val Http4sVersion = "0.23.4"
 val CirceVersion = "0.13.0"
 val Specs2Version = "4.9.3"
 val LogbackVersion = "1.2.3"
@@ -15,6 +15,7 @@ lazy val commonDependencies = Seq(
   "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
   "org.http4s" %% "http4s-circe" % Http4sVersion,
   "org.http4s" %% "http4s-dsl" % Http4sVersion,
+  "org.typelevel" %% "cats-effect" % "3.2.9",
   "io.circe" %% "circe-generic" % CirceVersion,
   "io.circe" %% "circe-generic-extras" % CirceVersion,
   "org.specs2" %% "specs2-core" % Specs2Version % "test",
@@ -34,23 +35,18 @@ lazy val commonDependencies = Seq(
   "com.pauldijou" %% "jwt-circe" % "4.2.0",
   "com.chatwork" %% "scala-jwk" % "1.0.5",
   "org.bitbucket.b_c" % "jose4j" % "0.7.2",
-  "co.fs2" %% "fs2-core" % "2.4.0",
-  "co.fs2" %% "fs2-io" % "2.4.0",
-  "co.fs2" %% "fs2-reactive-streams" % "2.4.0",
-  "co.fs2" %% "fs2-experimental" % "2.4.0",
+  "co.fs2" %% "fs2-core" % "3.1.1",
+  "co.fs2" %% "fs2-io" % "3.1.1",
+  "co.fs2" %% "fs2-reactive-streams" % "3.1.1",
   "com.michaelpollmeier" %% "macros" % "3.4.7.2",
   "org.apache.tinkerpop" % "tinkergraph-gremlin" % "3.3.1",
   "com.tinkerpop.gremlin" % "gremlin" % "2.6.0",
   "org.apache.tinkerpop" % "gremlin-driver" % "3.4.1",
   "com.google.maps" % "google-maps-services" % "0.15.0",
   "org.slf4j" % "slf4j-simple" % "2.0.0-alpha1",
-  "io.circe" %% "circe-fs2" % "0.13.0",
-  "io.laserdisc" %% "fs2-aws" % "3.0.2",
-  "io.laserdisc" %% "fs2-aws-s3" % "3.0.2",
   "com.typesafe.akka" %% "akka-http-core" % "10.2.1",
   "com.typesafe.akka" %% "akka-stream" % "2.6.8",
   "org.scalameta" %% "munit" % MunitVersion % Test,
-  "org.typelevel" %% "munit-cats-effect-2" % MunitCatsEffectVersion % Test,
   "com.stripe" % "stripe-java" % "20.41.0",
   "eu.timepit" %% "refined" % "0.9.21",
   "eu.timepit" %% "refined-cats" % "0.9.21", // optional
@@ -77,9 +73,8 @@ lazy val root = (project in file("."))
     scalacOptions += "-Ywarn-unused",
     libraryDependencies ++= commonDependencies,
     testFrameworks += new TestFramework("utest.runner.Framework"),
-    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),    
-    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full),
-    addCompilerPlugin("io.tryp" % "splain" % "0.5.8" cross CrossVersion.patch)
+    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
+    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
   )
 
 lazy val Web = crossProject(JSPlatform, JVMPlatform)
@@ -105,7 +100,6 @@ lazy val Web = crossProject(JSPlatform, JVMPlatform)
     scalaJSUseMainModuleInitializer := true,
     name := "web",
     libraryDependencies += "org.typelevel" %%% "cats-core" % "2.3.0",
-    libraryDependencies += "org.typelevel" %%% "cats-effect" % "2.3.0",
     Compile / run / mainClass := Some("com.gardenShare.gardenshare.web.Main")
   )
 

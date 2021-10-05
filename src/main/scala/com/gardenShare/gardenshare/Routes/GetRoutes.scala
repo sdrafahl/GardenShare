@@ -4,12 +4,11 @@ import org.http4s.HttpRoutes
 import cats.effect.IO
 import cats.implicits._
 import com.gardenShare.gardenshare.GetStore
-import cats.effect.ContextShift
 import com.gardenShare.gardenshare.GetStoresStream
 import com.gardenShare.gardenshare.GetTypeSafeConfig
-import cats.effect.Timer
 import scala.concurrent.ExecutionContext
 import org.http4s.server.AuthMiddleware
+import cats.effect.Temporal
 
 abstract class GetRoutes[F[_], T <: RoutesTypes] {
   def getRoutes: HttpRoutes[F]
@@ -21,7 +20,6 @@ object GetRoutes {
   implicit def ioTestingRoutes(
     implicit e: ApplyUserToBecomeSeller[IO],
     g: GetUserInfo[IO],
-    cs: ContextShift[IO],
     gs: GetStore[IO],
     gst: GetStoresStream[IO],
     tsc: GetTypeSafeConfig[IO],
@@ -30,7 +28,7 @@ object GetRoutes {
     deleteStore: DeleteStore[IO],
     addProductToStore: AddProductToStore[IO],
     getProductsByStore:GetProductsByStore[IO],
-    timer: Timer[IO],
+    timer: Temporal[IO],
     verifyUserAsSeller: VerifyUserAsSeller[IO],
     ec: ExecutionContext,
     authMiddleWear: AuthMiddleware[IO, Email]
@@ -47,7 +45,6 @@ object GetRoutes {
   implicit def ioProductionRoutes(
     implicit e: ApplyUserToBecomeSeller[IO],
     g: GetUserInfo[IO],
-    cs: ContextShift[IO],
     gs: GetStore[IO],
     gst: GetStoresStream[IO],
     tsc: GetTypeSafeConfig[IO],
@@ -55,7 +52,7 @@ object GetRoutes {
     cognitoClient: CogitoClient[IO],
     addProductToStore: AddProductToStore[IO],
     getProductsByStore:GetProductsByStore[IO],
-    timer: Timer[IO],
+    timer: Temporal[IO],
     verifyUserAsSeller: VerifyUserAsSeller[IO],
     ec: ExecutionContext,
     authMiddleWear: AuthMiddleware[IO, Email]

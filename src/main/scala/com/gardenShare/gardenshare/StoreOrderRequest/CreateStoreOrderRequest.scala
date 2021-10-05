@@ -2,19 +2,18 @@ package com.gardenShare.gardenshare
 
 import cats.effect.IO
 import com.gardenShare.gardenshare.Email
-import cats.effect.ContextShift
 import com.gardenShare.gardenshare.InsertStoreOrderRequest
 import scala.concurrent.ExecutionContext
 
 abstract class CreateStoreOrderRequest[F[_]] {
-  def createOrder(seller: Email, buyer: Email, products: List[ProductAndQuantity])(implicit cs: ContextShift[F],ec: ExecutionContext, gd: GetCurrentDate[F]): F[StoreOrderRequestWithId]
+  def createOrder(seller: Email, buyer: Email, products: List[ProductAndQuantity])(implicit gd: GetCurrentDate[F], ec: ExecutionContext): F[StoreOrderRequestWithId]
 }
 
 object CreateStoreOrderRequest {
   def apply[F[_]: CreateStoreOrderRequest]() = implicitly[CreateStoreOrderRequest[F]]
 
   implicit def createIOCreateStoreOrderRequest(implicit i:InsertStoreOrderRequest[IO], gs: GetStoreOrderRequestsWithinTimeRangeOfBuyer[IO]) = new CreateStoreOrderRequest[IO] {
-    def createOrder(seller: Email, buyer: Email, products: List[ProductAndQuantity])(implicit cs: ContextShift[IO],ec: ExecutionContext, gd: GetCurrentDate[IO]): IO[StoreOrderRequestWithId] = {
+    def createOrder(seller: Email, buyer: Email, products: List[ProductAndQuantity])(implicit gd: GetCurrentDate[IO], ec: ExecutionContext): IO[StoreOrderRequestWithId] = {
       val waitTimeInMinutes = 0
       for {
         currentDate <- gd.get        

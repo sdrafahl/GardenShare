@@ -3,10 +3,9 @@ package com.gardenShare.gardenshare
 import cats.effect.IO
 import com.gardenShare.gardenshare.Email
 import com.gardenShare.gardenshare.PaymentCommandEvaluator.PaymentCommandEvaluatorOps
-import cats.effect.ContextShift
 
 abstract class VerifyUserAsSeller[F[_]] {
-  def verify(email: Email, address: Address)(implicit cs: ContextShift[F]): F[Boolean]
+  def verify(email: Email, address: Address): F[Boolean]
 }
 
 object VerifyUserAsSeller {
@@ -20,7 +19,7 @@ object VerifyUserAsSeller {
     g:GetStore[IO],
     searchByEmail: SearchAccountIdsByEmail[IO]
   ) = new VerifyUserAsSeller[IO] {
-    def verify(email: Email, address: Address)(implicit cs: ContextShift[IO]): IO[Boolean] = {
+    def verify(email: Email, address: Address): IO[Boolean] = {
       for {
         maybeSlickID <- searchByEmail.search(email)
         slickId <- maybeSlickID match {

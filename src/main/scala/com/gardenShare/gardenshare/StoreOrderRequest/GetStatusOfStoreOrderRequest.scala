@@ -1,12 +1,11 @@
 package com.gardenShare.gardenshare
 
-import cats.effect.ContextShift
 import cats.effect.IO
 import cats.implicits._
 import StoreOrderRequestStatus._
 
 abstract class GetStatusOfStoreOrderRequest[F[_]] {
-  def get(id: OrderId)(implicit cs: ContextShift[F]): F[StoreOrderRequestStatus]
+  def get(id: OrderId): F[StoreOrderRequestStatus]
 }
 
 object GetStatusOfStoreOrderRequest {
@@ -22,7 +21,7 @@ object GetStatusOfStoreOrderRequest {
   ) = new GetStatusOfStoreOrderRequest[IO] {
     def get(
         id: OrderId
-    )(implicit cs: ContextShift[IO]): IO[StoreOrderRequestStatus] = {      
+    ): IO[StoreOrderRequestStatus] = {      
       for {        
         (acceptedOrders, denied, isPaidFor, sellerComplete, buyerComplete) <- (
           searchAcceptedStoreOrderRequestTableByID.search(id),

@@ -1,22 +1,22 @@
 package com.gardenShare.gardenshare
 
-import cats.effect.ConcurrentEffect
 import cats.implicits._
 import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.server.middleware.Logger
 import org.http4s.server.middleware._
 import scala.concurrent.duration._
 import com.gardenShare.gardenshare.GetEnvironment
-import cats.effect.Timer
+import cats.effect.Temporal
+import cats.effect.kernel.Async
 
 object GardenshareServer {
 
   def stream[F[_]:
-      ConcurrentEffect:
       GetEnvironment:
-      GetRoutesForEnv
-  ](implicit T: Timer[F]): F[Unit] = {
+      GetRoutesForEnv:
+      Async
+  ](implicit T: Temporal[F]): F[Unit] = {
 
     GetEnvironment().getEnv.flatMap { sysEnv =>
       val httpApp = (
@@ -25,19 +25,10 @@ object GardenshareServer {
 
       val finalHttpApp = Logger.httpApp(true, true)(httpApp)
 
-      val methodConfig = CORSConfig(
-          anyOrigin = true,
-          anyMethod = true,
-          allowCredentials = true,
-        maxAge = 1.day.toSeconds)
-
-      val corsService = CORS(finalHttpApp, methodConfig)
-
       (for {
-
         exitCode <- BlazeServerBuilder[F]
         .bindHttp(8055, "0.0.0.0")
-        .withHttpApp(corsService)
+        .withHttpApp(finalHttpApp)
         .enableHttp2(true)
         .serve
       } yield exitCode).drain.compile.drain

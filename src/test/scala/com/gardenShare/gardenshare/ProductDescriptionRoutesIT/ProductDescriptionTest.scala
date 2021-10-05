@@ -12,7 +12,6 @@ object ProductDescriptionTest extends TestSuite {
   lazy implicit val config = ConfigFactory.load()
   lazy implicit val dbClient = PostGresSetup.createPostgresClient
   val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
-  implicit val cs = executionStuff._3
 
   val testEmail = "shane@gmail.com"
   val testPassword = "teST12$5jljasdf"

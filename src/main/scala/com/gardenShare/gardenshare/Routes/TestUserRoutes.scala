@@ -13,7 +13,6 @@ import cats.implicits._
 import io.circe.generic.auto._
 import com.gardenShare.gardenshare.Password
 import com.gardenShare.gardenshare.DeleteStore
-import cats.effect.ContextShift
 import ProcessPolymorphicType.ProcessPolymorphicTypeOps
 
 /**
@@ -27,7 +26,6 @@ object TestUserRoutes {
       GetTypeSafeConfig:
       DeleteStore:
       GetUserPoolName:
-      ContextShift:
       ProcessPolymorphicType
   ](): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}

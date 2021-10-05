@@ -7,22 +7,20 @@ import org.http4s.Uri
 import org.http4s._
 import org.http4s.implicits._
 import eu.timepit.refined.auto._
-import fs2.text
-import io.circe.fs2._
 import java.time.ZonedDateTime
 import PaymentCommandEvaluator._
 import com.stripe.model.Account
 import cats.implicits._
 import org.http4s.circe.CirceEntityCodec._
 import AuthMiddleWear._
+import cats.effect.unsafe.implicits.global
+import org.typelevel.ci.CIString
 
 object UserTestsHelper {
   lazy implicit val config = ConfigFactory.load()
   lazy implicit val dbClient = PostGresSetup.createPostgresClient
   val executionStuff = ConcurrencyHelper.createConcurrencyValues(2)
-  implicit val cs = executionStuff._3
   implicit val ec = executionStuff._2
-  implicit val timer = executionStuff._5
 
   /**
     Do Not Use in production
@@ -81,14 +79,8 @@ object UserTestsHelper {
       .userRoutes[IO]()
       .orNotFound(regTestReq)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, AuthUserResponse])
-      .compile
-      .toList
-      .unsafeRunSync()
-      .head
+      .as[AuthUserResponse]
+      .unsafeRunSync()    
   }
 
   def authToken(jwtToken: String) = {
@@ -100,19 +92,13 @@ object UserTestsHelper {
       .userRoutes[IO]()
       .orNotFound(authRequest)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, IsJwtValidResponse])
-      .compile
-      .toList
+      .as[IsJwtValidResponse]
       .unsafeRunSync()
-      .head
   }
 
   def applyUserToBecomeSeller(jwt: String, a: ApplyUserToBecomeSellerData) = {
     val uriArg = Uri.fromString(s"/user/apply-to-become-seller").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(a)
 
     UserRoutes
@@ -125,7 +111,7 @@ object UserTestsHelper {
 
   def verifyUserAsSeller(jwt: String, address: Address) = {
     val uriArg = Uri.fromString(s"/user/verify-user-as-seller").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
     val request = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address)
 
     UserRoutes
@@ -138,21 +124,15 @@ object UserTestsHelper {
 
   def getUserInfo(jwt: String): UserInfo = {
     val uriArg = Uri.fromString("/user/info").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
     val infoRequest = Request[IO](Method.GET, uriArg, headers = headers)
 
     UserRoutes
       .userRoutes[IO]()
       .orNotFound(infoRequest)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, UserInfo])
-      .compile
-      .toList
+      .as[UserInfo]
       .unsafeRunSync()
-      .head
   }
 
   def deletestore(email: Email)(implicit d:DeleteStore[IO]) = d.delete(email).unsafeRunSync()
@@ -161,7 +141,7 @@ object UserTestsHelper {
 
   def getStores(limit: Int, rangeInMiles: Int, jwt: String, address: Address) = {
     val uriArg = Uri.fromString(s"/store/${limit}/${rangeInMiles}").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
     
     val storeRequest = Request[IO](Method.POST, uriArg, headers = headers).withEntity(address)
 
@@ -189,7 +169,8 @@ object UserTestsHelper {
   def addProductToStore(produce: String, jwt: String, am: Amount) = {
 
     val uri = Uri.fromString(s"product/add/${produce}/${am.quantityOfCurrency.value}/${am.currencyType.show}").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
     
     ProductRoutes
@@ -202,7 +183,7 @@ object UserTestsHelper {
 
   def getProductsFromStore(jwt: String) = {
     val uri = Uri.fromString(s"product").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
 
     val request = Request[IO](Method.GET, uri, headers = headers)
     ProductRoutes
@@ -215,7 +196,7 @@ object UserTestsHelper {
 
   def createStoreOrderRequest(jwtOfTheBuyer: String ,emailOfTheSeller: Email, s: StoreOrderRequestBody) = {
     val uri = Uri.fromString(s"storeOrderRequest/${emailOfTheSeller.underlying.value}").toOption.get
-    val headers = Headers.of(Header("authentication", jwtOfTheBuyer))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwtOfTheBuyer))
     val request = Request[IO](Method.POST, uri, headers = headers).withEntity(s)
 
     StoreOrderRoutes
@@ -231,7 +212,7 @@ object UserTestsHelper {
     val toForURL = Base64EncoderDecoder().encode(to.toString()).get
 
     val uri = Uri.fromString(s"storeOrderRequest/seller/${fromForURL}/${toForURL}").toOption.get
-    val headers = Headers.of(Header("authentication", jwtOfSeller))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwtOfSeller))
     val request = Request[IO](Method.GET, uri, headers = headers)
 
     StoreOrderRoutes
@@ -250,19 +231,13 @@ object UserTestsHelper {
       .storeOrderRoutes[IO]
       .orNotFound(request)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, StoreOrderRequestStatusBody])
-      .compile
-      .toList
+      .as[StoreOrderRequestStatusBody]
       .unsafeRunSync()
-      .head
   }
 
   def acceptOrder(orderId:OrderId, jwt: String) = {
     val uri = Uri.fromString(s"storeOrderRequest/accept/${orderId.id}").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)  
 
     StoreOrderRoutes
@@ -273,7 +248,7 @@ object UserTestsHelper {
 
   def denyOrder(orderId:Int, jwt: String) = {
     val uri = Uri.fromString(s"storeOrderRequest/deny/${orderId}").toOption.get
-    val headers = Headers.of(Header("authentication", jwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), jwt))
     val request = Request[IO](Method.POST, uri, headers = headers)  
 
     StoreOrderRoutes
@@ -292,26 +267,20 @@ object UserTestsHelper {
 
   def initiatePayment(buyerJwt: String, orderId: OrderId, receiptEmail: Email, paymentType: PaymentType) = {    
     val uri = Uri.fromString(s"storeOrderRequest/initiate-payment/${orderId.id}/${receiptEmail.underlying.value}/${paymentType.show}").toOption.get
-    val headers = Headers.of(Header("authentication", buyerJwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), buyerJwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
 
     StoreOrderRoutes
       .storeOrderRoutes[IO]
       .orNotFound(request)
       .unsafeRunSync()
-      .body
-      .through(text.utf8Decode)
-      .through(stringArrayParser)
-      .through(decoder[IO, PaymentIntentToken])
-      .compile
-      .toList
+      .as[PaymentIntentToken]
       .unsafeRunSync()
-      .head
   }
 
   def verifyPayment(orderId: OrderId, buyerJwt: String) = {
     val uri = Uri.fromString(s"storeOrderRequest/verify-payment/${orderId.id}").toOption.get
-    val headers = Headers.of(Header("authentication", buyerJwt))
+    val headers = Headers(Header.Raw(CIString("authentication"), buyerJwt))
     val request = Request[IO](Method.POST, uri, headers = headers)
 
     StoreOrderRoutes
@@ -333,5 +302,4 @@ object UserTestsHelper {
   def getPaymentIntentID(orderId: OrderId) = implicitly[GetPaymentIntentFromStoreRequest[IO]].search(orderId).unsafeRunSync()
 
   def getTestStripeAccount = "acct_1IV66N2R0KHt4WIV"
-
 }

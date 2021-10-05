@@ -7,9 +7,10 @@ import com.gardenShare.gardenshare._
 import ProcessPolymorphicType.ProcessPolymorphicTypeOps
 import cats.Defer
 import cats.Applicative
+import cats.effect.kernel.Async
 
 object ProductDescriptionRoutes {
-  def productDescriptionRoutes[F[_]: ProcessPolymorphicType: GetProduceDescription: Defer: Applicative]
+  def productDescriptionRoutes[F[_]: ProcessPolymorphicType: GetProduceDescription: Defer: Applicative: Async]
       : HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._

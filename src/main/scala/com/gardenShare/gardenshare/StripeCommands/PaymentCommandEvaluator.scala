@@ -1,7 +1,6 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.IO
-import cats.effect.ContextShift
 import com.gardenShare.gardenshare.ClearStripeAccountsEvaluator.ClearStripeAccountsEvaluatorOps
 import com.gardenShare.gardenshare.CreatePaymentIntentEvaluator.CreatePaymentIntentEvaluatorOps
 import com.gardenShare.gardenshare.GetPaymentIntentEvaluator.GetPaymentIntentEvaluatorOps
@@ -10,7 +9,7 @@ import com.gardenShare.gardenshare.DeleteAccountCommandEvaluator.DeleteAccountCo
 import ConfirmPaymentIntentEvaluator.ConfirmPaymentIntentEvaluatorOps
 
 abstract class PaymentCommandEvaluator[F[_]] {
-  def eval[A](c: PaymentCommand[A])(implicit cs: ContextShift[F]): F[A]
+  def eval[A](c: PaymentCommand[A]): F[A]
 }
 
 object PaymentCommandEvaluator {
@@ -25,9 +24,7 @@ object PaymentCommandEvaluator {
     deleteAccountCommandEvaluator: DeleteAccountCommandEvaluator[IO],
     confirmPaymentIntentEvaluator: ConfirmPaymentIntentEvaluator[IO]
   ) = new PaymentCommandEvaluator[IO] {
-    def eval[A](c: PaymentCommand[A])(
-      implicit cs: ContextShift[IO]
-    ) = {
+    def eval[A](c: PaymentCommand[A]) = {
       c match {
         case CreateStripeConnectedAccount(e) => createAccountEval.eval(CreateStripeConnectedAccount(e))
         case CreateStripeAccountLink(e, refreshurl, returnurl) => createLinkEval.eval(CreateStripeAccountLink(e, refreshurl, returnurl))
@@ -44,6 +41,6 @@ object PaymentCommandEvaluator {
   }
 
   implicit class PaymentCommandEvaluatorOps[A](underlying: PaymentCommand[A]) {
-    def evaluate[F[_]: PaymentCommandEvaluator: ContextShift] = implicitly[PaymentCommandEvaluator[F]].eval(underlying)
+    def evaluate[F[_]: PaymentCommandEvaluator] = implicitly[PaymentCommandEvaluator[F]].eval(underlying)
   }
 }

@@ -1,7 +1,6 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.IO
-import cats.effect.ContextShift
 import com.stripe.model.PaymentIntent
 import com.stripe.Stripe
 import com.stripe.model.PaymentMethod
@@ -10,12 +9,12 @@ import com.stripe.param.PaymentMethodCreateParams
 import com.stripe.param.PaymentMethodCreateParams.CardDetails
 
 abstract class ConfirmPaymentIntentEvaluator[F[_]] {
-  def eval(c: ConfirmPaymentIntentCard)(implicit cs: ContextShift[F]): F[Unit]
+  def eval(c: ConfirmPaymentIntentCard): F[Unit]
 }
 
 object ConfirmPaymentIntentEvaluator {
   implicit def createIOConfirmPaymentIntentEvaluator(implicit getStripeKey: GetStripePrivateKey[IO]) = new ConfirmPaymentIntentEvaluator[IO] {
-    def eval(c: ConfirmPaymentIntentCard)(implicit cs: ContextShift[IO]): IO[Unit] = {      
+    def eval(c: ConfirmPaymentIntentCard): IO[Unit] = {      
       for {
         stripeApiKey <- getStripeKey.getKey        
         _ <- IO(Stripe.apiKey = stripeApiKey.n)
@@ -47,6 +46,6 @@ object ConfirmPaymentIntentEvaluator {
   }
 
   implicit class ConfirmPaymentIntentEvaluatorOps(underlying: ConfirmPaymentIntentCard) {
-    def evaluate[F[_]: ConfirmPaymentIntentEvaluator:ContextShift] = implicitly[ConfirmPaymentIntentEvaluator[F]].eval(underlying)
+    def evaluate[F[_]: ConfirmPaymentIntentEvaluator] = implicitly[ConfirmPaymentIntentEvaluator[F]].eval(underlying)
   }
 }

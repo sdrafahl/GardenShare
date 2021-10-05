@@ -3,7 +3,6 @@ package com.gardenShare.gardenshare
 import slick.jdbc.PostgresProfile.api._
 import cats.effect.IO
 import slick.jdbc.PostgresProfile
-import cats.effect.ContextShift
 
 object OrdersPaidForTableSchemas {
   type OrdersPaidForTableSchema = (OrderId)
@@ -20,12 +19,12 @@ object OrdersPaidForTable {
 }
 
 abstract class OrderIdIsPaidFor[F[_]] {
-  def isPaidFor(order: OrderId)(implicit cs: ContextShift[F]): F[Boolean]
+  def isPaidFor(order: OrderId): F[Boolean]
 }
 
 object OrderIdIsPaidFor {
   implicit def createIOOrderIdIsPaidFor(implicit client: PostgresProfile.backend.DatabaseDef) = new OrderIdIsPaidFor[IO] {
-    def isPaidFor(order: OrderId)(implicit cs: ContextShift[IO]): IO[Boolean] = {
+    def isPaidFor(order: OrderId): IO[Boolean] = {
       val query = for {
         res <- OrdersPaidForTable.ordersPaidForTable if res.orderId === order
       } yield res
@@ -38,12 +37,12 @@ object OrderIdIsPaidFor {
 }
 
 abstract class SetOrderIsPaid[F[_]] {
-  def setOrder(orderId: OrderId)(implicit cs: ContextShift[F]): F[Unit]
+  def setOrder(orderId: OrderId): F[Unit]
 }
 
 object SetOrderIsPaid {
   implicit def createIOSetOrderIsPaid(implicit client: PostgresProfile.backend.DatabaseDef) = new SetOrderIsPaid[IO] {
-    def setOrder(orderId: OrderId)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    def setOrder(orderId: OrderId): IO[Unit] = {
       val table = OrdersPaidForTable.ordersPaidForTable
       val baseQuery = OrdersPaidForTable.ordersPaidForTable.returning(table)
       val query = (baseQuery += (orderId)).transactionally

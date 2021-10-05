@@ -1,6 +1,5 @@
 package com.gardenShare.gardenshare
 
-import cats.effect.ContextShift
 import com.gardenShare.gardenshare.Email
 import cats.effect.IO
 import com.gardenShare.gardenshare.InsertIntoAcceptedStoreOrderRequestTableByID
@@ -8,9 +7,7 @@ import com.gardenShare.gardenshare.InsertIntoDeniedStoreOrderRequestTableByID
 import com.gardenShare.gardenshare.SearchStoreOrderRequestTable
 
 abstract class AcceptOrderRequest[F[_]] {
-  def accept(storeOrderIdToAccept: OrderId, sellerEmail: Email)(
-      implicit cs: ContextShift[F]
-  ): F[Unit]
+  def accept(storeOrderIdToAccept: OrderId, sellerEmail: Email): F[Unit]
 }
 
 object AcceptOrderRequest {
@@ -18,9 +15,7 @@ object AcceptOrderRequest {
       implicit in: InsertIntoAcceptedStoreOrderRequestTableByID[IO],
       searchOrders: SearchStoreOrderRequestTable[IO]
   ) = new AcceptOrderRequest[IO] {
-    def accept(storeOrderIdToAccept: OrderId, sellerEmail: Email)(
-        implicit cs: ContextShift[IO]
-    ): IO[Unit] = {
+    def accept(storeOrderIdToAccept: OrderId, sellerEmail: Email): IO[Unit] = {
       for {
         order <- searchOrders.search(storeOrderIdToAccept)
         result <- order match {
@@ -41,9 +36,7 @@ object AcceptOrderRequest {
 }
 
 abstract class DeniedOrderRequests[F[_]] {
-  def deny(storeOrderToDeny: OrderId, sellerEmail: Email)(
-      implicit cs: ContextShift[F]
-  ): F[Unit]
+  def deny(storeOrderToDeny: OrderId, sellerEmail: Email): F[Unit]
 }
 
 object DeniedOrderRequests {
@@ -51,9 +44,7 @@ object DeniedOrderRequests {
       implicit in: InsertIntoDeniedStoreOrderRequestTableByID[IO],
       searchOrders: SearchStoreOrderRequestTable[IO]
   ) = new DeniedOrderRequests[IO] {
-    def deny(storeOrderToDeny: OrderId, sellerEmail: Email)(
-        implicit cs: ContextShift[IO]
-    ): IO[Unit] = {
+    def deny(storeOrderToDeny: OrderId, sellerEmail: Email): IO[Unit] = {
       for {
         order <- searchOrders.search(storeOrderToDeny)
         result <- order match {

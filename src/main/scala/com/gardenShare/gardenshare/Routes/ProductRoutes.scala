@@ -6,7 +6,6 @@ import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
 import io.circe.generic.auto._
 import com.gardenShare.gardenshare.Email
-import cats.effect.ContextShift
 import cats.implicits._
 import com.gardenShare.gardenshare.GetStore
 import com.gardenShare.gardenshare.GetProductsByStore
@@ -21,7 +20,6 @@ object ProductRoutes {
       AddProductToStoreForSeller:
       GetUserInfo:
       AddProductToStore:
-      ContextShift:
       GetProductsSoldFromSeller:
       GetStore:
       GetProductsByStore:

@@ -1,12 +1,11 @@
 package com.gardenShare.gardenshare
 
 import cats.effect.IO
-import cats.effect.ContextShift
 import cats.implicits._
 import StoreOrderRequestStatus._
 
 abstract class BuyerCompleteOrder[F[_]] {
-  def completeOrder(command: BuyerCompleteOrderRequest)(implicit cs: ContextShift[F]): F[Unit]
+  def completeOrder(command: BuyerCompleteOrderRequest): F[Unit]
 }
 
 object BuyerCompleteOrder {
@@ -15,7 +14,7 @@ object BuyerCompleteOrder {
     searchForOrder: SearchStoreOrderRequestTable[IO],
     insertIntoBuyerOrderCompleteTable: InsertIntoBuyerOrderCompleteTable[IO]
   ) = new BuyerCompleteOrder[IO] {
-    def completeOrder(command: BuyerCompleteOrderRequest)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    def completeOrder(command: BuyerCompleteOrderRequest): IO[Unit] = {
       for {
         (statusOfStoreOrderRequest, order) <- (getStatusOfStoreOrderRequest.get(command.orderID), searchForOrder.search(command.orderID)).parBisequence
         _ <- (statusOfStoreOrderRequest, order) match {
@@ -33,7 +32,7 @@ object BuyerCompleteOrder {
   }
 
   implicit class BuyerCompleteOrderOps(underlying: BuyerCompleteOrderRequest) {
-    def completeOrder[F[_]: BuyerCompleteOrder: ContextShift] = implicitly[BuyerCompleteOrder[F]].completeOrder(underlying)
+    def completeOrder[F[_]: BuyerCompleteOrder] = implicitly[BuyerCompleteOrder[F]].completeOrder(underlying)
   }
 
 }

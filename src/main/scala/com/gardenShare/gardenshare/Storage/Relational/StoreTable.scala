@@ -4,7 +4,7 @@ import cats.effect.IO._
 import com.gardenShare.gardenshare._
 import cats.implicits._
 import fs2.Stream
-import cats.effect.{ContextShift, IO}
+import cats.effect.IO
 import fs2.interop.reactivestreams._
 import _root_.io.circe.Encoder
 import _root_.io.circe._, _root_.io.circe.parser._
@@ -25,7 +25,7 @@ object StoreTable {
 }
 
 object StoreTableHelpers {
-  def parseResponseForStores(response: IO[List[com.gardenShare.gardenshare.StoreTable.StoreTable#TableElementType]])(implicit d:Decoder[State], cs: ContextShift[IO]) = {
+  def parseResponseForStores(response: IO[List[com.gardenShare.gardenshare.StoreTable.StoreTable#TableElementType]])(implicit d:Decoder[State]) = {
     response.map{lst =>
           lst
             .map(l => (l._1, l._2, l._3, l._4, decode[State](l._5), l._6))
@@ -46,14 +46,12 @@ object StoreTableHelpers {
 import StoreTableHelpers._
 
 abstract class GetStoreByID[F[_]] {
-  def getStore(id: Int)(implicit cs: ContextShift[F]): F[Option[Store]]
+  def getStore(id: Int): F[Option[Store]]
 }
 
 object GetStoreByID {
   implicit def getStoreByIDIO(implicit e: Decoder[State], client: PostgresProfile.backend.DatabaseDef) = new GetStoreByID[IO] {
-    def getStore(id: Int)(
-      implicit cs: ContextShift[IO]      
-    ): IO[Option[Store]] = {
+    def getStore(id: Int): IO[Option[Store]] = {
       val query = for {
         stores <- StoreTable.stores if stores.storeId === id
       } yield (stores.storeId, stores.street, stores.city, stores.zipcode, stores.state, stores.sellerEmail)
@@ -73,16 +71,14 @@ object GetStoreByID {
   }
 
 abstract class GetStore[F[_]] {
-  def getStoresByUserEmail(email: Email)(implicit cs: ContextShift[F]): F[List[Store]]
+  def getStoresByUserEmail(email: Email): F[List[Store]]
 }
 
 object GetStore {
   def apply[F[_]: GetStore]() = implicitly[GetStore[F]]
 
   implicit def iOGetStore(implicit e: Decoder[State], client: PostgresProfile.backend.DatabaseDef) = new GetStore[IO]{
-    def getStoresByUserEmail(email: Email)(
-      implicit cs: ContextShift[IO]      
-    ): IO[List[Store]] = {
+    def getStoresByUserEmail(email: Email): IO[List[Store]] = {
       val query = for {
         stores <- StoreTable.stores if stores.sellerEmail === email.underlying.value
       } yield (stores.storeId, stores.street, stores.city, stores.zipcode, stores.state, stores.sellerEmail)
@@ -93,7 +89,7 @@ object GetStore {
 }
 
 abstract class InsertStore[F[_]] {
-  def add(data: List[CreateStoreRequest])(implicit cs: ContextShift[F]): F[List[Store]]
+  def add(data: List[CreateStoreRequest]): F[List[Store]]
 }
 
 object InsertStore {
@@ -104,7 +100,7 @@ object InsertStore {
     d:Decoder[State],
     client: PostgresProfile.backend.DatabaseDef
   ) = new InsertStore[IO] {
-    def add(data: List[CreateStoreRequest])(implicit cs: ContextShift[IO]): IO[List[Store]] = {
+    def add(data: List[CreateStoreRequest]): IO[List[Store]] = {
       val query = StoreTable.stores
       val qu = StoreTable.stores.returning(query)      
       val res = qu ++= data.map(da => (0, da.address.street, da.address.city, da.address.zip, e(da.address.state).toString(), da.sellerEmail.underlying.value))
@@ -114,18 +110,18 @@ object InsertStore {
   }
 
   implicit class CreateStoreRequestOps(underlying: List[CreateStoreRequest]) {
-    def insertStore[F[_]: InsertStore:ContextShift] = implicitly[InsertStore[F]].add(underlying)
+    def insertStore[F[_]: InsertStore] = implicitly[InsertStore[F]].add(underlying)
   }
 }
 
 
 abstract class DeleteStore[F[_]] {
-  def delete(e: Email)(implicit cs: ContextShift[F]): F[Unit]
+  def delete(e: Email): F[Unit]
 }
 
 object DeleteStore {
   implicit def createIODeleteStore(implicit client: PostgresProfile.backend.DatabaseDef) = new DeleteStore[IO] {
-    def delete(e: Email)(implicit cs: ContextShift[IO]): IO[Unit] = {
+    def delete(e: Email): IO[Unit] = {
       val query = (for {
         stores <- StoreTable.stores if stores.sellerEmail === e.underlying.value
       } yield stores).delete
@@ -135,7 +131,7 @@ object DeleteStore {
 }
 
 abstract class GetStoresStream[F[_]] {
-  def getLazyStores(implicit cs: ContextShift[F]): Stream[F, Store]
+  def getLazyStores: Stream[F, Store]
 }
 
 object GetStoresStream {
@@ -145,7 +141,7 @@ object GetStoresStream {
     implicit d: Decoder[State],
     client: PostgresProfile.backend.DatabaseDef    
   ) = new GetStoresStream[IO] {
-    def getLazyStores(implicit cs: ContextShift[IO]): Stream[IO, Store] = {
+    def getLazyStores: Stream[IO, Store] = {
       val query = for {
         stores <- StoreTable.stores
       } yield (stores.storeId, stores.street, stores.city, stores.zipcode, stores.state, stores.sellerEmail)

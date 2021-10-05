@@ -1,6 +1,5 @@
 package com.gardenShare.gardenshare
 
-import cats.effect.ContextShift
 import cats.effect.IO
 import PaymentCommandEvaluator.PaymentCommandEvaluatorOps
 import PaymentID._
@@ -11,9 +10,7 @@ import PaymentVerificationStatus.RequiresFurtherAction
 import scala.util._
 
 abstract class VerifyPaymentOfOrder[F[_]] {
-  def verifyOrder(orderId: OrderId, buyerEmail: Email)(
-      implicit cs: ContextShift[F]
-  ): F[PaymentVerification]
+  def verifyOrder(orderId: OrderId, buyerEmail: Email): F[PaymentVerification]
 }
 
 object VerifyPaymentOfOrder {
@@ -23,9 +20,7 @@ object VerifyPaymentOfOrder {
       getPaymentIntent: GetPaymentIntentFromStoreRequest[IO],
       setPayment: SetOrderIsPaid[IO]
   ) = new VerifyPaymentOfOrder[IO] {
-    def verifyOrder(orderId: OrderId, buyerEmail: Email)(
-        implicit cs: ContextShift[IO]
-    ): IO[PaymentVerification] = {
+    def verifyOrder(orderId: OrderId, buyerEmail: Email): IO[PaymentVerification] = {
       searchForOrder.search(orderId).flatMap {
         case None => IO.raiseError(new Throwable("Order does not exist"))
         case Some(order) => {
